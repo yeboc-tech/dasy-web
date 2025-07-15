@@ -140,49 +140,50 @@ export default function TeacherPage() {
 
   return (
     <div className="h-full px-4 py-6 flex flex-col bg-[#f5f5f5]">
-
-      {/* Header */}
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
-            <h1 className="text-lg font-medium text-gray-900">
-              자세한 통합사회 학습지 제작 도구
-            </h1>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex w-full flex-1 min-h-0">
-        {/* Main Card Container */}
-        <div className="flex flex-col w-full rounded-xl border border-[#e0e0e0] overflow-hidden">
-          {/* Navigation Header */}
-          <div className="px-6 bg-white border-b border-[#e0e0e0] flex-shrink-0">
-            <div className='w-[124px] flex justify-center items-center'>
-              <div className="py-4 border-b-[1px] !border-black text-center font-semibold">단원·유형별</div>
-            </div>
+      <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+              <h1 className="text-lg font-medium text-gray-900">
+                자세한 통합사회 학습지 제작 도구
+              </h1>
           </div>
+        </div>
 
-          {/* Card Content */}
-          <div className="flex flex-1 min-h-0">
-            {/* Left Panel */}
-            <div className="w-1/2 flex flex-col min-h-0 bg-white border-r border-[#e0e0e0]">
-              {/* Content Tree */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="tree-container">
-                  {contentTree.map((item) => (
-                    <React.Fragment key={item.id}>
-                      {renderTreeItem(item)}
-                    </React.Fragment>
-                  ))}
-                </div>
+        {/* Main Content */}
+        <div className="flex w-full flex-1 min-h-0">
+          {/* Main Card Container */}
+          <div className="flex flex-col w-full rounded-xl border border-[#e0e0e0] overflow-hidden">
+            {/* Navigation Header */}
+            <div className="px-6 bg-white border-b border-[#e0e0e0] flex-shrink-0">
+              <div className='w-[124px] flex justify-center items-center'>
+                <div className="py-4 border-b-[1px] !border-black text-center font-semibold">단원·유형별</div>
               </div>
             </div>
 
-            {/* Right Panel */}
-            <div className="w-1/2 bg-white flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-gray-400 text-lg">
-                  단원과 유형을 선택해주세요.
-                </p>
+            {/* Card Content */}
+            <div className="flex flex-1 min-h-0">
+              {/* Left Panel */}
+              <div className="w-1/2 flex flex-col min-h-0 bg-white border-r border-[#e0e0e0]">
+                {/* Content Tree */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="tree-container">
+                    {contentTree.map((item) => (
+                      <React.Fragment key={item.id}>
+                        {renderTreeItem(item)}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Panel */}
+              <div className="w-1/2 bg-white flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-gray-400 text-sm">
+                    단원과 유형을 선택해주세요.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
