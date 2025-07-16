@@ -14,8 +14,8 @@ interface WorksheetState {
 export const useWorksheetStore = create<WorksheetState>((set) => ({
   selectedChapters: [],
   problemCount: 50,
-  difficulty: '중',
-  problemType: '모두 포함',
+  difficulty: '모두',
+  problemType: '모두',
   setSelectedChapters: (chapters) => set({ selectedChapters: chapters }),
   setProblemCount: (count) => set({ problemCount: count }),
   setDifficulty: (difficulty) => set({ difficulty }),

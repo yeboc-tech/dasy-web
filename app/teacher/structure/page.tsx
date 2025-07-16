@@ -12,15 +12,19 @@ function filterImagesByType(images: string[], difficulty: string, problemType: s
     const base = img.replace('.png', '');
     const parts = base.split('_');
     // parts: [문제번호, 난이도, (기출종류?)]
+    
+    // Check difficulty filter
+    const difficultyMatch = difficulty === '모두' || parts[1] === difficulty;
+    
     if (problemType === 'N제') {
       // Only allow if there are exactly 2 parts (no 기출종류)
-      return parts.length === 2 && parts[1] === difficulty;
+      return parts.length === 2 && difficultyMatch;
     } else if (problemType === '기출문제') {
       // Only allow if there are 3 parts (기출종류 present)
-      return parts.length === 3 && parts[1] === difficulty;
-    } else if (problemType === '모두 포함') {
+      return parts.length === 3 && difficultyMatch;
+    } else if (problemType === '모두') {
       // Allow both
-      return parts[1] === difficulty;
+      return difficultyMatch;
     }
     return false;
   });
@@ -172,12 +176,8 @@ export default function Page() {
   return (
     <Suspense fallback={
       <div className="flex flex-1 min-h-0">
-        <div className="flex-1 bg-white border-r border-[#e0e0e0] flex items-center justify-center">
-          <Loader className="animate-spin w-4 h-4" />
-        </div>
-        <div className="w-[400px] bg-white flex items-center justify-center">
-          <Loader className="animate-spin w-4 h-4" />
-        </div>
+        <div className="flex-1 bg-white border-r border-[#e0e0e0] flex items-center justify-center"><Loader className="animate-spin w-4 h-4" /></div>
+        <div className="w-[400px] bg-white flex items-center justify-center"><Loader className="animate-spin w-4 h-4" /></div>
       </div>
     }>
       <StructureContent />

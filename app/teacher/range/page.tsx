@@ -1,26 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { contentTree } from '@/lib/global';
+import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
-import { useRouter } from 'next/navigation';
+import { contentTree } from '@/lib/global';
 
 export default function Page() {
-  const {selectedChapters, setSelectedChapters, problemCount, setProblemCount, difficulty, setDifficulty, problemType, setProblemType} = useWorksheetStore();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['통합사회_1권_1단원_2']);
-  const checkedItems = new Set(selectedChapters);
   const router = useRouter();
+  
+  const {selectedChapters, setSelectedChapters, problemCount, setProblemCount, difficulty, setDifficulty, problemType, setProblemType} = useWorksheetStore();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const checkedItems = new Set(selectedChapters);
 
-  const toggleExpanded = (itemId: string) => {
-    setExpandedItems(prev => prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
+  const toggleExpanded = (itemId: string) => setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId): [...prev, itemId])
 
-  // Get all child IDs recursively
   const getAllChildIds = (item: any): string[] => {
     const childIds: string[] = [];
     if (item.children && item.children.length > 0) {
@@ -32,36 +27,27 @@ export default function Page() {
     return childIds;
   };
 
-  // Check if all children are checked
   const areAllChildrenChecked = (item: any): boolean => {
     if (!item.children || item.children.length === 0) return false;
     return item.children.every((child: any) => {
-      if (child.children && child.children.length > 0) {
-        return areAllChildrenChecked(child);
-      }
+      if (child.children && child.children.length > 0) return areAllChildrenChecked(child);
       return checkedItems.has(child.id);
     });
   };
 
-  // Check if some children are checked (for indeterminate state)
   const areSomeChildrenChecked = (item: any): boolean => {
     if (!item.children || item.children.length === 0) return false;
     return item.children.some((child: any) => {
-      if (child.children && child.children.length > 0) {
-        return areSomeChildrenChecked(child) || areAllChildrenChecked(child);
-      }
+      if (child.children && child.children.length > 0) return areSomeChildrenChecked(child) || areAllChildrenChecked(child);
       return checkedItems.has(child.id);
     });
   };
 
   const handleCheckboxChange = (itemId: string, item: any, level: number) => {
-    // Allow checking/unchecking for top-level categories (level 0) and level 1 categories only for chapters III, IV, V
     if (level !== 0 && level !== 1) return;
     
-    // For level 1, only allow if it's under chapters III, IV, V
     if (level === 1) {
-      const parentChapter = itemId.split('_').slice(0, 3).join('_'); // Get parent chapter ID
-
+      const parentChapter = itemId.split('_').slice(0, 3).join('_');
       const disallowedChapters = ['통합사회_1권_1단원', '통합사회_1권_2단원'];
       if (disallowedChapters.includes(parentChapter)) return;
     }
@@ -70,11 +56,9 @@ export default function Page() {
     const isCurrentlyChecked = checkedItems.has(itemId);
     
     if (isCurrentlyChecked) {
-      // Remove this item and all its children
       const allChildIds = getAllChildIds(item);
       newSelectedChapters = selectedChapters.filter(id => id !== itemId && !allChildIds.includes(id));
     } else {
-      // Add this item and all its children
       const allChildIds = getAllChildIds(item);
       const itemsToAdd = [itemId, ...allChildIds];
       newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
@@ -94,13 +78,10 @@ export default function Page() {
     return (
       <React.Fragment key={item.id}>
         <div className={`pl-1.5 min-h-[48px] flex items-center tree-item ${isExpanded ? 'expanded' : ''} hover:bg-gray-50 cursor-pointer transition-colors duration-200`} onClick={() => toggleExpanded(item.id)}>
-          {/* Indentation */}
           <div className="flex">
             {level > 0 && (<div className="w-4"></div>)}
             {level > 1 && (<div className="w-4"></div>)}
           </div>
-          
-          {/* Switcher */}
           <div className="flex items-center">
             {hasChildren ? (
               <div>
@@ -122,8 +103,6 @@ export default function Page() {
               <div className="w-6 h-6"></div>
             )}
           </div>
-          
-          {/* Checkbox */}
           <div className="cursor-pointer pl-1 flex items-center hover:cursor-pointer" onClick={(e) => e.stopPropagation()}>
             <Checkbox 
               checked={hasChildren ? allChildrenChecked : isChecked}
@@ -136,19 +115,12 @@ export default function Page() {
               onCheckedChange={() => handleCheckboxChange(item.id, item, level)}
             />
           </div>
-          
-          {/* Content */}
           <div className="pl-2 flex items-center flex-1 text-sm"><span className="tree-title">{item.label}</span></div>
         </div>
         
-        {/* Children as separate rows */}
         {hasChildren && isExpanded && (
           <>
-            {item.children.map((child: any) => (
-              <React.Fragment key={child.id}>
-                {renderTreeItem(child, level + 1)}
-              </React.Fragment>
-            ))}
+            {item.children.map((child: any) => (<React.Fragment key={child.id}>{renderTreeItem(child, level + 1)}</React.Fragment>))}
           </>
         )}
       </React.Fragment>
@@ -199,7 +171,7 @@ export default function Page() {
                         className={`cursor-pointer px-3 py-2 text-sm border rounded-md transition-colors ${
                           problemCount === num 
                             ? 'border-black text-black bg-gray-100' 
-                            : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         {num}
@@ -220,32 +192,16 @@ export default function Page() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-900">난이도</h3>
-                </div>
-                <div className="flex gap-2">
-                  {['하', '중', '상'].map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => setDifficulty(level)}
-                      className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${
-                        difficulty === level 
-                          ? 'border-black text-black bg-gray-100' 
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                      }`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
+                <div className="flex items-center justify-between"><h3 className="text-sm font-medium text-gray-900">난이도</h3></div>
+                <div className="flex gap-2">{['하', '중', '상', '모두'].map((level) => (<button key={level} onClick={() => setDifficulty(level)} className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${ difficulty === level ? 'border-black text-black bg-gray-100' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>{level}</button>))}</div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-sm font-medium text-gray-900">문제 타입</h3></div>
-                <div className="flex gap-2">{['기출문제', 'N제', '모두 포함'].map((type) => (<button key={type} onClick={() => setProblemType(type)} className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${problemType === type ? 'border-black text-black bg-gray-100' : 'border-gray-300 text-gray-700 hover:border-gray-400'}`}>{type}</button>))}</div>
+                <div className="flex gap-2">{['기출문제', 'N제', '모두'].map((type) => (<button key={type} onClick={() => setProblemType(type)} className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${problemType === type ? 'border-black text-black bg-gray-100' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}>{type}</button>))}</div>
               </div>
 
-              <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6">
+              <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6 border-t border-gray-300">
                 <p className="text-sm text-gray-600">학습지 문제 수 <span className="text-black font-medium">{problemCount}</span> 개</p>
                 <button type="button" onClick={handleNextStep} className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors">다음 단계</button>
               </div>
