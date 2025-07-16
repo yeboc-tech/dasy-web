@@ -5,7 +5,7 @@ import { contentTree } from '@/lib/global';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 
-export default function TeacherPage() {
+export default function Page() {
   const [expandedItems, setExpandedItems] = useState<string[]>(['integrated-perspective']);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [problemCount, setProblemCount] = useState<number[]>([50]);

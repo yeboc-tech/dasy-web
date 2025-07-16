@@ -1,3 +1,38 @@
+export const sampleProblems = [
+  {
+    id: 1,
+    image: "/problems/통합사회_1권_1단원_2/문제1_하.png"
+  },
+  {
+    id: 2,
+    image: "/problems/통합사회_1권_1단원_2/문제2_하.png"
+  },
+  {
+    id: 3,
+    image: "/problems/통합사회_1권_1단원_2/문제3_하.png"
+  },
+  {
+    id: 4,
+    image: "/problems/통합사회_1권_1단원_2/문제4_하.png"
+  },
+  {
+    id: 5,
+    image: "/problems/통합사회_1권_1단원_2/문제5_하.png"
+  },
+  {
+    id: 6,
+    image: "/problems/통합사회_1권_1단원_2/문제6_하.png"
+  },
+  {
+    id: 7,
+    image: "/problems/통합사회_1권_1단원_2/문제7_하.png"
+  },
+  {
+    id: 8,
+    image: "/problems/통합사회_1권_1단원_2/문제8_하.png"
+  }
+];
+
 export const contentTree = [
   {
     id: 'integrated-perspective',
