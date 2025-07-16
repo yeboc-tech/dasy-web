@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
   try {
     const body: WorksheetRequest = await req.json();
     let { title, creator, images } = body;
-    images = getRandomProblems(12);
+    // Do NOT overwrite images here! Use the images sent from the frontend.
 
     if (!images || images.length === 0) {
       return new Response("No images provided", { status: 400 });

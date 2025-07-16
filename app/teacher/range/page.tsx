@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 import { contentTree } from '@/lib/global';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
+import { useRouter } from 'next/navigation';
 
 export default function Page() {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['integrated-perspective']);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [problemCount, setProblemCount] = useState<number[]>([50]);
-  const [difficulty, setDifficulty] = useState<string>('중');
-  const [problemType, setProblemType] = useState<string>('N제');
+  const {selectedChapters, setSelectedChapters, problemCount, setProblemCount, difficulty, setDifficulty, problemType, setProblemType} = useWorksheetStore();
+  const [expandedItems, setExpandedItems] = useState<string[]>(['통합사회_1권_1단원_2']);
+  const checkedItems = new Set(selectedChapters);
+  const router = useRouter();
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) 
@@ -33,7 +34,7 @@ export default function Page() {
 
   // Check if all children are checked
   const areAllChildrenChecked = (item: any): boolean => {
-    if (!item.children || item.children.length === 0) return true;
+    if (!item.children || item.children.length === 0) return false;
     return item.children.every((child: any) => {
       if (child.children && child.children.length > 0) {
         return areAllChildrenChecked(child);
@@ -53,22 +54,25 @@ export default function Page() {
     });
   };
 
-  const handleCheckboxChange = (itemId: string, item: any) => {
-    const newCheckedItems = new Set(checkedItems);
-    const childIds = getAllChildIds(item);
+  const handleCheckboxChange = (itemId: string, item: any, level: number) => {
+    // Only allow checking/unchecking for top-level categories (level 0)
+    if (level !== 0) return;
+    
+    let newSelectedChapters: string[];
     const isCurrentlyChecked = checkedItems.has(itemId);
-
+    
     if (isCurrentlyChecked) {
-      // Uncheck this item and all its children
-      newCheckedItems.delete(itemId);
-      childIds.forEach(id => newCheckedItems.delete(id));
+      // Remove this item and all its children
+      const allChildIds = getAllChildIds(item);
+      newSelectedChapters = selectedChapters.filter(id => id !== itemId && !allChildIds.includes(id));
     } else {
-      // Check this item and all its children
-      newCheckedItems.add(itemId);
-      childIds.forEach(id => newCheckedItems.add(id));
+      // Add this item and all its children
+      const allChildIds = getAllChildIds(item);
+      const itemsToAdd = [itemId, ...allChildIds];
+      newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
     }
-
-    setCheckedItems(newCheckedItems);
+    
+    setSelectedChapters(newSelectedChapters);
   };
 
   const renderTreeItem = (item: any, level: number = 0) => {
@@ -77,6 +81,7 @@ export default function Page() {
     const isChecked = checkedItems.has(item.id);
     const allChildrenChecked = hasChildren ? areAllChildrenChecked(item) : false;
     const someChildrenChecked = hasChildren ? areSomeChildrenChecked(item) : false;
+    const isTopLevel = level === 0;
 
     return (
       <React.Fragment key={item.id}>
@@ -120,7 +125,8 @@ export default function Page() {
                   (ref as HTMLInputElement).indeterminate = someChildrenChecked && !allChildrenChecked;
                 }
               }}
-              onCheckedChange={() => handleCheckboxChange(item.id, item)}
+              disabled={!isTopLevel}
+              onCheckedChange={() => handleCheckboxChange(item.id, item, level)}
             />
           </div>
           
@@ -142,6 +148,15 @@ export default function Page() {
     );
   };
 
+  const handleNextStep = () => {
+    const params = new URLSearchParams();
+    if (selectedChapters.length > 0) params.set('selectedChapters', selectedChapters.join(','));
+    params.set('problemCount', String(problemCount));
+    params.set('difficulty', difficulty);
+    params.set('problemType', problemType);
+    router.push(`/teacher/structure?${params.toString()}`);
+  };
+
   return (
     <>
       <div className="px-6 bg-white border-b border-[#e0e0e0] flex-shrink-0">
@@ -160,7 +175,7 @@ export default function Page() {
         </div>
         {/* Right Panel */}
         <div className="w-[400px] bg-white relative">
-          {checkedItems.size > 0 ? (
+          {selectedChapters.length > 0 ? (
             <div className="p-6 space-y-6 pb-20">
               {/* 문제 수 (Number of Problems) */}
               <div className="space-y-4">
@@ -173,9 +188,9 @@ export default function Page() {
                     {[25, 50, 75, 100].map((num) => (
                       <button
                         key={num}
-                        onClick={() => setProblemCount([num])}
+                        onClick={() => setProblemCount(num)}
                         className={`cursor-pointer px-3 py-2 text-sm border rounded-md transition-colors ${
-                          problemCount[0] === num 
+                          problemCount === num 
                             ? 'border-black text-black bg-gray-100' 
                             : 'border-gray-300 text-gray-700 hover:border-gray-400'
                         }`}
@@ -188,11 +203,11 @@ export default function Page() {
                     <div className="flex-1">
                       <div className="flex justify-between gap-2 text-xs text-gray-500">
                         <span>0</span>
-                        <Slider value={problemCount} onValueChange={setProblemCount} min={0} max={150} step={1} className="w-full" />
+                        <Slider value={[problemCount]} onValueChange={([val]) => setProblemCount(val)} min={0} max={150} step={1} className="w-full" />
                         <span>150</span>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-black">{problemCount[0]} 문제</span>
+                    <span className="text-sm font-medium text-black">{problemCount} 문제</span>
                   </div>
                 </div>
               </div>
@@ -241,11 +256,16 @@ export default function Page() {
 
               <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6">
                 <p className="text-sm text-gray-600">
-                  학습지 문제 수 <span className="text-black font-medium">{problemCount[0]}</span> 개
+                  학습지 문제 수 <span className="text-black font-medium">{problemCount}</span> 개
                 </p>
-                <a href="/teacher/structure" className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors">다음 단계</a>
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors"
+                >
+                  다음 단계
+                </button>
               </div>
-
             </div>
           ) : (
             <div className="flex items-center justify-center h-full">
