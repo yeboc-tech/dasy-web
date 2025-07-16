@@ -55,8 +55,16 @@ export default function Page() {
   };
 
   const handleCheckboxChange = (itemId: string, item: any, level: number) => {
-    // Only allow checking/unchecking for top-level categories (level 0)
-    if (level !== 0) return;
+    // Allow checking/unchecking for top-level categories (level 0) and level 1 categories only for chapters III, IV, V
+    if (level !== 0 && level !== 1) return;
+    
+    // For level 1, only allow if it's under chapters III, IV, V
+    if (level === 1) {
+      const parentChapter = itemId.split('_').slice(0, 3).join('_'); // Get parent chapter ID
+
+      const disallowedChapters = ['통합사회_1권_1단원', '통합사회_1권_2단원'];
+      if (disallowedChapters.includes(parentChapter)) return;
+    }
     
     let newSelectedChapters: string[];
     const isCurrentlyChecked = checkedItems.has(itemId);
@@ -121,11 +129,10 @@ export default function Page() {
               checked={hasChildren ? allChildrenChecked : isChecked}
               ref={(ref) => {
                 if (ref && hasChildren) {
-                  // Set indeterminate state for parent checkboxes
                   (ref as HTMLInputElement).indeterminate = someChildrenChecked && !allChildrenChecked;
                 }
               }}
-              disabled={!isTopLevel}
+              disabled={!isTopLevel && (level !== 1 || ['통합사회_1권_1단원', '통합사회_1권_2단원'].includes(item.id.split('_').slice(0, 3).join('_')))}
               onCheckedChange={() => handleCheckboxChange(item.id, item, level)}
             />
           </div>
@@ -234,37 +241,13 @@ export default function Page() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-900">문제 타입</h3>
-                </div>
-                <div className="flex gap-2">
-                  {['기출문제', 'N제', '모두 포함'].map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setProblemType(type)}
-                      className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${
-                        problemType === type 
-                          ? 'border-black text-black bg-gray-100' 
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
+                <div className="flex items-center justify-between"><h3 className="text-sm font-medium text-gray-900">문제 타입</h3></div>
+                <div className="flex gap-2">{['기출문제', 'N제', '모두 포함'].map((type) => (<button key={type} onClick={() => setProblemType(type)} className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${problemType === type ? 'border-black text-black bg-gray-100' : 'border-gray-300 text-gray-700 hover:border-gray-400'}`}>{type}</button>))}</div>
               </div>
 
               <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6">
-                <p className="text-sm text-gray-600">
-                  학습지 문제 수 <span className="text-black font-medium">{problemCount}</span> 개
-                </p>
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors"
-                >
-                  다음 단계
-                </button>
+                <p className="text-sm text-gray-600">학습지 문제 수 <span className="text-black font-medium">{problemCount}</span> 개</p>
+                <button type="button" onClick={handleNextStep} className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors">다음 단계</button>
               </div>
             </div>
           ) : (
