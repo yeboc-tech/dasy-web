@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Loader } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import problemDB from '@/public/problems/db-index';
@@ -40,7 +40,7 @@ function getRandomSample<T>(arr: T[], n: number): T[] {
   return result;
 }
 
-export default function Page() {
+function StructureContent() {
   const searchParams = useSearchParams();
   const selectedChapters = searchParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
   const problemCount = parseInt(searchParams.get('problemCount') || '0', 10);
@@ -165,5 +165,22 @@ export default function Page() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-1 min-h-0">
+        <div className="flex-1 bg-white border-r border-[#e0e0e0] flex items-center justify-center">
+          <Loader className="animate-spin w-4 h-4" />
+        </div>
+        <div className="w-[400px] bg-white flex items-center justify-center">
+          <Loader className="animate-spin w-4 h-4" />
+        </div>
+      </div>
+    }>
+      <StructureContent />
+    </Suspense>
   );
 }
