@@ -9,6 +9,8 @@ export default function TeacherPage() {
   const [expandedItems, setExpandedItems] = useState<string[]>(['integrated-perspective']);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [problemCount, setProblemCount] = useState<number[]>([50]);
+  const [difficulty, setDifficulty] = useState<string>('중');
+  const [problemType, setProblemType] = useState<string>('N제');
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) 
@@ -180,14 +182,14 @@ export default function TeacherPage() {
               </div>
 
               {/* Right Panel */}
-              <div className="w-[400px] bg-white">
+              <div className="w-[400px] bg-white relative">
                 {checkedItems.size > 0 ? (
-                  <div className="p-6 space-y-6">
+                  <div className="p-6 space-y-6 pb-20">
                     {/* 문제 수 (Number of Problems) */}
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
                         <h3 className="text-sm font-medium text-gray-900">문제 수</h3>
-                        <span className="text-xs text-gray-500">최대 150문제</span>
+                        <span className="text-xs text-gray-400">최대 150문제</span>
                       </div>
                       <div className="space-y-3">
                         <div className="flex gap-2">
@@ -195,7 +197,7 @@ export default function TeacherPage() {
                             <button
                               key={num}
                               onClick={() => setProblemCount([num])}
-                              className={`px-3 py-2 text-sm border rounded-md transition-colors ${
+                              className={`cursor-pointer px-3 py-2 text-sm border rounded-md transition-colors ${
                                 problemCount[0] === num 
                                   ? 'border-black text-black bg-gray-100' 
                                   : 'border-gray-300 text-gray-700 hover:border-gray-400'
@@ -207,18 +209,9 @@ export default function TeacherPage() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="flex-1">
-                            <div className="h-[20px] w-full">
-                              <Slider
-                                value={problemCount}
-                                onValueChange={setProblemCount}
-                                min={0}
-                                max={150}
-                                step={1}
-                                className="w-full"
-                                />
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <div className="flex justify-between gap-2 text-xs text-gray-500">
                               <span>0</span>
+                              <Slider value={problemCount} onValueChange={setProblemCount} min={0} max={150} step={1} className="w-full" />
                               <span>150</span>
                             </div>
                           </div>
@@ -227,68 +220,54 @@ export default function TeacherPage() {
                       </div>
                     </div>
 
-                    {/* 난이도 (Difficulty) */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium text-gray-900">난이도</h3>
-                        <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                          </svg>
-                          난이도 설정
-                        </button>
                       </div>
-                                              <div className="flex gap-2">
-                          {['하', '중하', '중', '상', '최상'].map((level) => (
-                            <button
-                              key={level}
-                              className={`px-3 py-2 text-sm border rounded-md transition-colors ${
-                                level === '중' 
-                                  ? 'border-black text-black bg-gray-100' 
-                                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                              }`}
-                            >
-                              {level}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="flex gap-2">
+                        {['하', '중', '상'].map((level) => (
+                          <button
+                            key={level}
+                            onClick={() => setDifficulty(level)}
+                            className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${
+                              difficulty === level 
+                                ? 'border-black text-black bg-gray-100' 
+                                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                            }`}
+                          >
+                            {level}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* 문제 타입 (Problem Type) */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-medium text-gray-900">문제 타입</h3>
                       </div>
-                                              <div className="flex gap-2">
-                          {['전체', '객관식', '주관식'].map((type) => (
-                            <button
-                              key={type}
-                              className={`px-3 py-2 text-sm border rounded-md transition-colors ${
-                                type === '객관식' 
-                                  ? 'border-black text-black bg-gray-100' 
-                                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                              }`}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="flex gap-2">
+                        {['기출문제', 'N제', '모두 포함'].map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => setProblemType(type)}
+                            className={`px-3 py-2 text-sm border rounded-md transition-colors cursor-pointer ${
+                              problemType === type 
+                                ? 'border-black text-black bg-gray-100' 
+                                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {/* Summary */}
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6">
                       <p className="text-sm text-gray-600">
-                        학습지 문제 수 <span className="text-black font-medium">{problemCount[0]}</span> 개 | 유형 <span className="text-gray-900">242</span>개
+                        학습지 문제 수 <span className="text-black font-medium">{problemCount[0]}</span> 개
                       </p>
+                      <button className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors">다음 단계</button>
                     </div>
-
-                    {/* Action Button */}
-                    <button className="w-full bg-black text-white py-3 px-4 rounded-md font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                      다음 단계 →
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full">

@@ -101,3 +101,31 @@ body {
 .toggle-label {
   transition: background-color 0.3s;
 }
+
+/* Slider styles */
+[data-slot="slider-track"] {
+  background-color: #e5e7eb !important;
+}
+
+[data-slot="slider-range"] {
+  background-color: #9ca3af !important;
+}
+
+[data-slot="slider-thumb"] {
+  background-color: #000000 !important;
+  cursor: pointer;
+  border: 1px solid #ffffff !important;
+  outline: none !important;
+}
+
+[data-slot="slider-thumb"]:hover {
+  border: 1px solid #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[data-slot="slider-thumb"]:focus {
+  border: 1px solid #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
