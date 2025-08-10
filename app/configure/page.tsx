@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { Loader } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
+import { Card } from '@/components/ui/card';
 import problemDB from '@/public/problems/db-index';
 
 function filterImagesByType(images: string[], difficulty: string, problemType: string): string[] {
@@ -11,21 +12,11 @@ function filterImagesByType(images: string[], difficulty: string, problemType: s
     // e.g. 문제1_하.png (N제), 문제1_하_수능.png (기출)
     const base = img.replace('.png', '');
     const parts = base.split('_');
-    // parts: [문제번호, 난이도, (기출종류?)]
-    
-    // Check difficulty filter
     const difficultyMatch = difficulty === '모두' || parts[1] === difficulty;
     
-    if (problemType === 'N제') {
-      // Only allow if there are exactly 2 parts (no 기출종류)
-      return parts.length === 2 && difficultyMatch;
-    } else if (problemType === '기출문제') {
-      // Only allow if there are 3 parts (기출종류 present)
-      return parts.length === 3 && difficultyMatch;
-    } else if (problemType === '모두') {
-      // Allow both
-      return difficultyMatch;
-    }
+    if (problemType === 'N제') return parts.length === 2 && difficultyMatch;
+    else if (problemType === '기출문제') return parts.length === 3 && difficultyMatch;
+    else if (problemType === '모두') return difficultyMatch;
     return false;
   });
 }
@@ -44,7 +35,7 @@ function getRandomSample<T>(arr: T[], n: number): T[] {
   return result;
 }
 
-function StructureContent() {
+function PdfContent() {
   const searchParams = useSearchParams();
   const selectedChapters = searchParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
   const problemCount = parseInt(searchParams.get('problemCount') || '0', 10);
@@ -75,7 +66,7 @@ function StructureContent() {
     const fetchPdf = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/pdf", {
+        const res = await fetch("/api/configure", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -107,10 +98,10 @@ function StructureContent() {
   }, [worksheetName, creator, selectedImages]);
 
   return (
-    <>
-      <div className="flex flex-1 min-h-0">
-        {/* Left Panel - Worksheet Preview */}
-        <div className="flex-1 bg-white border-r border-[#e0e0e0] overflow-y-auto relative">
+    <div className="px-4 pt-2 pb-6 max-w-4xl mx-auto w-full h-full">
+      <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
+        {/* PDF Preview Panel */}
+        <div className="flex-1 bg-white overflow-y-auto relative">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-white bg-opacity-70">
               <Loader className="animate-spin w-4 h-4" />
@@ -129,58 +120,23 @@ function StructureContent() {
             </div>
           )}
         </div>
-
-        {/* Right Panel - Form Inputs */}
-        <div className="w-[400px] bg-white relative">
-          <div className="p-6 space-y-6 pb-20">
-            {/* 학습지명 */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">학습지명</label>
-              <input
-                type="text"
-                value={worksheetName}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="학습지명을 입력하세요"
-                disabled
-              />
-            </div>
-
-            {/* 출제자 */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">출제자</label>
-              <input
-                type="text"
-                value={creator}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="출제자를 입력하세요"
-                disabled
-              />
-            </div>
-
-            {/* Bottom Bar */}
-            <div className="absolute bottom-0 right-0 flex justify-between items-center w-full pl-6 border-t border-gray-300">
-              <p className="text-sm text-gray-600">학습지 문제 수 <span className="text-black font-medium">{selectedImages.length}</span> 개</p>
-              <div className="flex">
-                <a href="/teacher/range" className="cursor-pointer h-full bg-white text-black py-3 px-6 font-medium hover:bg-gray-100 transition-colors border-l border-gray-300">이전</a>
-                <button className="cursor-pointer bg-black text-white py-3 px-6 font-medium hover:bg-gray-800 transition-colors">적용하기</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+      </Card>
+    </div>
   );
 }
 
 export default function Page() {
   return (
     <Suspense fallback={
-      <div className="flex flex-1 min-h-0">
-        <div className="flex-1 bg-white border-r border-[#e0e0e0] flex items-center justify-center"><Loader className="animate-spin w-4 h-4" /></div>
-        <div className="w-[400px] bg-white flex items-center justify-center"><Loader className="animate-spin w-4 h-4" /></div>
+      <div className="px-4 pt-2 pb-6 max-w-6xl mx-auto w-full h-full">
+        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
+          <div className="flex-1 bg-white flex items-center justify-center">
+            <Loader className="animate-spin w-4 h-4" />
+          </div>
+        </Card>
       </div>
     }>
-      <StructureContent />
+      <PdfContent />
     </Suspense>
   );
 }

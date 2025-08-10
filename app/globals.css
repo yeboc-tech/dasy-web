@@ -129,3 +129,20 @@ body {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Accordion custom styles */
+[data-state="open"] .accordion-plus {
+  display: none;
+}
+
+[data-state="open"] .accordion-minus {
+  display: block !important;
+}
+
+[data-state="closed"] .accordion-plus {
+  display: block;
+}
+
+[data-state="closed"] .accordion-minus {
+  display: none !important;
+}
