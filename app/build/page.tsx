@@ -29,6 +29,7 @@ export default function Page() {
   
   const {selectedChapters, setSelectedChapters, problemCount, setProblemCount, difficulty, setDifficulty, problemType, setProblemType, selectedSubjects, setSelectedSubjects} = useWorksheetStore();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['통합사회_1']);
   const checkedItems = new Set(selectedChapters);
 
   const toggleExpanded = (itemId: string) => setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId): [...prev, itemId])
@@ -61,14 +62,6 @@ export default function Page() {
   };
 
   const handleCheckboxChange = (itemId: string, item: any, level: number) => {
-    if (level !== 0 && level !== 1) return;
-    
-    if (level === 1) {
-      const parentChapter = itemId.split('_').slice(0, 3).join('_');
-      const disallowedChapters = ['통합사회_1권_1단원', '통합사회_1권_2단원'];
-      if (disallowedChapters.includes(parentChapter)) return;
-    }
-    
     let newSelectedChapters: string[];
     const isCurrentlyChecked = checkedItems.has(itemId);
     
@@ -89,6 +82,19 @@ export default function Page() {
       ? selectedSubjects.filter(s => s !== subject)
       : [...selectedSubjects, subject];
     setSelectedSubjects(newSelectedSubjects);
+  };
+
+  const handleMainSubjectToggle = (subject: string) => {
+    const newSelectedMainSubjects = selectedMainSubjects.includes(subject)
+      ? selectedMainSubjects.filter(s => s !== subject)
+      : [...selectedMainSubjects, subject];
+    
+    // Ensure at least one subject is always selected
+    if (newSelectedMainSubjects.length === 0) {
+      setSelectedMainSubjects([subject]);
+    } else {
+      setSelectedMainSubjects(newSelectedMainSubjects);
+    }
   };
 
   const renderTreeItem = (item: any, level: number = 0) => {
@@ -135,7 +141,6 @@ export default function Page() {
                   (ref as HTMLInputElement).indeterminate = someChildrenChecked && !allChildrenChecked;
                 }
               }}
-              disabled={!isTopLevel && (level !== 1 || ['통합사회_1권_1단원', '통합사회_1권_2단원'].includes(item.id.split('_').slice(0, 3).join('_')))}
               onCheckedChange={() => handleCheckboxChange(item.id, item, level)}
             />
           </div>
@@ -161,12 +166,41 @@ export default function Page() {
     router.push(`/configure?${params.toString()}`);
   };
 
+  // Filter content tree based on selected main subjects
+  const filteredContentTree = contentTree.filter(item => selectedMainSubjects.includes(item.id));
+
   return (
     <div className="px-4 pt-2 pb-6 max-w-4xl mx-auto w-full h-full">
       <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
         {/* Left Panel - Filter Panel */}
-        <div className="w-1/2 flex flex-col min-h-0 overflow-y-scroll">
-          {/* <h2 className="sticky top-0 z-10 bg-white p-4 text-lg font-semibold">필터</h2> */}
+        <div className="w-1/2 flex flex-col min-h-0 overflow-y-scroll border-r border-gray-200">
+          {/* Subject Filter Bar */}
+          <div className="bg-white border-b border-gray-200 px-4 py-3">
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleMainSubjectToggle('통합사회_1')}
+                variant="outline"
+                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  selectedMainSubjects.includes('통합사회_1')
+                    ? 'border-black text-black bg-gray-100'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                통합사회 1
+              </Button>
+              <Button
+                onClick={() => handleMainSubjectToggle('통합사회_2')}
+                variant="outline"
+                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  selectedMainSubjects.includes('통합사회_2')
+                    ? 'border-black text-black bg-gray-100'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                통합사회 2
+              </Button>
+            </div>
+          </div>
           
           <div className="flex-1 p-4 pt-0 min-h-0">
             <div className="space-y-6">
@@ -177,7 +211,7 @@ export default function Page() {
                     <span>단원</span>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="tree-container flex flex-col gap-2">{contentTree.map((item) => (<React.Fragment key={item.id}>{renderTreeItem(item)}</React.Fragment>))}</div>
+                    <div className="tree-container flex flex-col gap-2">{filteredContentTree.map((item) => (<React.Fragment key={item.id}>{renderTreeItem(item)}</React.Fragment>))}</div>
                   </AccordionContent>
                 </AccordionItem>
 

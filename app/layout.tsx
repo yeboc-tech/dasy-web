@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TopNavbar } from "@/components/topNavbar";
+import { Navbar } from "@/components/navbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="ko">
       <body>
         <div className="h-screen flex flex-col">
-          <TopNavbar />
+          <Navbar />
           <div className="flex-1 min-h-0">
             {children}
           </div>
