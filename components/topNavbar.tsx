@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useWorksheetStore } from "@/lib/zustand/worksheetStore";
 import { usePathname } from "next/navigation";
 
-export function Navbar() {
+export function TopNavbar() {
   const pathname = usePathname();
   const isBuildPage = pathname === '/build';
   const { selectedChapters, problemCount, difficulty, problemType } = useWorksheetStore();
