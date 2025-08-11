@@ -19,6 +19,7 @@ export default function Navbar() {
     window.location.href = `/configure?${params.toString()}`;
   };
 
+  
   const isPdfButtonDisabled = selectedChapters.length === 0;
 
   return (
