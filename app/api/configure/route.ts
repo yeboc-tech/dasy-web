@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return new Promise<Response>((resolve, reject) => {
       try {
         pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
-          const res = new Response(buffer, {headers: {"Content-Type": "application/pdf", "Content-Disposition": "inline; filename=worksheet.pdf"}});
+          const res = new Response(buffer as any, {headers: {"Content-Type": "application/pdf", "Content-Disposition": "inline; filename=worksheet.pdf"}});
           resolve(res);
         });
       } catch (error) {
@@ -48,15 +48,15 @@ export async function GET(req: NextRequest) {
 
   return new Promise<Response>((resolve, reject) => {
     try {
-      pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
-        const res = new Response(buffer, {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": "inline; filename=worksheet.pdf",
-          },
+              pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
+          const res = new Response(buffer as any, {
+            headers: {
+              "Content-Type": "application/pdf",
+              "Content-Disposition": "inline; filename=worksheet.pdf",
+            },
+          });
+          resolve(res);
         });
-        resolve(res);
-      });
     } catch (error) {
       console.error("PDF generation error:", error);
       reject(new Response("PDF generation failed", { status: 500 }));
