@@ -20,6 +20,16 @@ export function TopNavbar() {
     if (selectedSubjects && selectedSubjects.length > 0) {
       params.set('selectedSubjects', selectedSubjects.join(','));
     }
+    
+    console.log('TopNavbar - Passing parameters:', {
+      selectedChapters,
+      problemCount,
+      selectedDifficulties,
+      selectedProblemTypes,
+      selectedSubjects,
+      url: `/configure?${params.toString()}`
+    });
+    
     window.location.href = `/configure?${params.toString()}`;
   };
 

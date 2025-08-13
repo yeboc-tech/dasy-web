@@ -65,6 +65,8 @@ export default function Page() {
   
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
+  
+
 
   const toggleExpanded = (itemId: string) => setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId): [...prev, itemId])
 
@@ -79,7 +81,6 @@ export default function Page() {
         }
         const data: MetadataFile = await response.json();
         setMetadata(data);
-        setFilteredProblems(data.problems);
       } catch (error) {
         console.error('Error loading metadata:', error);
         setMetadataError(error instanceof Error ? error.message : 'Unknown error');
@@ -93,11 +94,18 @@ export default function Page() {
 
   // Filter problems based on selected criteria
   useEffect(() => {
-
+    console.log('Build page - Parameters:', {
+      selectedChapters,
+      selectedDifficulties,
+      selectedProblemTypes,
+      selectedSubjects,
+      problemCount
+    });
     
     if (!metadata) return;
 
     let filtered = metadata.problems.filter(problem => problem.is_active);
+    console.log('Build page - After active filter:', filtered.length, 'problems');
 
     // Filter by difficulty (multi-select)
     if (selectedDifficulties.length > 0 && selectedDifficulties.length < 3) {
@@ -144,16 +152,23 @@ export default function Page() {
       getChapterNames(contentTree, selectedChapters);
       
       // Debug logging
+      console.log('Build page - Selected chapter names:', selectedChapterNames);
+      console.log('Build page - All available chapter names in metadata:', metadata.problems.map(p => p.chapter_name).filter((v, i, a) => a.indexOf(v) === i));
       
       
       if (selectedChapterNames.length > 0) {
-        filtered = filtered.filter(problem => 
-          selectedChapterNames.some(chapterName => {
+        filtered = filtered.filter(problem => {
+          const matches = selectedChapterNames.some(chapterName => {
             // Strip the "01.", "02." prefix from the selected chapter name for comparison
             const cleanChapterName = chapterName.replace(/^\d+\.\s*/, '');
-            return problem.chapter_name.includes(cleanChapterName);
-          })
-        );
+            const matches = problem.chapter_name.includes(cleanChapterName);
+            if (matches) {
+              console.log('Build page - Match found:', { problem: problem.filename, chapter: problem.chapter_name, cleanChapterName });
+            }
+            return matches;
+          });
+          return matches;
+        });
       }
       
 
@@ -172,10 +187,15 @@ export default function Page() {
       );
     }
 
+    // Filter out the missing image (problem_004.png)
+    filtered = filtered.filter(problem => problem.filename !== 'problem_004.png');
+
     // Limit to problemCount
     filtered = filtered.slice(0, problemCount);
 
-
+    // Debug logging
+    console.log('Build page - Selected problems:', filtered.map(p => p.filename));
+    console.log('Build page - Problem details:', filtered.map(p => ({ id: p.id, filename: p.filename, chapter_name: p.chapter_name })));
 
     setFilteredProblems(filtered);
   }, [metadata, selectedDifficulties, selectedProblemTypes, selectedChapters, selectedSubjects, problemCount, contentTree]);

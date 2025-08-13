@@ -33,19 +33,7 @@ interface MetadataFile {
   problems: ProblemMetadata[];
 }
 
-function getRandomSample<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr;
-  const result = [];
-  const used = new Set<number>();
-  while (result.length < n) {
-    const idx = Math.floor(Math.random() * arr.length);
-    if (!used.has(idx)) {
-      used.add(idx);
-      result.push(arr[idx]);
-    }
-  }
-  return result;
-}
+
 
 function PdfContent() {
   const searchParams = useSearchParams();
@@ -64,10 +52,13 @@ function PdfContent() {
   const [metadataError, setMetadataError] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [useObjectTag, setUseObjectTag] = useState(false);
-  const lastProcessedSelection = useRef<string>('');
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
+  
+
+  
+
 
   // Load metadata
   useEffect(() => {
@@ -94,9 +85,21 @@ function PdfContent() {
 
   // Filter and select problems based on criteria
   const selectedImages = useMemo(() => {
-    if (!metadata || metadataLoading) return [];
+    console.log('Configure page - useMemo running, checking dependencies...');
+    console.log('Configure page - Parameters:', {
+      selectedChapters,
+      selectedDifficulties,
+      selectedProblemTypes,
+      selectedSubjects,
+      problemCount
+    });
+    
+    if (!metadata || metadataLoading) {
+      return [];
+    }
 
     let filtered = metadata.problems.filter(problem => problem.is_active);
+    console.log('Configure page - After active filter:', filtered.length, 'problems');
 
     // Filter by difficulty (multi-select)
     if (selectedDifficulties.length > 0 && selectedDifficulties.length < 3) {
@@ -142,14 +145,22 @@ function PdfContent() {
       
       getChapterNames(contentTree, selectedChapters);
       
+      console.log('Configure page - Selected chapter names:', selectedChapterNames);
+      console.log('Configure page - All available chapter names in metadata:', metadata.problems.map(p => p.chapter_name).filter((v, i, a) => a.indexOf(v) === i));
+      
       if (selectedChapterNames.length > 0) {
-        filtered = filtered.filter(problem => 
-          selectedChapterNames.some(chapterName => {
+        filtered = filtered.filter(problem => {
+          const matches = selectedChapterNames.some(chapterName => {
             // Strip the "01.", "02." prefix from the selected chapter name for comparison
             const cleanChapterName = chapterName.replace(/^\d+\.\s*/, '');
-            return problem.chapter_name.includes(cleanChapterName);
-          })
-        );
+            const matches = problem.chapter_name.includes(cleanChapterName);
+            if (matches) {
+              console.log('Configure page - Match found:', { problem: problem.filename, chapter: problem.chapter_name, cleanChapterName });
+            }
+            return matches;
+          });
+          return matches;
+        });
       }
     } else {
       // If no chapters selected, show no problems
@@ -168,39 +179,49 @@ function PdfContent() {
     // Filter out the missing image (problem_004.png)
     filtered = filtered.filter(problem => problem.filename !== 'problem_004.png');
 
-    // Limit to problemCount
-    const sampled = getRandomSample(filtered, problemCount);
+    // Limit to problemCount - use first N problems to match filter preview
+    const sampled = filtered.slice(0, problemCount);
+    
+    // Debug logging
+    console.log('Configure page - Selected problems:', sampled.map(p => p.filename));
+    console.log('Configure page - Problem details:', sampled.map(p => ({ id: p.id, filename: p.filename, chapter_name: p.chapter_name })));
     
     // Convert to image paths
-    return sampled.map(problem => `/dummies/${problem.filename}`);
-  }, [metadata, metadataLoading, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree]);
+    const result = sampled.map(problem => `/dummies/${problem.filename}`);
 
+    return result;
+  }, [metadata, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount]);
+
+  // Generate PDF when selectedImages changes
+  const lastProcessedImages = useRef<string>('');
+  
   useEffect(() => {
+    console.log('Configure page - PDF useEffect running, selectedImages:', selectedImages);
+    
     // Create a unique key for the current selection
     const selectionKey = JSON.stringify({
-      selectedChapters,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount
+      selectedImages,
+      worksheetName,
+      creator
     });
-
-    // Force generation if we have images but no PDF URL
-    const shouldGenerate = selectionKey !== lastProcessedSelection.current || (selectedImages.length > 0 && !pdfUrl);
-
-    if (!shouldGenerate) {
+    
+    // Skip if we've already processed this exact selection
+    if (selectionKey === lastProcessedImages.current) {
+      console.log('Configure page - Skipping PDF generation, already processed');
+      return;
+    }
+    
+    if (selectedImages.length === 0) {
+      setPdfUrl(null);
+      setPdfError(null);
+      setLoading(false);
+      lastProcessedImages.current = selectionKey;
       return;
     }
 
     const fetchPdf = async () => {
       try {
         setLoading(true);
-        
-        if (selectedImages.length === 0) {
-          setPdfUrl(null);
-          setPdfError('선택된 문제가 없습니다.');
-          return;
-        }
         
         const res = await fetch("/api/configure", {
           method: 'POST',
@@ -227,50 +248,27 @@ function PdfContent() {
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
         setPdfError(null);
-        // Mark this selection as processed
-        lastProcessedSelection.current = selectionKey;
+        lastProcessedImages.current = selectionKey;
       } catch (error: any) {
         console.error("Failed to fetch PDF:", error.message);
         // Set error state for better user feedback
         setPdfUrl(null);
         setPdfError(error.message);
+        lastProcessedImages.current = selectionKey;
       } finally {
         setLoading(false);
       }
     };
     
-    if (selectedImages.length > 0) {
-      fetchPdf();
-    } else {
-      setPdfUrl(null);
-      setLoading(false);
-      lastProcessedSelection.current = selectionKey;
-    }
-    
-    return () => {
-      if (pdfUrl && typeof pdfUrl === 'string' && pdfUrl.startsWith("blob:")) URL.revokeObjectURL(pdfUrl);
-    };
-  }, [selectedImages, worksheetName, creator, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, pdfUrl]);
-
-  // Reset last processed selection when component mounts
-  useEffect(() => {
-    lastProcessedSelection.current = '';
-  }, []);
+    fetchPdf();
+  }, [selectedImages, worksheetName, creator]);
 
   // Force regenerate PDF function
   const regeneratePdf = () => {
-    lastProcessedSelection.current = '';
     // Trigger the PDF generation effect by updating a dependency
     setLoading(true);
     setTimeout(() => setLoading(false), 100);
   };
-
-  // Force reset on first load
-  useEffect(() => {
-    if (selectedImages.length > 0 && !pdfUrl) {
-      lastProcessedSelection.current = '';
-    }
-  }, [selectedImages, pdfUrl]);
 
   if (metadataLoading || chaptersLoading) {
     return (
@@ -318,7 +316,6 @@ function PdfContent() {
                 <button 
                   onClick={() => {
                     setPdfError(null);
-                    lastProcessedSelection.current = '';
                   }}
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
