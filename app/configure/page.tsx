@@ -55,10 +55,6 @@ function PdfContent() {
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
-  
-
-  
-
 
   // Load metadata
   useEffect(() => {

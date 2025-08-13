@@ -33,7 +33,7 @@ export const sampleProblems = [
     id: 8,
     image: "/problems/통합사회_1권_1단원_2/문제8_하.png"
   }
-] as ChapterTreeItem[];
+];
 
 export const contentTree = [
   {
