@@ -8,14 +8,18 @@ import { usePathname } from "next/navigation";
 export function TopNavbar() {
   const pathname = usePathname();
   const isBuildPage = pathname === '/build';
-  const { selectedChapters, problemCount, difficulty, problemType } = useWorksheetStore();
+  const { selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects } = useWorksheetStore();
 
   const handlePdfGeneration = () => {
     const params = new URLSearchParams();
     if (selectedChapters.length > 0) params.set('selectedChapters', selectedChapters.join(','));
     params.set('problemCount', String(problemCount));
-    params.set('difficulty', difficulty);
-    params.set('problemType', problemType);
+    params.set('selectedDifficulties', selectedDifficulties.join(','));
+    params.set('selectedProblemTypes', selectedProblemTypes.join(','));
+    // Add selectedSubjects if available
+    if (selectedSubjects && selectedSubjects.length > 0) {
+      params.set('selectedSubjects', selectedSubjects.join(','));
+    }
     window.location.href = `/configure?${params.toString()}`;
   };
 

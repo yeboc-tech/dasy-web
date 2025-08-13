@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
   try {
     const body: WorksheetRequest = await req.json();
     let { title, creator, images } = body;
-    if (!images || images.length === 0) return new Response("No images provided", { status: 400 });
+    
+    if (!images || images.length === 0) {
+      return new Response("No images provided", { status: 400 });
+    }
 
     const pdfFonts = await import("pdfmake/build/vfs_fonts");
     pdfMake.vfs = pdfFonts.default.vfs;
@@ -21,7 +24,12 @@ export async function POST(req: NextRequest) {
     return new Promise<Response>((resolve, reject) => {
       try {
         pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
-          const res = new Response(buffer as any, {headers: {"Content-Type": "application/pdf", "Content-Disposition": "inline; filename=worksheet.pdf"}});
+          const res = new Response(buffer as any, {
+            headers: {
+              "Content-Type": "application/pdf", 
+              "Content-Disposition": "inline; filename=worksheet.pdf"
+            }
+          });
           resolve(res);
         });
       } catch (error) {
@@ -48,15 +56,15 @@ export async function GET(req: NextRequest) {
 
   return new Promise<Response>((resolve, reject) => {
     try {
-              pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
-          const res = new Response(buffer as any, {
-            headers: {
-              "Content-Type": "application/pdf",
-              "Content-Disposition": "inline; filename=worksheet.pdf",
-            },
-          });
-          resolve(res);
+      pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
+        const res = new Response(buffer as any, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": "inline; filename=worksheet.pdf",
+          },
         });
+        resolve(res);
+      });
     } catch (error) {
       console.error("PDF generation error:", error);
       reject(new Response("PDF generation failed", { status: 500 }));

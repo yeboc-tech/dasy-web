@@ -1,0 +1,1716 @@
+{
+  "problems": [
+    {
+      "id": 1,
+      "filename": "problem_001.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-004",
+      "subject_name": "통합사회 1",
+      "chapter_name": "행복한 삶을 실현하기 위한 조건",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "한국지리",
+        "정치와 법",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:00:00.000Z",
+      "updated_at": "2024-01-15T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "filename": "problem_002.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-014",
+      "subject_name": "통합사회 1",
+      "chapter_name": "우리 지역의 공간 변화",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 6,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "동아시아사",
+        "생활과 윤리",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:01:00.000Z",
+      "updated_at": "2024-01-15T10:01:00.000Z"
+    },
+    {
+      "id": 3,
+      "filename": "problem_003.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-002",
+      "subject_name": "통합사회 1",
+      "chapter_name": "통합적 관점의 필요성과 적용",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "세계지리",
+        "생활과 윤리",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:02:00.000Z",
+      "updated_at": "2024-01-15T10:02:00.000Z"
+    },
+    {
+      "id": 5,
+      "filename": "problem_005.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-009",
+      "subject_name": "통합사회 1",
+      "chapter_name": "문화 변동과 전통문화",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "생활과 윤리",
+        "정치와 법",
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:04:00.000Z",
+      "updated_at": "2024-01-15T10:04:00.000Z"
+    },
+    {
+      "id": 6,
+      "filename": "problem_006.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-030",
+      "subject_name": "통합사회 2",
+      "chapter_name": "미래 사회와 세계시민으로서의 삶",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "윤리와 사상",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:05:00.000Z",
+      "updated_at": "2024-01-15T10:05:00.000Z"
+    },
+    {
+      "id": 7,
+      "filename": "problem_007.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-014",
+      "subject_name": "통합사회 1",
+      "chapter_name": "우리 지역의 공간 변화",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "세계사",
+        "동아시아사",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:06:00.000Z",
+      "updated_at": "2024-01-15T10:06:00.000Z"
+    },
+    {
+      "id": 8,
+      "filename": "problem_008.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-016",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권 보장을 위한 헌법의 역할과 시민 참여",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2024,
+      "month": 9,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "경제",
+        "정치와 법",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:07:00.000Z",
+      "updated_at": "2024-01-15T10:07:00.000Z"
+    },
+    {
+      "id": 9,
+      "filename": "problem_009.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-027",
+      "subject_name": "통합사회 2",
+      "chapter_name": "남북 분단 및 동아시아 역사 갈등과 세계 평화를 위한 노력",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2024,
+      "month": 11,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "정치와 법",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:08:00.000Z",
+      "updated_at": "2024-01-15T10:08:00.000Z"
+    },
+    {
+      "id": 10,
+      "filename": "problem_010.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-003",
+      "subject_name": "통합사회 1",
+      "chapter_name": "행복의 기준과 의미",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 9,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "생활과 윤리",
+        "정치와 법",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:09:00.000Z",
+      "updated_at": "2024-01-15T10:09:00.000Z"
+    },
+    {
+      "id": 11,
+      "filename": "problem_011.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-004",
+      "subject_name": "통합사회 1",
+      "chapter_name": "행복한 삶을 실현하기 위한 조건",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 3,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:10:00.000Z",
+      "updated_at": "2024-01-15T10:10:00.000Z"
+    },
+    {
+      "id": 12,
+      "filename": "problem_012.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-002",
+      "subject_name": "통합사회 1",
+      "chapter_name": "통합적 관점의 필요성과 적용",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:11:00.000Z",
+      "updated_at": "2024-01-15T10:11:00.000Z"
+    },
+    {
+      "id": 13,
+      "filename": "problem_013.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-002",
+      "subject_name": "통합사회 1",
+      "chapter_name": "통합적 관점의 필요성과 적용",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "세계지리",
+        "동아시아사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:12:00.000Z",
+      "updated_at": "2024-01-15T10:12:00.000Z"
+    },
+    {
+      "id": 14,
+      "filename": "problem_014.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-001",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간, 사회, 환경을 바라보는 다양한 관점",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 9,
+      "estimated_time": 4,
+      "points": 3,
+      "related_subjects": [
+        "정치와 법",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:13:00.000Z",
+      "updated_at": "2024-01-15T10:13:00.000Z"
+    },
+    {
+      "id": 15,
+      "filename": "problem_015.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-017",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권 문제의 양상과 해결 방안",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2024,
+      "month": 11,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "경제"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:14:00.000Z",
+      "updated_at": "2024-01-15T10:14:00.000Z"
+    },
+    {
+      "id": 16,
+      "filename": "problem_016.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-016",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권 보장을 위한 헌법의 역할과 시민 참여",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "세계사",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:15:00.000Z",
+      "updated_at": "2024-01-15T10:15:00.000Z"
+    },
+    {
+      "id": 17,
+      "filename": "problem_017.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-011",
+      "subject_name": "통합사회 1",
+      "chapter_name": "다문화 사회와 문화적 다양성 존중",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 6,
+      "estimated_time": 4,
+      "points": 3,
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:16:00.000Z",
+      "updated_at": "2024-01-15T10:16:00.000Z"
+    },
+    {
+      "id": 18,
+      "filename": "problem_018.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-001",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간, 사회, 환경을 바라보는 다양한 관점",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "동아시아사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:17:00.000Z",
+      "updated_at": "2024-01-15T10:17:00.000Z"
+    },
+    {
+      "id": 19,
+      "filename": "problem_019.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-005",
+      "subject_name": "통합사회 1",
+      "chapter_name": "자연환경과 인간 생활",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 7,
+      "points": 4,
+      "related_subjects": [
+        "동아시아사",
+        "세계지리",
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:18:00.000Z",
+      "updated_at": "2024-01-15T10:18:00.000Z"
+    },
+    {
+      "id": 20,
+      "filename": "problem_020.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-018",
+      "subject_name": "통합사회 2",
+      "chapter_name": "정의의 의미와 실질적 기준",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:19:00.000Z",
+      "updated_at": "2024-01-15T10:19:00.000Z"
+    },
+    {
+      "id": 21,
+      "filename": "problem_021.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-012",
+      "subject_name": "통합사회 1",
+      "chapter_name": "산업화와 도시화에 따른 변화",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "한국지리",
+        "경제",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:20:00.000Z",
+      "updated_at": "2024-01-15T10:20:00.000Z"
+    },
+    {
+      "id": 22,
+      "filename": "problem_022.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-014",
+      "subject_name": "통합사회 1",
+      "chapter_name": "우리 지역의 공간 변화",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 9,
+      "estimated_time": 7,
+      "points": 4,
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:21:00.000Z",
+      "updated_at": "2024-01-15T10:21:00.000Z"
+    },
+    {
+      "id": 23,
+      "filename": "problem_023.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-004",
+      "subject_name": "통합사회 1",
+      "chapter_name": "행복한 삶을 실현하기 위한 조건",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계사",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:22:00.000Z",
+      "updated_at": "2024-01-15T10:22:00.000Z"
+    },
+    {
+      "id": 24,
+      "filename": "problem_024.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-028",
+      "subject_name": "통합사회 2",
+      "chapter_name": "세계의 인구 변화와 인구 문제",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2024,
+      "month": 3,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:23:00.000Z",
+      "updated_at": "2024-01-15T10:23:00.000Z"
+    },
+    {
+      "id": 25,
+      "filename": "problem_025.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-015",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권의 의미와 현대 사회의 인권",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2023,
+      "month": 6,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "경제"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:24:00.000Z",
+      "updated_at": "2024-01-15T10:24:00.000Z"
+    },
+    {
+      "id": 26,
+      "filename": "problem_026.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-028",
+      "subject_name": "통합사회 2",
+      "chapter_name": "세계의 인구 변화와 인구 문제",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "한국지리",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:25:00.000Z",
+      "updated_at": "2024-01-15T10:25:00.000Z"
+    },
+    {
+      "id": 27,
+      "filename": "problem_027.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-013",
+      "subject_name": "통합사회 1",
+      "chapter_name": "교통·통신 및 과학기술의 발달에 따른 변화",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "동아시아사",
+        "사회·문화",
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:26:00.000Z",
+      "updated_at": "2024-01-15T10:26:00.000Z"
+    },
+    {
+      "id": 28,
+      "filename": "problem_028.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-019",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 정의관의 특징과 적용",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "세계지리",
+        "한국지리",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:27:00.000Z",
+      "updated_at": "2024-01-15T10:27:00.000Z"
+    },
+    {
+      "id": 29,
+      "filename": "problem_029.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-019",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 정의관의 특징과 적용",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:28:00.000Z",
+      "updated_at": "2024-01-15T10:28:00.000Z"
+    },
+    {
+      "id": 30,
+      "filename": "problem_030.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-026",
+      "subject_name": "통합사회 2",
+      "chapter_name": "평화의 의미와 국제 사회의 역할",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계사",
+        "동아시아사",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:29:00.000Z",
+      "updated_at": "2024-01-15T10:29:00.000Z"
+    },
+    {
+      "id": 31,
+      "filename": "problem_031.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-002",
+      "subject_name": "통합사회 1",
+      "chapter_name": "통합적 관점의 필요성과 적용",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계사",
+        "동아시아사",
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "updated_at": "2024-01-15T10:30:00.000Z"
+    },
+    {
+      "id": 32,
+      "filename": "problem_032.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-023",
+      "subject_name": "통합사회 2",
+      "chapter_name": "자산 관리와 금융 생활 설계",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "동아시아사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:31:00.000Z",
+      "updated_at": "2024-01-15T10:31:00.000Z"
+    },
+    {
+      "id": 33,
+      "filename": "problem_033.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-024",
+      "subject_name": "통합사회 2",
+      "chapter_name": "국제 분업과 무역",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2024,
+      "month": 9,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "생활과 윤리",
+        "경제",
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:32:00.000Z",
+      "updated_at": "2024-01-15T10:32:00.000Z"
+    },
+    {
+      "id": 34,
+      "filename": "problem_034.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-001",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간, 사회, 환경을 바라보는 다양한 관점",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2024,
+      "month": 3,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "한국지리",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:33:00.000Z",
+      "updated_at": "2024-01-15T10:33:00.000Z"
+    },
+    {
+      "id": 35,
+      "filename": "problem_035.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-006",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간과 자연의 관계",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2024,
+      "month": 3,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:34:00.000Z",
+      "updated_at": "2024-01-15T10:34:00.000Z"
+    },
+    {
+      "id": 36,
+      "filename": "problem_036.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-026",
+      "subject_name": "통합사회 2",
+      "chapter_name": "평화의 의미와 국제 사회의 역할",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2024,
+      "month": 9,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "동아시아사",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:35:00.000Z",
+      "updated_at": "2024-01-15T10:35:00.000Z"
+    },
+    {
+      "id": 37,
+      "filename": "problem_037.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-022",
+      "subject_name": "통합사회 2",
+      "chapter_name": "합리적 선택과 경제 주체의 역할",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "윤리와 사상",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:36:00.000Z",
+      "updated_at": "2024-01-15T10:36:00.000Z"
+    },
+    {
+      "id": 38,
+      "filename": "problem_038.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-028",
+      "subject_name": "통합사회 2",
+      "chapter_name": "세계의 인구 변화와 인구 문제",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 4,
+      "points": 3,
+      "related_subjects": [
+        "세계사",
+        "정치와 법",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:37:00.000Z",
+      "updated_at": "2024-01-15T10:37:00.000Z"
+    },
+    {
+      "id": 39,
+      "filename": "problem_039.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-029",
+      "subject_name": "통합사회 2",
+      "chapter_name": "에너지 자원과 지속가능한 발전",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "윤리와 사상",
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:38:00.000Z",
+      "updated_at": "2024-01-15T10:38:00.000Z"
+    },
+    {
+      "id": 40,
+      "filename": "problem_040.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-024",
+      "subject_name": "통합사회 2",
+      "chapter_name": "국제 분업과 무역",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "경제",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:39:00.000Z",
+      "updated_at": "2024-01-15T10:39:00.000Z"
+    },
+    {
+      "id": 41,
+      "filename": "problem_041.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-006",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간과 자연의 관계",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "동아시아사",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:40:00.000Z",
+      "updated_at": "2024-01-15T10:40:00.000Z"
+    },
+    {
+      "id": 42,
+      "filename": "problem_042.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-008",
+      "subject_name": "통합사회 1",
+      "chapter_name": "세계의 다양한 문화권",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 3,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "동아시아사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:41:00.000Z",
+      "updated_at": "2024-01-15T10:41:00.000Z"
+    },
+    {
+      "id": 43,
+      "filename": "problem_043.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-001",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간, 사회, 환경을 바라보는 다양한 관점",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 7,
+      "points": 4,
+      "related_subjects": [
+        "윤리와 사상",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:42:00.000Z",
+      "updated_at": "2024-01-15T10:42:00.000Z"
+    },
+    {
+      "id": 44,
+      "filename": "problem_044.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-017",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권 문제의 양상과 해결 방안",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:43:00.000Z",
+      "updated_at": "2024-01-15T10:43:00.000Z"
+    },
+    {
+      "id": 45,
+      "filename": "problem_045.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-021",
+      "subject_name": "통합사회 2",
+      "chapter_name": "자본주의의 전개 과정과 경제 체제",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:44:00.000Z",
+      "updated_at": "2024-01-15T10:44:00.000Z"
+    },
+    {
+      "id": 46,
+      "filename": "problem_046.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-027",
+      "subject_name": "통합사회 2",
+      "chapter_name": "남북 분단 및 동아시아 역사 갈등과 세계 평화를 위한 노력",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2024,
+      "month": 11,
+      "estimated_time": 4,
+      "points": 3,
+      "related_subjects": [
+        "한국지리",
+        "정치와 법",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:45:00.000Z",
+      "updated_at": "2024-01-15T10:45:00.000Z"
+    },
+    {
+      "id": 47,
+      "filename": "problem_047.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-014",
+      "subject_name": "통합사회 1",
+      "chapter_name": "우리 지역의 공간 변화",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:46:00.000Z",
+      "updated_at": "2024-01-15T10:46:00.000Z"
+    },
+    {
+      "id": 48,
+      "filename": "problem_048.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-019",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 정의관의 특징과 적용",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 7,
+      "points": 4,
+      "related_subjects": [
+        "생활과 윤리",
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:47:00.000Z",
+      "updated_at": "2024-01-15T10:47:00.000Z"
+    },
+    {
+      "id": 49,
+      "filename": "problem_049.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-008",
+      "subject_name": "통합사회 1",
+      "chapter_name": "세계의 다양한 문화권",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "경제",
+        "동아시아사",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:48:00.000Z",
+      "updated_at": "2024-01-15T10:48:00.000Z"
+    },
+    {
+      "id": 50,
+      "filename": "problem_050.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-002",
+      "subject_name": "통합사회 1",
+      "chapter_name": "통합적 관점의 필요성과 적용",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:49:00.000Z",
+      "updated_at": "2024-01-15T10:49:00.000Z"
+    },
+    {
+      "id": 51,
+      "filename": "problem_051.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-011",
+      "subject_name": "통합사회 1",
+      "chapter_name": "다문화 사회와 문화적 다양성 존중",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 11,
+      "points": 5,
+      "related_subjects": [
+        "경제",
+        "세계사",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:50:00.000Z",
+      "updated_at": "2024-01-15T10:50:00.000Z"
+    },
+    {
+      "id": 52,
+      "filename": "problem_052.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-010",
+      "subject_name": "통합사회 1",
+      "chapter_name": "문화 상대주의와 보편 윤리",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "세계사",
+        "세계지리",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:51:00.000Z",
+      "updated_at": "2024-01-15T10:51:00.000Z"
+    },
+    {
+      "id": 53,
+      "filename": "problem_053.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-013",
+      "subject_name": "통합사회 1",
+      "chapter_name": "교통·통신 및 과학기술의 발달에 따른 변화",
+      "difficulty": "중",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "윤리와 사상",
+        "경제",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:52:00.000Z",
+      "updated_at": "2024-01-15T10:52:00.000Z"
+    },
+    {
+      "id": 54,
+      "filename": "problem_054.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-005",
+      "subject_name": "통합사회 1",
+      "chapter_name": "자연환경과 인간 생활",
+      "difficulty": "상",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:53:00.000Z",
+      "updated_at": "2024-01-15T10:53:00.000Z"
+    },
+    {
+      "id": 55,
+      "filename": "problem_055.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-008",
+      "subject_name": "통합사회 1",
+      "chapter_name": "세계의 다양한 문화권",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 3,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계사",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:54:00.000Z",
+      "updated_at": "2024-01-15T10:54:00.000Z"
+    },
+    {
+      "id": 56,
+      "filename": "problem_056.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-023",
+      "subject_name": "통합사회 2",
+      "chapter_name": "자산 관리와 금융 생활 설계",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "세계지리",
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:55:00.000Z",
+      "updated_at": "2024-01-15T10:55:00.000Z"
+    },
+    {
+      "id": 57,
+      "filename": "problem_057.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-029",
+      "subject_name": "통합사회 2",
+      "chapter_name": "에너지 자원과 지속가능한 발전",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2024,
+      "month": 3,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계사",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:56:00.000Z",
+      "updated_at": "2024-01-15T10:56:00.000Z"
+    },
+    {
+      "id": 58,
+      "filename": "problem_058.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-023",
+      "subject_name": "통합사회 2",
+      "chapter_name": "자산 관리와 금융 생활 설계",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2023,
+      "month": 9,
+      "estimated_time": 7,
+      "points": 4,
+      "related_subjects": [
+        "동아시아사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:57:00.000Z",
+      "updated_at": "2024-01-15T10:57:00.000Z"
+    },
+    {
+      "id": 59,
+      "filename": "problem_059.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-029",
+      "subject_name": "통합사회 2",
+      "chapter_name": "에너지 자원과 지속가능한 발전",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 9,
+      "points": 5,
+      "related_subjects": [
+        "세계지리",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:58:00.000Z",
+      "updated_at": "2024-01-15T10:58:00.000Z"
+    },
+    {
+      "id": 60,
+      "filename": "problem_060.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-027",
+      "subject_name": "통합사회 2",
+      "chapter_name": "남북 분단 및 동아시아 역사 갈등과 세계 평화를 위한 노력",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2024,
+      "month": 3,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "정치와 법",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T10:59:00.000Z",
+      "updated_at": "2024-01-15T10:59:00.000Z"
+    },
+    {
+      "id": 61,
+      "filename": "problem_061.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-006",
+      "subject_name": "통합사회 1",
+      "chapter_name": "인간과 자연의 관계",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:00:00.000Z",
+      "updated_at": "2024-01-15T11:00:00.000Z"
+    },
+    {
+      "id": 62,
+      "filename": "problem_062.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-015",
+      "subject_name": "통합사회 2",
+      "chapter_name": "인권의 의미와 현대 사회의 인권",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2024,
+      "month": 9,
+      "estimated_time": 6,
+      "points": 4,
+      "related_subjects": [
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:01:00.000Z",
+      "updated_at": "2024-01-15T11:01:00.000Z"
+    },
+    {
+      "id": 63,
+      "filename": "problem_063.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-019",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 정의관의 특징과 적용",
+      "difficulty": "하",
+      "problem_type": "N제",
+      "exam_type": null,
+      "year": null,
+      "month": null,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "정치와 법",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:02:00.000Z",
+      "updated_at": "2024-01-15T11:02:00.000Z"
+    },
+    {
+      "id": 64,
+      "filename": "problem_064.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-020",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 불평등 현상과 정의로운 사회 실현",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 9,
+      "estimated_time": 3,
+      "points": 3,
+      "related_subjects": [
+        "정치와 법",
+        "생활과 윤리",
+        "윤리와 사상"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:03:00.000Z",
+      "updated_at": "2024-01-15T11:03:00.000Z"
+    },
+    {
+      "id": 65,
+      "filename": "problem_065.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-025",
+      "subject_name": "통합사회 2",
+      "chapter_name": "세계화의 다양한 양상과 문제 해결 방안",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "학평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 4,
+      "points": 3,
+      "related_subjects": [
+        "세계지리",
+        "한국지리",
+        "세계사"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:04:00.000Z",
+      "updated_at": "2024-01-15T11:04:00.000Z"
+    },
+    {
+      "id": 66,
+      "filename": "problem_066.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-022",
+      "subject_name": "통합사회 2",
+      "chapter_name": "합리적 선택과 경제 주체의 역할",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "동아시아사",
+        "사회·문화"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:05:00.000Z",
+      "updated_at": "2024-01-15T11:05:00.000Z"
+    },
+    {
+      "id": 67,
+      "filename": "problem_067.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-020",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 불평등 현상과 정의로운 사회 실현",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "경제",
+        "정치와 법"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:06:00.000Z",
+      "updated_at": "2024-01-15T11:06:00.000Z"
+    },
+    {
+      "id": 68,
+      "filename": "problem_068.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-020",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 불평등 현상과 정의로운 사회 실현",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 3,
+      "estimated_time": 10,
+      "points": 5,
+      "related_subjects": [
+        "한국지리",
+        "세계지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:07:00.000Z",
+      "updated_at": "2024-01-15T11:07:00.000Z"
+    },
+    {
+      "id": 69,
+      "filename": "problem_069.png",
+      "subject_id": "subj-002",
+      "chapter_id": "chap-019",
+      "subject_name": "통합사회 2",
+      "chapter_name": "다양한 정의관의 특징과 적용",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "exam_type": "모평",
+      "year": 2023,
+      "month": 11,
+      "estimated_time": 5,
+      "points": 3,
+      "related_subjects": [
+        "경제",
+        "세계사",
+        "생활과 윤리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:08:00.000Z",
+      "updated_at": "2024-01-15T11:08:00.000Z"
+    },
+    {
+      "id": 70,
+      "filename": "problem_070.png",
+      "subject_id": "subj-001",
+      "chapter_id": "chap-004",
+      "subject_name": "통합사회 1",
+      "chapter_name": "행복한 삶을 실현하기 위한 조건",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "exam_type": "수능",
+      "year": 2023,
+      "month": 6,
+      "estimated_time": 8,
+      "points": 4,
+      "related_subjects": [
+        "동아시아사",
+        "한국지리"
+      ],
+      "is_active": true,
+      "created_at": "2024-01-15T11:09:00.000Z",
+      "updated_at": "2024-01-15T11:09:00.000Z"
+    }
+  ],
+  "metadata": {
+    "total_problems": 70,
+    "subjects": [
+      {
+        "id": "subj-001",
+        "name": "통합사회 1"
+      },
+      {
+        "id": "subj-002",
+        "name": "통합사회 2"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "chap-001",
+        "name": "인간, 사회, 환경을 바라보는 다양한 관점",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-002",
+        "name": "통합적 관점의 필요성과 적용",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-003",
+        "name": "행복의 기준과 의미",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-004",
+        "name": "행복한 삶을 실현하기 위한 조건",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-005",
+        "name": "자연환경과 인간 생활",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-006",
+        "name": "인간과 자연의 관계",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-007",
+        "name": "환경 문제 해결을 위한 다양한 노력",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-008",
+        "name": "세계의 다양한 문화권",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-009",
+        "name": "문화 변동과 전통문화",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-010",
+        "name": "문화 상대주의와 보편 윤리",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-011",
+        "name": "다문화 사회와 문화적 다양성 존중",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-012",
+        "name": "산업화와 도시화에 따른 변화",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-013",
+        "name": "교통·통신 및 과학기술의 발달에 따른 변화",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-014",
+        "name": "우리 지역의 공간 변화",
+        "subject_id": "subj-001"
+      },
+      {
+        "id": "chap-015",
+        "name": "인권의 의미와 현대 사회의 인권",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-016",
+        "name": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-017",
+        "name": "인권 문제의 양상과 해결 방안",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-018",
+        "name": "정의의 의미와 실질적 기준",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-019",
+        "name": "다양한 정의관의 특징과 적용",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-020",
+        "name": "다양한 불평등 현상과 정의로운 사회 실현",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-021",
+        "name": "자본주의의 전개 과정과 경제 체제",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-022",
+        "name": "합리적 선택과 경제 주체의 역할",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-023",
+        "name": "자산 관리와 금융 생활 설계",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-024",
+        "name": "국제 분업과 무역",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-025",
+        "name": "세계화의 다양한 양상과 문제 해결 방안",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-026",
+        "name": "평화의 의미와 국제 사회의 역할",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-027",
+        "name": "남북 분단 및 동아시아 역사 갈등과 세계 평화를 위한 노력",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-028",
+        "name": "세계의 인구 변화와 인구 문제",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-029",
+        "name": "에너지 자원과 지속가능한 발전",
+        "subject_id": "subj-002"
+      },
+      {
+        "id": "chap-030",
+        "name": "미래 사회와 세계시민으로서의 삶",
+        "subject_id": "subj-002"
+      }
+    ],
+    "difficulties": [
+      "하",
+      "중",
+      "상"
+    ],
+    "problem_types": [
+      "기출문제",
+      "N제"
+    ],
+    "exam_types": [
+      "학평",
+      "모평",
+      "수능"
+    ],
+    "years": [
+      2023,
+      2024
+    ],
+    "created_at": "2025-08-12T22:54:19.309Z",
+    "version": "2.0"
+  }
+}

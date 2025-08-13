@@ -7,11 +7,14 @@ export function createWorksheetDocDefinition(
   title?: string, 
   creator?: string
 ) {
+  const content = createTwoColumnLayout(images, base64Images);
+  
   return {
     pageSize: "A4",
     pageMargins: [40, 60, 40, 30],
     footer: createFooter,
     content: [
+      // Header with title and creator (commented out for now)
       // {
       //   text: title || "Worksheet",
       //   fontSize: 24,
@@ -26,8 +29,8 @@ export function createWorksheetDocDefinition(
       //   color: '#666666',
       //   margin: [0, 0, 0, 30]
       // },
-      ...createTwoColumnLayout(images, base64Images)
-    ],
+      ...content
+    ]
   };
 }
 
