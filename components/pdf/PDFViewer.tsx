@@ -332,7 +332,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
   };
 
   // Touch gesture handlers
-  const getTouchDistance = (touches: TouchList) => {
+  const getTouchDistance = (touches: React.TouchList) => {
     if (touches.length < 2) return 0;
     const touch1 = touches[0];
     const touch2 = touches[1];
@@ -551,7 +551,9 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
           {pageImages.map((imageData, index) => (
             <img 
               key={index}
-              ref={(el) => pageRefs.current[index + 1] = el}
+              ref={(el) => {
+                pageRefs.current[index + 1] = el;
+              }}
               src={imageData}
               alt={`PDF Page ${index + 1}`}
               className="shadow-lg border border-gray-300 max-w-full"
