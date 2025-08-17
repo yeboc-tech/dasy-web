@@ -1,24 +1,19 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import type { Chapter, Subject, ChapterTreeItem } from '@/lib/types';
 
-export interface Chapter {
-  id: string;
-  name: string;
-  chapter_number: number;
-  parent_id: string | null;
-  subject_id: string;
+/**
+ * Convert number to Roman numeral
+ */
+function toRomanNumeral(num: number): string {
+  const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  return romanNumerals[num - 1] || num.toString();
 }
 
-export interface Subject {
-  id: string;
-  name: string;
-}
-
-export interface ChapterTreeItem {
-  id: string;
-  label: string;
-  type: 'category' | 'item';
-  expanded: boolean;
-  children?: ChapterTreeItem[];
+/**
+ * Format chapter number to "01", "02" format
+ */
+function formatChapterNumber(num: number): string {
+  return num.toString().padStart(2, '0');
 }
 
 /**
@@ -86,8 +81,8 @@ export async function fetchChapterTree(supabase: SupabaseClient): Promise<Chapte
     const mainUnits = subjectChapters.filter(ch => ch.parent_id === null);
     
     const subjectTree: ChapterTreeItem = {
-      id: subject.name === '통합사회 1' ? '통합사회_1' : '통합사회_2',
-      label: subject.name,
+      id: subject.id, // Use actual database ID
+      label: subject.name, // Use actual database name
       type: 'category',
       expanded: true,
       children: []
@@ -97,17 +92,24 @@ export async function fetchChapterTree(supabase: SupabaseClient): Promise<Chapte
     for (const mainUnit of mainUnits) {
       const subChapters = subjectChapters.filter(ch => ch.parent_id === mainUnit.id);
       
+      // Format main unit label with Roman numeral
+      const mainUnitLabel = `${toRomanNumeral(mainUnit.chapter_number)}. ${mainUnit.name}`;
+      
       const mainUnitTree: ChapterTreeItem = {
-        id: `${subject.name === '통합사회 1' ? '통합사회_1권' : '통합사회_2권'}_${mainUnit.chapter_number}단원`,
-        label: formatMainUnitName(mainUnit.chapter_number, mainUnit.name),
+        id: mainUnit.id, // Use actual database ID
+        label: mainUnitLabel, // Format with Roman numeral
         type: 'category',
         expanded: true,
-        children: subChapters.map(subChapter => ({
-          id: `${subject.name === '통합사회 1' ? '통합사회_1권' : '통합사회_2권'}_${mainUnit.chapter_number}단원_${subChapter.chapter_number}`,
-          label: formatSubChapterName(subChapter.chapter_number, subChapter.name),
-          type: 'item' as const,
-          expanded: false
-        }))
+        children: subChapters.map(subChapter => {
+          // Format sub-chapter label with "01", "02" format
+          const subChapterLabel = `${formatChapterNumber(subChapter.chapter_number)}. ${subChapter.name}`;
+          return {
+            id: subChapter.id, // Use actual database ID
+            label: subChapterLabel, // Format with "01", "02"
+            type: 'item' as const,
+            expanded: false
+          };
+        })
       };
 
       subjectTree.children!.push(mainUnitTree);
@@ -117,19 +119,4 @@ export async function fetchChapterTree(supabase: SupabaseClient): Promise<Chapte
   }
 
   return tree;
-}
-
-/**
- * Format main unit name with Roman numerals
- */
-function formatMainUnitName(chapterNumber: number, name: string): string {
-  const romanNumerals = ['I', 'II', 'III', 'IV', 'V'];
-  return `${romanNumerals[chapterNumber - 1]}. ${name}`;
-}
-
-/**
- * Format sub-chapter name with zero-padded numbers
- */
-function formatSubChapterName(chapterNumber: number, name: string): string {
-  return `${chapterNumber.toString().padStart(2, '0')}. ${name}`;
 }

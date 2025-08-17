@@ -1,0 +1,492 @@
+{
+  "timestamp": "2025-08-16T22:47:55.135Z",
+  "totalProblems": 69,
+  "successful": 69,
+  "failed": 0,
+  "results": [
+    {
+      "problemId": "1e642b43-d6b5-4b9f-82b0-a648d923c0f6",
+      "filename": "problem_001.png",
+      "s3Key": "problems/1e642b43-d6b5-4b9f-82b0-a648d923c0f6.png",
+      "chapterId": "fc18c629-88f7-4e3b-a3d4-f0f98b055e37",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "9752dbb1-58bd-4bbd-9138-720127944510",
+      "filename": "problem_002.png",
+      "s3Key": "problems/9752dbb1-58bd-4bbd-9138-720127944510.png",
+      "chapterId": "fc18c629-88f7-4e3b-a3d4-f0f98b055e37",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "fa344c41-ebb5-44e7-a43f-1a247b696998",
+      "filename": "problem_003.png",
+      "s3Key": "problems/fa344c41-ebb5-44e7-a43f-1a247b696998.png",
+      "chapterId": "fc18c629-88f7-4e3b-a3d4-f0f98b055e37",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "fb015f62-6061-4dae-b306-7f0b378dc2fa",
+      "filename": "problem_004.png",
+      "s3Key": "problems/fb015f62-6061-4dae-b306-7f0b378dc2fa.png",
+      "chapterId": "1ff4e5c5-0e1c-44b9-92bf-3a8b2e259c4e",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "37b3a738-0b56-4e98-8378-8f66d26ed925",
+      "filename": "problem_005.png",
+      "s3Key": "problems/37b3a738-0b56-4e98-8378-8f66d26ed925.png",
+      "chapterId": "1ff4e5c5-0e1c-44b9-92bf-3a8b2e259c4e",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "02c798d1-765e-44ce-8770-a467868ebfca",
+      "filename": "problem_006.png",
+      "s3Key": "problems/02c798d1-765e-44ce-8770-a467868ebfca.png",
+      "chapterId": "1ff4e5c5-0e1c-44b9-92bf-3a8b2e259c4e",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "b955abaa-5a01-49ea-afe3-87600b7ed215",
+      "filename": "problem_007.png",
+      "s3Key": "problems/b955abaa-5a01-49ea-afe3-87600b7ed215.png",
+      "chapterId": "1d02b494-f0ee-4492-89fe-623726759448",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "97c61892-f1be-46d5-8885-f2c9d2cdb90b",
+      "filename": "problem_008.png",
+      "s3Key": "problems/97c61892-f1be-46d5-8885-f2c9d2cdb90b.png",
+      "chapterId": "1d02b494-f0ee-4492-89fe-623726759448",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "3fe8bbe5-4b7a-4ce4-bf14-e131a5eaa012",
+      "filename": "problem_009.png",
+      "s3Key": "problems/3fe8bbe5-4b7a-4ce4-bf14-e131a5eaa012.png",
+      "chapterId": "1d02b494-f0ee-4492-89fe-623726759448",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "cc569b3b-2c21-4ad1-a755-069cbe80191d",
+      "filename": "problem_010.png",
+      "s3Key": "problems/cc569b3b-2c21-4ad1-a755-069cbe80191d.png",
+      "chapterId": "290d88c6-d259-4519-a35b-e51650e56868",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "f9cd08b7-cfcd-401f-af13-2cc58e2608eb",
+      "filename": "problem_011.png",
+      "s3Key": "problems/f9cd08b7-cfcd-401f-af13-2cc58e2608eb.png",
+      "chapterId": "290d88c6-d259-4519-a35b-e51650e56868",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "efc7449e-40ff-431f-b96d-986b8e0845da",
+      "filename": "problem_012.png",
+      "s3Key": "problems/efc7449e-40ff-431f-b96d-986b8e0845da.png",
+      "chapterId": "290d88c6-d259-4519-a35b-e51650e56868",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "979ed622-7dc3-4ef6-afc4-991eff66dc64",
+      "filename": "problem_013.png",
+      "s3Key": "problems/979ed622-7dc3-4ef6-afc4-991eff66dc64.png",
+      "chapterId": "8f2263f9-8cc0-439a-a85e-7b59d9d03c25",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "6b5003bd-023d-40ac-ae83-7e0b98b36420",
+      "filename": "problem_014.png",
+      "s3Key": "problems/6b5003bd-023d-40ac-ae83-7e0b98b36420.png",
+      "chapterId": "8f2263f9-8cc0-439a-a85e-7b59d9d03c25",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "875c8022-44cb-40eb-b07d-73d1e6051669",
+      "filename": "problem_015.png",
+      "s3Key": "problems/875c8022-44cb-40eb-b07d-73d1e6051669.png",
+      "chapterId": "8f2263f9-8cc0-439a-a85e-7b59d9d03c25",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "0a17d2a5-c624-4918-b320-57e028ac14d9",
+      "filename": "problem_016.png",
+      "s3Key": "problems/0a17d2a5-c624-4918-b320-57e028ac14d9.png",
+      "chapterId": "f870ff1d-9650-4581-a05b-ef8eb6b84752",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "e30e802e-3791-4530-90fb-564d98270217",
+      "filename": "problem_017.png",
+      "s3Key": "problems/e30e802e-3791-4530-90fb-564d98270217.png",
+      "chapterId": "f870ff1d-9650-4581-a05b-ef8eb6b84752",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "a710ea0c-75ca-4255-be48-fa6792f1f17a",
+      "filename": "problem_018.png",
+      "s3Key": "problems/a710ea0c-75ca-4255-be48-fa6792f1f17a.png",
+      "chapterId": "f870ff1d-9650-4581-a05b-ef8eb6b84752",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "10b5bc4e-d6bb-4dc4-962e-5950e4139545",
+      "filename": "problem_019.png",
+      "s3Key": "problems/10b5bc4e-d6bb-4dc4-962e-5950e4139545.png",
+      "chapterId": "478cf785-9a49-412f-941f-8abb799ee42a",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "b3b5adda-104b-4178-bc3c-8592d9749e2d",
+      "filename": "problem_020.png",
+      "s3Key": "problems/b3b5adda-104b-4178-bc3c-8592d9749e2d.png",
+      "chapterId": "478cf785-9a49-412f-941f-8abb799ee42a",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "4a532780-76b1-444b-8730-5748d9c09731",
+      "filename": "problem_021.png",
+      "s3Key": "problems/4a532780-76b1-444b-8730-5748d9c09731.png",
+      "chapterId": "478cf785-9a49-412f-941f-8abb799ee42a",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "28575aa9-7a1f-46b7-9b04-72066a51c540",
+      "filename": "problem_022.png",
+      "s3Key": "problems/28575aa9-7a1f-46b7-9b04-72066a51c540.png",
+      "chapterId": "88d80a82-36e5-46fb-a587-7ed5f880e502",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "5b321450-23ac-48c7-84be-8809ded16f28",
+      "filename": "problem_023.png",
+      "s3Key": "problems/5b321450-23ac-48c7-84be-8809ded16f28.png",
+      "chapterId": "88d80a82-36e5-46fb-a587-7ed5f880e502",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "6e33292b-3441-482c-878c-3ddce80c2e8c",
+      "filename": "problem_024.png",
+      "s3Key": "problems/6e33292b-3441-482c-878c-3ddce80c2e8c.png",
+      "chapterId": "88d80a82-36e5-46fb-a587-7ed5f880e502",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "15a7fa2f-9d7a-4f38-bd98-e3e53992a601",
+      "filename": "problem_025.png",
+      "s3Key": "problems/15a7fa2f-9d7a-4f38-bd98-e3e53992a601.png",
+      "chapterId": "fa201413-29c5-410f-aee0-b54d2170b2b2",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "b6957800-5200-44b6-b646-3f6e9be89f45",
+      "filename": "problem_026.png",
+      "s3Key": "problems/b6957800-5200-44b6-b646-3f6e9be89f45.png",
+      "chapterId": "fa201413-29c5-410f-aee0-b54d2170b2b2",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "98e0991d-64ea-4265-a338-5bdcf5879467",
+      "filename": "problem_027.png",
+      "s3Key": "problems/98e0991d-64ea-4265-a338-5bdcf5879467.png",
+      "chapterId": "fa201413-29c5-410f-aee0-b54d2170b2b2",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "3cc3823c-4c4c-4ef3-880c-680db8fa75af",
+      "filename": "problem_028.png",
+      "s3Key": "problems/3cc3823c-4c4c-4ef3-880c-680db8fa75af.png",
+      "chapterId": "8e72d4c3-3946-44c5-bdf3-ad8546ec370a",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "5d872de3-06f8-45a8-b64e-13d815bb000a",
+      "filename": "problem_029.png",
+      "s3Key": "problems/5d872de3-06f8-45a8-b64e-13d815bb000a.png",
+      "chapterId": "8e72d4c3-3946-44c5-bdf3-ad8546ec370a",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "ffcd6049-a4f1-4c6a-8ff6-aa72c78ad7f0",
+      "filename": "problem_030.png",
+      "s3Key": "problems/ffcd6049-a4f1-4c6a-8ff6-aa72c78ad7f0.png",
+      "chapterId": "1e383104-a411-4217-9586-a3eb9ceace11",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "d08fdaa3-e94b-4053-b65e-13addc4029d7",
+      "filename": "problem_031.png",
+      "s3Key": "problems/d08fdaa3-e94b-4053-b65e-13addc4029d7.png",
+      "chapterId": "1e383104-a411-4217-9586-a3eb9ceace11",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "2165c1b2-b312-41e5-8a03-c162b3ffd9f6",
+      "filename": "problem_032.png",
+      "s3Key": "problems/2165c1b2-b312-41e5-8a03-c162b3ffd9f6.png",
+      "chapterId": "14b222b9-ac4b-4ec7-bca0-27941e24987e",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "de38e453-ed64-464f-9977-0eb39309f85a",
+      "filename": "problem_033.png",
+      "s3Key": "problems/de38e453-ed64-464f-9977-0eb39309f85a.png",
+      "chapterId": "14b222b9-ac4b-4ec7-bca0-27941e24987e",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "8c3ee126-c982-4073-ac89-21bf05bbc202",
+      "filename": "problem_034.png",
+      "s3Key": "problems/8c3ee126-c982-4073-ac89-21bf05bbc202.png",
+      "chapterId": "a9aa1316-d913-49e8-86c6-0bddb5566191",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "be90c4df-b91a-4316-a275-6b577a404e11",
+      "filename": "problem_035.png",
+      "s3Key": "problems/be90c4df-b91a-4316-a275-6b577a404e11.png",
+      "chapterId": "a9aa1316-d913-49e8-86c6-0bddb5566191",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "ef8a0c2f-56c2-4005-80b8-6ac9aa79afda",
+      "filename": "problem_036.png",
+      "s3Key": "problems/ef8a0c2f-56c2-4005-80b8-6ac9aa79afda.png",
+      "chapterId": "6d6d8c59-baac-46af-98b9-68673dc2f344",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "b2a8731f-fbbe-443f-81c3-a4f9fe893e65",
+      "filename": "problem_037.png",
+      "s3Key": "problems/b2a8731f-fbbe-443f-81c3-a4f9fe893e65.png",
+      "chapterId": "6d6d8c59-baac-46af-98b9-68673dc2f344",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "4fe0f524-ef5f-44fa-be78-0b00eee736bc",
+      "filename": "problem_038.png",
+      "s3Key": "problems/4fe0f524-ef5f-44fa-be78-0b00eee736bc.png",
+      "chapterId": "e533a439-9219-416e-8d4f-61cc52574176",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "4dc915d1-af01-4e96-9c38-c1ec034e7011",
+      "filename": "problem_039.png",
+      "s3Key": "problems/4dc915d1-af01-4e96-9c38-c1ec034e7011.png",
+      "chapterId": "e533a439-9219-416e-8d4f-61cc52574176",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "ad5cfc1e-94d2-4999-a254-40dc1363ae22",
+      "filename": "problem_040.png",
+      "s3Key": "problems/ad5cfc1e-94d2-4999-a254-40dc1363ae22.png",
+      "chapterId": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "0bf23894-850a-4477-bb52-f632a78c8448",
+      "filename": "problem_041.png",
+      "s3Key": "problems/0bf23894-850a-4477-bb52-f632a78c8448.png",
+      "chapterId": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "4b3a5cdb-6366-4af0-aa52-ea10911d03d0",
+      "filename": "problem_042.png",
+      "s3Key": "problems/4b3a5cdb-6366-4af0-aa52-ea10911d03d0.png",
+      "chapterId": "5ee9b9bc-5268-45e0-8f6f-c315e2790808",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "3be31a65-48ef-4619-b200-4457a7398501",
+      "filename": "problem_043.png",
+      "s3Key": "problems/3be31a65-48ef-4619-b200-4457a7398501.png",
+      "chapterId": "5ee9b9bc-5268-45e0-8f6f-c315e2790808",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "806d36c8-fc73-4087-81de-3c669ccdc172",
+      "filename": "problem_044.png",
+      "s3Key": "problems/806d36c8-fc73-4087-81de-3c669ccdc172.png",
+      "chapterId": "decba78b-c5b4-4fbb-a2fe-1a07641a35ae",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "36b965bd-1355-498c-b985-321c8c839828",
+      "filename": "problem_045.png",
+      "s3Key": "problems/36b965bd-1355-498c-b985-321c8c839828.png",
+      "chapterId": "decba78b-c5b4-4fbb-a2fe-1a07641a35ae",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "37372605-04ef-440b-a86e-6ebb408b2c78",
+      "filename": "problem_046.png",
+      "s3Key": "problems/37372605-04ef-440b-a86e-6ebb408b2c78.png",
+      "chapterId": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "3a8074f4-7630-418c-89ce-08cc93bca4ad",
+      "filename": "problem_047.png",
+      "s3Key": "problems/3a8074f4-7630-418c-89ce-08cc93bca4ad.png",
+      "chapterId": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "7de8ca5f-1bd1-4d9e-bfe2-688d12ff86cb",
+      "filename": "problem_048.png",
+      "s3Key": "problems/7de8ca5f-1bd1-4d9e-bfe2-688d12ff86cb.png",
+      "chapterId": "9e291336-dc51-4ea1-80bb-c726eff66c6f",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "400db877-a52d-4c43-a838-b7a85935d24f",
+      "filename": "problem_049.png",
+      "s3Key": "problems/400db877-a52d-4c43-a838-b7a85935d24f.png",
+      "chapterId": "9e291336-dc51-4ea1-80bb-c726eff66c6f",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "c270979a-098a-4608-953e-73cf27b23826",
+      "filename": "problem_050.png",
+      "s3Key": "problems/c270979a-098a-4608-953e-73cf27b23826.png",
+      "chapterId": "74c3276e-144d-4098-9d78-c6df80ef1ffe",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "3ea09b9c-d164-4275-ae71-d218857be3bd",
+      "filename": "problem_051.png",
+      "s3Key": "problems/3ea09b9c-d164-4275-ae71-d218857be3bd.png",
+      "chapterId": "74c3276e-144d-4098-9d78-c6df80ef1ffe",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "bacf9fad-29d8-4df5-82c6-557da6c94305",
+      "filename": "problem_052.png",
+      "s3Key": "problems/bacf9fad-29d8-4df5-82c6-557da6c94305.png",
+      "chapterId": "36477a86-54b2-40e1-bb16-1f8fd287eec1",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "af56ca51-25e7-4eb6-82fb-5e6e37b560d2",
+      "filename": "problem_053.png",
+      "s3Key": "problems/af56ca51-25e7-4eb6-82fb-5e6e37b560d2.png",
+      "chapterId": "36477a86-54b2-40e1-bb16-1f8fd287eec1",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "f0121b1f-161f-4179-b3d2-ceb2cbd471a3",
+      "filename": "problem_054.png",
+      "s3Key": "problems/f0121b1f-161f-4179-b3d2-ceb2cbd471a3.png",
+      "chapterId": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "7299d87c-d78f-47d3-9930-33b2aba34478",
+      "filename": "problem_055.png",
+      "s3Key": "problems/7299d87c-d78f-47d3-9930-33b2aba34478.png",
+      "chapterId": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "ce75b04c-0a78-4d14-a4d4-f21fc6e985e1",
+      "filename": "problem_056.png",
+      "s3Key": "problems/ce75b04c-0a78-4d14-a4d4-f21fc6e985e1.png",
+      "chapterId": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "15e2f756-721e-4569-bfbc-2f6582095569",
+      "filename": "problem_057.png",
+      "s3Key": "problems/15e2f756-721e-4569-bfbc-2f6582095569.png",
+      "chapterId": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "0693878f-bc9f-4e63-8638-77766d4f5874",
+      "filename": "problem_058.png",
+      "s3Key": "problems/0693878f-bc9f-4e63-8638-77766d4f5874.png",
+      "chapterId": "915e818d-76a6-40c2-841a-4adcd2cd5757",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "a5487f72-352f-495e-afb8-2b83de779b9c",
+      "filename": "problem_059.png",
+      "s3Key": "problems/a5487f72-352f-495e-afb8-2b83de779b9c.png",
+      "chapterId": "915e818d-76a6-40c2-841a-4adcd2cd5757",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "3b1a3d20-039c-41d3-a3c0-f0051b9e885a",
+      "filename": "problem_060.png",
+      "s3Key": "problems/3b1a3d20-039c-41d3-a3c0-f0051b9e885a.png",
+      "chapterId": "ace8d032-0b84-417b-8096-fa5f3cba0719",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "bd5e8dbe-9297-4e68-bb4a-4349c4188c8a",
+      "filename": "problem_061.png",
+      "s3Key": "problems/bd5e8dbe-9297-4e68-bb4a-4349c4188c8a.png",
+      "chapterId": "ace8d032-0b84-417b-8096-fa5f3cba0719",
+      "subjectCount": 1
+    },
+    {
+      "problemId": "417404fe-af51-49a5-bc33-f3859003bd4f",
+      "filename": "problem_062.png",
+      "s3Key": "problems/417404fe-af51-49a5-bc33-f3859003bd4f.png",
+      "chapterId": "7e285c93-824f-4e8a-8c11-d6593cd1b8a1",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "98db3c61-368d-4b0a-a7d6-32f6d6ef58ef",
+      "filename": "problem_063.png",
+      "s3Key": "problems/98db3c61-368d-4b0a-a7d6-32f6d6ef58ef.png",
+      "chapterId": "7e285c93-824f-4e8a-8c11-d6593cd1b8a1",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "532c5833-807d-46a4-8932-5d9679bc6f82",
+      "filename": "problem_064.png",
+      "s3Key": "problems/532c5833-807d-46a4-8932-5d9679bc6f82.png",
+      "chapterId": "00562326-8ab3-40c9-9cec-3e68d5ec01cf",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "2379a23e-139f-4e6a-bc1c-541adfe1a47f",
+      "filename": "problem_065.png",
+      "s3Key": "problems/2379a23e-139f-4e6a-bc1c-541adfe1a47f.png",
+      "chapterId": "00562326-8ab3-40c9-9cec-3e68d5ec01cf",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "b40c40f3-c358-459e-a295-34806dbcc5c8",
+      "filename": "problem_066.png",
+      "s3Key": "problems/b40c40f3-c358-459e-a295-34806dbcc5c8.png",
+      "chapterId": "7e1fc3a0-43df-4b7b-855e-1bf00712c716",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "c1d61edc-3bb1-4405-a32a-19f3f124801c",
+      "filename": "problem_067.png",
+      "s3Key": "problems/c1d61edc-3bb1-4405-a32a-19f3f124801c.png",
+      "chapterId": "7e1fc3a0-43df-4b7b-855e-1bf00712c716",
+      "subjectCount": 2
+    },
+    {
+      "problemId": "2335c70e-210a-41a7-8748-e6d0229010fb",
+      "filename": "problem_068.png",
+      "s3Key": "problems/2335c70e-210a-41a7-8748-e6d0229010fb.png",
+      "chapterId": "576336b9-c441-4b22-ae5a-8173f5293fa3",
+      "subjectCount": 3
+    },
+    {
+      "problemId": "06a22d14-3d1a-43ba-bad3-680397efd3bb",
+      "filename": "problem_069.png",
+      "s3Key": "problems/06a22d14-3d1a-43ba-bad3-680397efd3bb.png",
+      "chapterId": "576336b9-c441-4b22-ae5a-8173f5293fa3",
+      "subjectCount": 2
+    }
+  ],
+  "errors": []
+}

@@ -1,7 +1,8 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
-import { fetchChapters, fetchSubjects, fetchChapterTree, type Chapter, type Subject, type ChapterTreeItem } from './services';
+import { fetchChapters, fetchSubjects, fetchChapterTree } from './services';
+import type { Chapter, Subject, ChapterTreeItem } from '@/lib/types';
 
 /**
  * Client-side function to fetch all chapters

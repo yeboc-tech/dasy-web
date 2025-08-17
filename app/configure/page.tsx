@@ -1,39 +1,32 @@
 'use client';
 
-import React, { useEffect, useState, Suspense, useMemo, useRef } from 'react';
+import { useEffect, useState, Suspense, useMemo, useRef } from 'react';
 import { Loader } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { useChapters } from '@/lib/hooks/useChapters';
-import type { ChapterTreeItem } from '@/lib/supabase/services/services';
+import { useProblems } from '@/lib/hooks/useProblems';
+import { imageToBase64Client, createWorksheetDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
 
-// Types for the new metadata structure
-interface ProblemMetadata {
-  id: number;
-  filename: string;
-  subject_id: string;
-  chapter_id: string;
-  subject_name: string;
-  chapter_name: string;
-  difficulty: string;
-  problem_type: string;
-  exam_type: string | null;
-  year: number | null;
-  month: number | null;
-  estimated_time: number;
-  points: number;
-  related_subjects: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+// Helper function to generate a simple "No Image" base64 as fallback
+function getNoImageBase64(): string {
+  // Create a simple SVG with "No Image" text
+  const svg = `<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="300" height="200" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+    <text x="150" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#6b7280">
+      이미지를 불러올 수 없습니다
+    </text>
+    <text x="150" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af">
+      S3 설정을 확인하세요
+    </text>
+  </svg>`;
+  
+  // Convert SVG to base64
+  const base64 = btoa(unescape(encodeURIComponent(svg)));
+  return `data:image/svg+xml;base64,${base64}`;
 }
-
-interface MetadataFile {
-  problems: ProblemMetadata[];
-}
-
-
+import { ProblemFilter } from '@/lib/utils/problemFiltering';
+import { getProblemImageUrl } from '@/lib/utils/s3Utils';
 
 function PdfContent() {
   const searchParams = useSearchParams();
@@ -47,153 +40,43 @@ function PdfContent() {
   const creator = '';
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [metadata, setMetadata] = useState<MetadataFile | null>(null);
-  const [metadataLoading, setMetadataLoading] = useState(true);
-  const [metadataError, setMetadataError] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [useObjectTag, setUseObjectTag] = useState(false);
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
-
-  // Load metadata
-  useEffect(() => {
-    const loadMetadata = async () => {
-      try {
-        setMetadataLoading(true);
-        setMetadataError(null);
-        const response = await fetch('/dummies/problems-metadata.json');
-        if (!response.ok) {
-          throw new Error(`Failed to load metadata: ${response.status}`);
-        }
-        const data = await response.json();
-        setMetadata(data);
-      } catch (error) {
-        console.error('Error loading metadata:', error);
-        setMetadataError(error instanceof Error ? error.message : 'Failed to load metadata');
-      } finally {
-        setMetadataLoading(false);
-      }
-    };
-
-    loadMetadata();
-  }, []);
+  const { problems, loading: problemsLoading, error: problemsError } = useProblems();
 
   // Filter and select problems based on criteria
   const selectedImages = useMemo(() => {
-    console.log('Configure page - useMemo running, checking dependencies...');
-    console.log('Configure page - Parameters:', {
+    if (!problems || problems.length === 0 || problemsLoading) {
+      return [];
+    }
+
+    const filters = {
       selectedChapters,
       selectedDifficulties,
       selectedProblemTypes,
       selectedSubjects,
-      problemCount
-    });
+      problemCount,
+      contentTree
+    };
+
+    const filtered = ProblemFilter.filterProblems(problems, filters);
     
-    if (!metadata || metadataLoading) {
+    // Convert to S3 image URLs with error handling
+    try {
+      return filtered.map(problem => getProblemImageUrl(problem.id));
+    } catch (error) {
+      console.error('Failed to generate image URLs:', error);
       return [];
     }
-
-    let filtered = metadata.problems.filter(problem => problem.is_active);
-    console.log('Configure page - After active filter:', filtered.length, 'problems');
-
-    // Filter by difficulty (multi-select)
-    if (selectedDifficulties.length > 0 && selectedDifficulties.length < 3) {
-      filtered = filtered.filter(problem => selectedDifficulties.includes(problem.difficulty));
-    }
-
-    // Filter by problem type (multi-select)
-    if (selectedProblemTypes.length > 0 && selectedProblemTypes.length < 2) {
-      filtered = filtered.filter(problem => selectedProblemTypes.includes(problem.problem_type));
-    }
-
-    // Filter by selected chapters
-    if (selectedChapters.length > 0) {
-      // Get chapter names from the database chapters
-      const selectedChapterNames: string[] = [];
-      
-      // Helper function to get chapter names recursively
-      const getChapterNames = (chapters: ChapterTreeItem[], selectedIds: string[]) => {
-        chapters.forEach(chapter => {
-          if (selectedIds.includes(chapter.id)) {
-            // If this is a parent chapter, get all its child chapter names
-            if (chapter.children && chapter.children.length > 0) {
-              chapter.children.forEach((child: ChapterTreeItem) => {
-                selectedChapterNames.push(child.label);
-                // Also get grandchildren if they exist
-                if (child.children && child.children.length > 0) {
-                  child.children.forEach((grandchild: ChapterTreeItem) => {
-                    selectedChapterNames.push(grandchild.label);
-                  });
-                }
-              });
-            } else {
-              // If this is a leaf chapter, add it directly
-              selectedChapterNames.push(chapter.label);
-            }
-          }
-          // Continue searching in children
-          if (chapter.children) {
-            getChapterNames(chapter.children, selectedIds);
-          }
-        });
-      };
-      
-      getChapterNames(contentTree, selectedChapters);
-      
-      console.log('Configure page - Selected chapter names:', selectedChapterNames);
-      console.log('Configure page - All available chapter names in metadata:', metadata.problems.map(p => p.chapter_name).filter((v, i, a) => a.indexOf(v) === i));
-      
-      if (selectedChapterNames.length > 0) {
-        filtered = filtered.filter(problem => {
-          const matches = selectedChapterNames.some(chapterName => {
-            // Strip the "01.", "02." prefix from the selected chapter name for comparison
-            const cleanChapterName = chapterName.replace(/^\d+\.\s*/, '');
-            const matches = problem.chapter_name.includes(cleanChapterName);
-            if (matches) {
-              console.log('Configure page - Match found:', { problem: problem.filename, chapter: problem.chapter_name, cleanChapterName });
-            }
-            return matches;
-          });
-          return matches;
-        });
-      }
-    } else {
-      // If no chapters selected, show no problems
-      filtered = [];
-    }
-
-    // Filter by selected subjects (using related_subjects array)
-    if (selectedSubjects.length > 0) {
-      filtered = filtered.filter(problem => 
-        problem.related_subjects.some(relatedSubject => 
-          selectedSubjects.includes(relatedSubject)
-        )
-      );
-    }
-
-    // Filter out the missing image (problem_004.png)
-    filtered = filtered.filter(problem => problem.filename !== 'problem_004.png');
-
-    // Limit to problemCount - use first N problems to match filter preview
-    const sampled = filtered.slice(0, problemCount);
-    
-    // Debug logging
-    console.log('Configure page - Selected problems:', sampled.map(p => p.filename));
-    console.log('Configure page - Problem details:', sampled.map(p => ({ id: p.id, filename: p.filename, chapter_name: p.chapter_name })));
-    
-    // Convert to image paths
-    const result = sampled.map(problem => `/dummies/${problem.filename}`);
-
-    return result;
-  }, [metadata, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount]);
+  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, problemsLoading]);
 
   // Generate PDF when selectedImages changes
   const lastProcessedImages = useRef<string>('');
   
   useEffect(() => {
-    console.log('Configure page - PDF useEffect running, selectedImages:', selectedImages);
-    
     // Create a unique key for the current selection
     const selectionKey = JSON.stringify({
       selectedImages,
@@ -203,7 +86,6 @@ function PdfContent() {
     
     // Skip if we've already processed this exact selection
     if (selectionKey === lastProcessedImages.current) {
-      console.log('Configure page - Skipping PDF generation, already processed');
       return;
     }
     
@@ -215,48 +97,68 @@ function PdfContent() {
       return;
     }
 
-    const fetchPdf = async () => {
+    const generatePdf = async () => {
       try {
         setLoading(true);
+        setPdfError(null);
         
-        const res = await fetch("/api/configure", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: worksheetName,
-            creator: creator,
-            images: selectedImages,
-          })
+        // Convert images to base64 on client side with error handling
+        const imagePromises = selectedImages.map(async (imagePath) => {
+          try {
+            return await imageToBase64Client(imagePath);
+          } catch (error) {
+            console.error(`Failed to process image ${imagePath}:`, error);
+            return getNoImageBase64();
+          }
         });
         
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
-        }
+        const base64Images = await Promise.allSettled(imagePromises);
+        const processedImages = base64Images.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            console.error(`Image ${index} failed:`, result.reason);
+            return getNoImageBase64();
+          }
+        });
         
-        const blob = await res.blob();
+        // Create document definition (now async)
+        const docDefinition = await createWorksheetDocDefinitionClient(
+          selectedImages, 
+          processedImages, 
+          worksheetName, 
+          creator
+        );
+        
+        // Generate PDF blob
+        const blob = await generatePdfClient(docDefinition);
         
         if (blob.size === 0) throw new Error("PDF blob is empty");
-        if (blob.type !== 'application/pdf') {
-          console.warn('Unexpected blob type:', blob.type);
-        }
         
         const url = URL.createObjectURL(blob);
         setPdfUrl(url);
         setPdfError(null);
         lastProcessedImages.current = selectionKey;
       } catch (error: any) {
-        console.error("Failed to fetch PDF:", error.message);
-        // Set error state for better user feedback
+        console.error("Failed to generate PDF:", error);
         setPdfUrl(null);
-        setPdfError(error.message);
+        
+        // Provide more helpful error messages
+        let errorMessage = error.message;
+        if (errorMessage.includes('Network error') || errorMessage.includes('Failed to fetch')) {
+          errorMessage = 'S3 버킷에서 이미지를 불러올 수 없습니다. S3 설정을 확인하거나 관리자에게 문의하세요.';
+        } else if (errorMessage.includes('Failed to load PDF library')) {
+          errorMessage = 'PDF 라이브러리 로딩에 실패했습니다. 페이지를 새로고침해 주세요.';
+        }
+        
+        setPdfError(errorMessage);
         lastProcessedImages.current = selectionKey;
       } finally {
         setLoading(false);
       }
     };
     
-    fetchPdf();
+    generatePdf();
   }, [selectedImages, worksheetName, creator]);
 
   // Force regenerate PDF function
@@ -266,7 +168,7 @@ function PdfContent() {
     setTimeout(() => setLoading(false), 100);
   };
 
-  if (metadataLoading || chaptersLoading) {
+  if (problemsLoading || chaptersLoading) {
     return (
       <div className="px-4 pt-2 pb-6 max-w-4xl mx-auto w-full h-full">
         <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
@@ -278,13 +180,13 @@ function PdfContent() {
     );
   }
 
-  if (metadataError || chaptersError) {
+  if (problemsError || chaptersError) {
     return (
       <div className="px-4 pt-2 pb-6 max-w-4xl mx-auto w-full h-full">
         <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
           <div className="flex-1 bg-white flex items-center justify-center">
             <div className="text-center text-gray-600">
-              {metadataError ? `메타데이터 오류: ${metadataError}` : `단원 정보 오류: ${chaptersError}`}
+              {problemsError ? `문제 데이터 오류: ${problemsError}` : `단원 정보 오류: ${chaptersError}`}
             </div>
           </div>
         </Card>
@@ -374,7 +276,20 @@ function PdfContent() {
           
           {!loading && !pdfError && selectedImages.length === 0 && (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-400 text-sm">선택한 조건에 맞는 문제가 없습니다.</div>
+              <div className="text-center text-gray-600 max-w-md p-4">
+                <div className="text-orange-500 font-medium mb-2">설정 필요</div>
+                <div className="text-sm mb-4">
+                  S3 환경 변수가 설정되지 않았습니다. 이미지를 불러올 수 없습니다.
+                </div>
+                <div className="text-xs text-gray-500 mb-4">
+                  <p>다음 환경 변수를 설정해주세요:</p>
+                  <p>• NEXT_PUBLIC_S3_BUCKET_NAME</p>
+                  <p>• NEXT_PUBLIC_AWS_REGION</p>
+                </div>
+                <div className="text-xs text-gray-400">
+                  자세한 설정 방법은 ENVIRONMENT_SETUP.md 파일을 참조하세요.
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -383,17 +298,21 @@ function PdfContent() {
   );
 }
 
+function Fallback() {
+  return (
+    <div className="px-4 pt-2 pb-6 max-w-6xl mx-auto w-full h-full">
+      <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
+        <div className="flex-1 bg-white flex items-center justify-center">
+          <Loader className="animate-spin w-4 h-4" />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function Page() {
   return (
-    <Suspense fallback={
-      <div className="px-4 pt-2 pb-6 max-w-6xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <div className="flex-1 bg-white flex items-center justify-center">
-            <Loader className="animate-spin w-4 h-4" />
-          </div>
-        </Card>
-      </div>
-    }>
+    <Suspense fallback={<Fallback />}>
       <PdfContent />
     </Suspense>
   );

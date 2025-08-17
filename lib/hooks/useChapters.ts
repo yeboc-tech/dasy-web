@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getChapterTree } from '@/lib/supabase/services/clientServices';
-import type { ChapterTreeItem } from '@/lib/supabase/services/services';
-import { contentTree } from '@/lib/global';
+import type { ChapterTreeItem } from '@/lib/types';
 
 export function useChapters() {
   const [chapters, setChapters] = useState<ChapterTreeItem[]>([]);
@@ -15,9 +14,8 @@ export function useChapters() {
       try {
         setLoading(true);
         setError(null);
-        // Temporarily use static contentTree to test
-        setChapters(contentTree);
-        setError(null);
+        const data = await getChapterTree();
+        setChapters(data);
       } catch (err) {
         console.error('Error loading chapters:', err);
         setError(err instanceof Error ? err.message : 'Failed to load chapters');
@@ -33,9 +31,8 @@ export function useChapters() {
     try {
       setLoading(true);
       setError(null);
-      // Temporarily use static contentTree to test
-      setChapters(contentTree);
-      setError(null);
+      const data = await getChapterTree();
+      setChapters(data);
     } catch (err) {
       console.error('Error refetching chapters:', err);
       setError(err instanceof Error ? err.message : 'Failed to refetch chapters');
