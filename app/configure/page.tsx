@@ -7,6 +7,17 @@ import { Card } from '@/components/ui/card';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
 import { imageToBase64Client, createWorksheetDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
+import dynamic from 'next/dynamic';
+
+// Dynamically import PDFViewer to prevent SSR issues
+const PDFViewer = dynamic(() => import('@/components/pdf/PDFViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <Loader className="animate-spin w-4 h-4 text-gray-600" />
+    </div>
+  )
+});
 
 // Helper function to generate a simple "No Image" base64 as fallback
 function getNoImageBase64(): string {
@@ -41,7 +52,6 @@ function PdfContent() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState<string | null>(null);
-  const [useObjectTag, setUseObjectTag] = useState(false);
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
@@ -202,7 +212,7 @@ function PdfContent() {
           
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-white bg-opacity-70">
-              <Loader className="animate-spin w-4 h-4" />
+              <Loader className="animate-spin w-4 h-4 text-gray-600" />
             </div>
           )}
           
@@ -224,54 +234,10 @@ function PdfContent() {
           )}
           
           {pdfUrl && !loading && !pdfError && (
-            <div className="w-full h-full flex flex-col">
-              {/* PDF Display */}
-              <div className="flex-1 relative">
-                {useObjectTag ? (
-                  <object 
-                    key={pdfUrl} 
-                    data={pdfUrl} 
-                    type="application/pdf" 
-                    className="w-full h-full border-0" 
-                    title="PDF Preview"
-                    onError={() => {
-                      console.error('object failed to load PDF');
-                      setPdfError('PDF를 표시할 수 없습니다. 다운로드 버튼을 사용해주세요.');
-                    }}
-                  >
-                    <div className="flex items-center justify-center h-full bg-gray-50">
-                      <div className="text-center">
-                        <p className="text-gray-600 mb-2">PDF를 표시할 수 없습니다.</p>
-                        <button
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = pdfUrl;
-                            link.download = 'worksheet.pdf';
-                            link.click();
-                          }}
-                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                          PDF 다운로드
-                        </button>
-                      </div>
-                    </div>
-                  </object>
-                ) : (
-                  <div className="w-full h-full">
-                    <iframe 
-                      key={pdfUrl} 
-                      src={pdfUrl}
-                      className="w-full h-full border-0" 
-                      title="PDF Preview"
-                      onError={(e) => {
-                        console.error('iframe failed to load PDF', e);
-                        setPdfError('PDF를 표시할 수 없습니다. 다운로드 버튼을 사용해주세요.');
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+            <PDFViewer 
+              pdfUrl={pdfUrl}
+              onError={(error) => setPdfError(error)}
+            />
           )}
           
           {!loading && !pdfError && selectedImages.length === 0 && (
@@ -303,7 +269,7 @@ function Fallback() {
     <div className="px-4 pt-2 pb-6 max-w-6xl mx-auto w-full h-full">
       <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
         <div className="flex-1 bg-white flex items-center justify-center">
-          <Loader className="animate-spin w-4 h-4" />
+          <Loader className="animate-spin w-4 h-4 text-gray-600" />
         </div>
       </Card>
     </div>
