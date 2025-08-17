@@ -12,7 +12,11 @@ export interface DatabaseProblem {
   problem_type: string;
   created_at: string;
   updated_at: string;
-  subjects: { name: string }[];
+  problem_subjects?: {
+    subjects: {
+      name: string;
+    };
+  }[];
 }
 
 export function useProblems() {
@@ -49,17 +53,20 @@ export function useProblems() {
           throw new Error(`Failed to fetch problems: ${fetchError.message}`);
         }
 
-        // Transform the data to match ProblemMetadata interface
-        const transformedProblems: ProblemMetadata[] = (data || []).map((problem: any) => ({
-          id: problem.id,
-          filename: problem.filename,
-          chapter_id: problem.chapter_id,
-          difficulty: problem.difficulty,
-          problem_type: problem.problem_type,
-          tags: problem.problem_subjects?.map((ps: any) => ps.subjects.name) || [],
-          created_at: problem.created_at,
-          updated_at: problem.updated_at
-        }));
+        // Transform the data to match ProblemMetadata interface  
+        const transformedProblems: ProblemMetadata[] = (data || []).map((problem: unknown) => {
+          const typedProblem = problem as DatabaseProblem;
+          return {
+            id: typedProblem.id,
+            filename: typedProblem.filename,
+            chapter_id: typedProblem.chapter_id,
+            difficulty: typedProblem.difficulty,
+            problem_type: typedProblem.problem_type,
+            tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
+            created_at: typedProblem.created_at,
+            updated_at: typedProblem.updated_at
+          };
+        });
 
         setProblems(transformedProblems);
       } catch (err) {
@@ -100,16 +107,19 @@ export function useProblems() {
         throw new Error(`Failed to fetch problems: ${fetchError.message}`);
       }
 
-      const transformedProblems: ProblemMetadata[] = (data || []).map((problem: any) => ({
-        id: problem.id,
-        filename: problem.filename,
-        chapter_id: problem.chapter_id,
-        difficulty: problem.difficulty,
-        problem_type: problem.problem_type,
-        tags: problem.problem_subjects?.map((ps: any) => ps.subjects.name) || [],
-        created_at: problem.created_at,
-        updated_at: problem.updated_at
-      }));
+      const transformedProblems: ProblemMetadata[] = (data || []).map((problem: unknown) => {
+        const typedProblem = problem as DatabaseProblem;
+        return {
+          id: typedProblem.id,
+          filename: typedProblem.filename,
+          chapter_id: typedProblem.chapter_id,
+          difficulty: typedProblem.difficulty,
+          problem_type: typedProblem.problem_type,
+          tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
+          created_at: typedProblem.created_at,
+          updated_at: typedProblem.updated_at
+        };
+      });
 
       setProblems(transformedProblems);
     } catch (err) {

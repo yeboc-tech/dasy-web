@@ -41,11 +41,7 @@ import { getProblemImageUrl } from '@/lib/utils/s3Utils';
 
 function PdfContent() {
   const searchParams = useSearchParams();
-  const selectedChapters = searchParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
   const problemCount = parseInt(searchParams.get('problemCount') || '0', 10);
-  const selectedDifficulties = searchParams.get('selectedDifficulties')?.split(',').filter(Boolean) || [];
-  const selectedProblemTypes = searchParams.get('selectedProblemTypes')?.split(',').filter(Boolean) || [];
-  const selectedSubjects = searchParams.get('selectedSubjects')?.split(',').filter(Boolean) || [];
   
   const worksheetName = '';
   const creator = '';
@@ -62,6 +58,11 @@ function PdfContent() {
     if (!problems || problems.length === 0 || problemsLoading) {
       return [];
     }
+
+    const selectedChapters = searchParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
+    const selectedDifficulties = searchParams.get('selectedDifficulties')?.split(',').filter(Boolean) || [];
+    const selectedProblemTypes = searchParams.get('selectedProblemTypes')?.split(',').filter(Boolean) || [];
+    const selectedSubjects = searchParams.get('selectedSubjects')?.split(',').filter(Boolean) || [];
 
     const filters = {
       selectedChapters,
@@ -81,7 +82,7 @@ function PdfContent() {
       console.error('Failed to generate image URLs:', error);
       return [];
     }
-  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, problemsLoading]);
+  }, [problems, problemCount, contentTree, problemsLoading, searchParams]);
 
   // Generate PDF when selectedImages changes
   const lastProcessedImages = useRef<string>('');
@@ -149,12 +150,12 @@ function PdfContent() {
         setPdfUrl(url);
         setPdfError(null);
         lastProcessedImages.current = selectionKey;
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Failed to generate PDF:", error);
         setPdfUrl(null);
         
         // Provide more helpful error messages
-        let errorMessage = error.message;
+        let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         if (errorMessage.includes('Network error') || errorMessage.includes('Failed to fetch')) {
           errorMessage = 'S3 버킷에서 이미지를 불러올 수 없습니다. S3 설정을 확인하거나 관리자에게 문의하세요.';
         } else if (errorMessage.includes('Failed to load PDF library')) {
@@ -170,13 +171,6 @@ function PdfContent() {
     
     generatePdf();
   }, [selectedImages, worksheetName, creator]);
-
-  // Force regenerate PDF function
-  const regeneratePdf = () => {
-    // Trigger the PDF generation effect by updating a dependency
-    setLoading(true);
-    setTimeout(() => setLoading(false), 100);
-  };
 
   if (problemsLoading || chaptersLoading) {
     return (

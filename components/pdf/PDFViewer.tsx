@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 
 // Print styles (minimal, just for hiding toolbar if needed)
@@ -15,9 +14,10 @@ const printStyles = `
 `;
 
 // Dynamically import PDF.js only on client side
-let pdfjsLib: any = null;
+let pdfjsLib: typeof import('pdfjs-dist') | null = null;
 if (typeof window !== 'undefined') {
-  pdfjsLib = require('pdfjs-dist');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  pdfjsLib = require('pdfjs-dist') as typeof import('pdfjs-dist');
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/lib/pdfjs/pdf.worker.min.js';
 }
 
@@ -29,20 +29,13 @@ interface PDFViewerProps {
 export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<{[key: number]: HTMLImageElement | null}>({});
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [zoom, setZoom] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]);
-  const [fitToWidthZoom, setFitToWidthZoom] = useState(1.0);
   
-  // Touch gesture state
-  const [isTouch, setIsTouch] = useState(false);
-  const [lastPinchDistance, setLastPinchDistance] = useState(0);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
 
   // Load PDF document and render all pages
   useEffect(() => {
@@ -59,7 +52,6 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdf = await loadingTask.promise;
         
-        setPdfDoc(pdf);
         setTotalPages(pdf.numPages);
         setCurrentPage(1);
         
@@ -80,6 +72,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
           const renderContext = {
             canvasContext: context,
             viewport: viewport,
+            canvas: canvas,
           };
           
           await page.render(renderContext).promise;
@@ -116,7 +109,6 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
           const containerWidth = container.clientWidth - 32; // Account for p-4 padding
           const scaleToFitWidth = containerWidth / tempImg.width;
           if (scaleToFitWidth > 0) {
-            setFitToWidthZoom(scaleToFitWidth);
             setZoom(scaleToFitWidth); // Start with fit-to-width
           }
         };
@@ -234,9 +226,6 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
     setZoom(prevZoom => Math.max(prevZoom / 1.2, 0.1));
   };
 
-  const resetZoom = () => {
-    setZoom(1.0);
-  };
 
   const fitToPage = () => {
     // Calculate and set zoom to fit width
@@ -331,77 +320,6 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
     }
   };
 
-  // Touch gesture handlers
-  const getTouchDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return 0;
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    return Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) + 
-      Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsTouch(true);
-    
-    if (e.touches.length === 2) {
-      // Pinch gesture start
-      setLastPinchDistance(getTouchDistance(e.touches));
-    } else if (e.touches.length === 1) {
-      // Pan gesture start
-      setPanStart({
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY
-      });
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    
-    if (e.touches.length === 2) {
-      // Pinch to zoom
-      const distance = getTouchDistance(e.touches);
-      if (lastPinchDistance > 0) {
-        const scale = distance / lastPinchDistance;
-        const newZoom = Math.max(0.1, zoom * scale);
-        setZoom(newZoom);
-      }
-      setLastPinchDistance(distance);
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length === 0) {
-      setIsTouch(false);
-      setLastPinchDistance(0);
-    }
-  };
-
-  // Swipe detection for page navigation
-  let touchStartX = 0;
-  const handleSwipeStart = (e: React.TouchEvent) => {
-    touchStartX = e.touches[0].clientX;
-  };
-
-  const handleSwipeEnd = (e: React.TouchEvent) => {
-    if (!e.changedTouches.length) return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const swipeDistance = touchEndX - touchStartX;
-    const minSwipeDistance = 50;
-    
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        // Swipe right - previous page
-        goToPreviousPage();
-      } else {
-        // Swipe left - next page
-        goToNextPage();
-      }
-    }
-  };
 
   if (loading) {
     return (

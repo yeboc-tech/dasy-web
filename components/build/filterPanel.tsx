@@ -76,7 +76,7 @@ export default function FilterPanel({
   const getAllChildIds = (item: ChapterTreeItem): string[] => {
     const childIds: string[] = [];
     if (item.children && item.children.length > 0) {
-      item.children.forEach((child: any) => {
+      item.children.forEach((child: ChapterTreeItem) => {
         childIds.push(child.id);
         childIds.push(...getAllChildIds(child));
       });

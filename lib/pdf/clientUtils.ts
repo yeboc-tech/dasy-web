@@ -1,5 +1,16 @@
 // Client-side pdfMake setup using CDN approach
-let pdfMake: any = null;
+interface PdfMakeAPI {
+  createPdf: (docDefinition: unknown) => {
+    getBlob: (callback: (blob: Blob) => void) => void;
+  };
+  vfs: Record<string, string>;
+}
+
+interface PdfMakeWindow {
+  pdfMake?: PdfMakeAPI;
+}
+
+let pdfMake: PdfMakeAPI | null = null;
 let fontsLoaded = false;
 
 async function loadPdfMake() {
@@ -20,7 +31,7 @@ async function loadPdfMake() {
       script.onload = () => {
         fontsScript.onload = () => {
           // Access the global pdfMake object
-          pdfMake = (window as any).pdfMake;
+          pdfMake = (window as PdfMakeWindow).pdfMake || null;
           fontsLoaded = true;
           resolve();
         };
@@ -284,13 +295,13 @@ export async function createColumnBasedLayoutClient(problems: string[], base64Im
 
 // Legacy function for backward compatibility (will be replaced)
 export function createTwoColumnLayoutClient(problems: string[], base64Images: string[]) {
-  const columns: any[] = [];
+  const columns: Array<{ columns: unknown[]; columnGap: number; margin?: number[] }> = [];
   
   for (let i = 0; i < problems.length; i += 2) {
     const leftProblem = base64Images[i];
     const rightProblem = base64Images[i + 1];
     
-    const columnContent: any[] = [];
+    const columnContent: Array<{ image: string; width: number; alignment: string; margin: number[] }> = [];
     
     if (leftProblem) {
       columnContent.push({
@@ -322,7 +333,7 @@ export function createTwoColumnLayoutClient(problems: string[], base64Images: st
   return columns;
 }
 
-export function createFooterClient(currentPage: number, pageCount: number) {
+export function createFooterClient(currentPage: number, _pageCount: number) {
   return [
     {
       canvas: [
@@ -348,8 +359,8 @@ export function createFooterClient(currentPage: number, pageCount: number) {
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
   base64Images: string[], 
-  title?: string, 
-  creator?: string
+  _title?: string, 
+  _creator?: string
 ) {
   // Use new column-based layout system
   const content = await createColumnBasedLayoutClient(images, base64Images);
@@ -379,12 +390,16 @@ export async function createWorksheetDocDefinitionClient(
   };
 }
 
-export async function generatePdfClient(docDefinition: any): Promise<Blob> {
+export async function generatePdfClient(docDefinition: unknown): Promise<Blob> {
   // Ensure pdfMake is loaded before generating PDF
   const pdfMakeInstance = await loadPdfMake();
   
   return new Promise((resolve, reject) => {
     try {
+      if (!pdfMakeInstance) {
+        reject(new Error('pdfMake not loaded'));
+        return;
+      }
       pdfMakeInstance.createPdf(docDefinition).getBlob((blob: Blob) => {
         resolve(blob);
       });

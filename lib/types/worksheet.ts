@@ -7,8 +7,8 @@ export interface WorksheetRequest {
 export interface PdfDocumentDefinition {
   pageSize: string;
   pageMargins: number[];
-  footer: (currentPage: number, pageCount: number) => any[];
-  content: any[];
+  footer: (currentPage: number, pageCount: number) => unknown[];
+  content: unknown[];
 }
 
 // Client-side specific types
