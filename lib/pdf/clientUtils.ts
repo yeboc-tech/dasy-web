@@ -32,6 +32,28 @@ async function loadPdfMake() {
         fontsScript.onload = () => {
           // Access the global pdfMake object
           pdfMake = (window as PdfMakeWindow).pdfMake || null;
+          
+          // Configure Korean font support
+          if (pdfMake) {
+            // Add Korean font configuration using base64 embedded fonts
+            // Note: This is a simplified approach using available system fonts
+            const koreanFontConfig = {
+              Roboto: {
+                normal: 'Roboto-Regular.ttf',
+                bold: 'Roboto-Medium.ttf',
+                italics: 'Roboto-Italic.ttf',
+                bolditalics: 'Roboto-MediumItalic.ttf'
+              }
+            };
+            
+            // Use default fonts without additional Korean font loading
+            try {
+              (pdfMake as unknown as { fonts: unknown }).fonts = koreanFontConfig;
+            } catch (_e) {
+              console.log('Using default fonts');
+            }
+          }
+          
           fontsLoaded = true;
           resolve();
         };
@@ -228,6 +250,20 @@ function createColumnContent(columnProblems: Array<{ image: string; height: numb
   }));
 }
 
+// Create answer column content with smaller width (1/3 of total problem area)
+// Answer images should NOT use justify-between spacing, just start from top with minimal gaps
+function createAnswerColumnContent(columnProblems: Array<{ image: string; height: number; index: number }>, _maxHeight: number) {
+  if (columnProblems.length === 0) return [];
+  
+  // For answers, use consistent small margin between images (no justify-between)
+  return columnProblems.map((problem, index) => ({
+    image: problem.image,
+    width: 165, // 1/3 of total problem area (495px / 3 = 165px)
+    alignment: 'center',
+    margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, 15] // Fixed 15px gap
+  }));
+}
+
 // New column-based layout system
 export async function createColumnBasedLayoutClient(problems: string[], base64Images: string[]) {
   // Step 1: Calculate all image heights
@@ -356,6 +392,165 @@ export function createFooterClient(currentPage: number, _pageCount: number) {
   ];
 }
 
+// Create answer grid table for PDF
+// Pattern: {index}{answer}{index}{answer}... - 5 pairs per row, index cells gray
+function createAnswerGridPdf(problems: Array<{ answer: number | null }>) {
+  const rows = [];
+  
+  for (let i = 0; i < problems.length; i += 5) {
+    const row = [];
+    
+    for (let j = 0; j < 5; j++) {
+      const problem = problems[i + j];
+      if (problem) {
+        // Index cell (gray background)
+        row.push({ 
+          text: (i + j + 1).toString(), 
+          alignment: 'center', 
+          fontSize: 9,
+          fillColor: '#f0f0f0' // Gray background for index
+        });
+        // Answer cell (white background)
+        row.push({ 
+          text: problem.answer?.toString() || '?', 
+          alignment: 'center', 
+          fontSize: 9, 
+          bold: true 
+        });
+      } else {
+        // Empty index cell (gray)
+        row.push({ text: '', alignment: 'center', fillColor: '#f0f0f0' });
+        // Empty answer cell (white)
+        row.push({ text: '', alignment: 'center' });
+      }
+    }
+    
+    rows.push(row);
+  }
+  
+  return {
+    table: {
+      headerRows: 0,
+      widths: ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*'], // 10 columns (5 pairs)
+      body: rows
+    },
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#666666',
+      vLineColor: () => '#666666',
+      paddingLeft: () => 2,
+      paddingRight: () => 2,
+      paddingTop: () => 2,
+      paddingBottom: () => 2
+    },
+    margin: [0, 0, 0, 15]
+  };
+}
+
+// Create answer pages layout with 3 columns
+export async function createAnswerPagesClient(
+  answerImages: string[], 
+  base64AnswerImages: string[],
+  problems: Array<{ answer: number | null }>
+) {
+  if (answerImages.length === 0) return [];
+  
+  // Calculate image heights for answers (495/3 = 165px total problem area divided by 3)
+  const answerHeights = await getAllImageHeights(base64AnswerImages, 165);
+  
+  // Get available page height
+  const maxPageHeight = getAvailablePageHeight();
+  
+  // Create answer objects with heights
+  let remainingAnswers = base64AnswerImages.map((image, index) => ({
+    image,
+    height: answerHeights[index],
+    index
+  }));
+  
+  const pages = [];
+  let isFirstPage = true;
+  
+  // Fill pages with 3 columns
+  while (remainingAnswers.length > 0) {
+    const pageColumns = [];
+    
+    // Column 1: Special content on first page
+    if (isFirstPage) {
+      // Fill column 1 without grid (hidden for now)
+      const column1Result = fillColumn(remainingAnswers, maxPageHeight);
+      const column1Content = createAnswerColumnContent(column1Result.columnProblems, maxPageHeight);
+      
+      remainingAnswers = column1Result.remaining;
+      
+      if (column1Content.length > 0) {
+        pageColumns.push({
+          width: 165,
+          stack: column1Content
+        });
+      }
+      
+      isFirstPage = false;
+    } else {
+      // Regular column 1 for subsequent pages
+      const column1Result = fillColumn(remainingAnswers, maxPageHeight);
+      const column1Content = createAnswerColumnContent(column1Result.columnProblems, maxPageHeight);
+      
+      remainingAnswers = column1Result.remaining;
+      
+      if (column1Content.length > 0) {
+        pageColumns.push({
+          width: 165,
+          stack: column1Content
+        });
+      }
+    }
+    
+    // Column 2
+    const column2Result = fillColumn(remainingAnswers, maxPageHeight);
+    const column2Content = createAnswerColumnContent(column2Result.columnProblems, maxPageHeight);
+    
+    remainingAnswers = column2Result.remaining;
+    
+    if (column2Content.length > 0) {
+      pageColumns.push({
+        width: 165,
+        stack: column2Content
+      });
+    }
+    
+    // Column 3
+    const column3Result = fillColumn(remainingAnswers, maxPageHeight);
+    const column3Content = createAnswerColumnContent(column3Result.columnProblems, maxPageHeight);
+    
+    remainingAnswers = column3Result.remaining;
+    
+    if (column3Content.length > 0) {
+      pageColumns.push({
+        width: 165,
+        stack: column3Content
+      });
+    }
+    
+    // Add page if there are columns
+    if (pageColumns.length > 0) {
+      pages.push({
+        columns: pageColumns,
+        columnGap: 10,
+        margin: [0, 0, 0, 0]
+      });
+    }
+    
+    // Add page break if there are more answers
+    if (remainingAnswers.length > 0) {
+      pages.push({ pageBreak: 'after', text: '' });
+    }
+  }
+  
+  return pages;
+}
+
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
   base64Images: string[], 
@@ -387,6 +582,41 @@ export async function createWorksheetDocDefinitionClient(
       // },
       ...content
     ]
+  };
+}
+
+// New function to create worksheet with answers
+export async function createWorksheetWithAnswersDocDefinitionClient(
+  problemImages: string[], 
+  base64ProblemImages: string[],
+  answerImages: string[],
+  base64AnswerImages: string[],
+  problems: Array<{ answer: number | null }>,
+  _title?: string, 
+  _creator?: string
+) {
+  // Create problem pages
+  const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
+  
+  // Create answer pages
+  const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages, problems);
+  
+  const allContent: unknown[] = [...problemContent];
+  
+  // Add page break before answers if there are answers
+  if (answerContent.length > 0) {
+    allContent.push({ pageBreak: 'after', text: '' });
+    allContent.push(...answerContent);
+  }
+  
+  return {
+    pageSize: "A4",
+    pageMargins: [40, 60, 40, 30],
+    footer: createFooterClient,
+    defaultStyle: {
+      font: 'Roboto'
+    },
+    content: allContent
   };
 }
 

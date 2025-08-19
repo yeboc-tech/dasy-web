@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
-import { imageToBase64Client, createWorksheetDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
+import { imageToBase64Client, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
 import dynamic from 'next/dynamic';
 
 // Dynamically import PDFViewer to prevent SSR issues
@@ -37,7 +37,7 @@ function getNoImageBase64(): string {
   return `data:image/svg+xml;base64,${base64}`;
 }
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
-import { getProblemImageUrl } from '@/lib/utils/s3Utils';
+import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 
 function PdfContent() {
   const searchParams = useSearchParams();
@@ -54,9 +54,9 @@ function PdfContent() {
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
 
   // Filter and select problems based on criteria
-  const selectedImages = useMemo(() => {
+  const { selectedProblems, selectedImages, selectedAnswerImages } = useMemo(() => {
     if (!problems || problems.length === 0 || problemsLoading) {
-      return [];
+      return { selectedProblems: [], selectedImages: [], selectedAnswerImages: [] };
     }
 
     const selectedChapters = searchParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
@@ -77,10 +77,19 @@ function PdfContent() {
     
     // Convert to S3 image URLs with error handling
     try {
-      return filtered.map(problem => getProblemImageUrl(problem.id));
+      const problemImages = filtered.map(problem => getProblemImageUrl(problem.id));
+      const answerImages = filtered
+        .filter(problem => problem.answer_filename)
+        .map(problem => getAnswerImageUrl(problem.id));
+      
+      return { 
+        selectedProblems: filtered, 
+        selectedImages: problemImages, 
+        selectedAnswerImages: answerImages 
+      };
     } catch (error) {
       console.error('Failed to generate image URLs:', error);
-      return [];
+      return { selectedProblems: [], selectedImages: [], selectedAnswerImages: [] };
     }
   }, [problems, problemCount, contentTree, problemsLoading, searchParams]);
 
@@ -91,6 +100,7 @@ function PdfContent() {
     // Create a unique key for the current selection
     const selectionKey = JSON.stringify({
       selectedImages,
+      selectedAnswerImages,
       worksheetName,
       creator
     });
@@ -113,30 +123,58 @@ function PdfContent() {
         setLoading(true);
         setPdfError(null);
         
-        // Convert images to base64 on client side with error handling
-        const imagePromises = selectedImages.map(async (imagePath) => {
+        // Convert problem images to base64 on client side with error handling
+        const problemImagePromises = selectedImages.map(async (imagePath) => {
           try {
             return await imageToBase64Client(imagePath);
           } catch (error) {
-            console.error(`Failed to process image ${imagePath}:`, error);
+            console.error(`Failed to process problem image ${imagePath}:`, error);
             return getNoImageBase64();
           }
         });
         
-        const base64Images = await Promise.allSettled(imagePromises);
-        const processedImages = base64Images.map((result, index) => {
+        const base64ProblemImages = await Promise.allSettled(problemImagePromises);
+        const processedProblemImages = base64ProblemImages.map((result, index) => {
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            console.error(`Image ${index} failed:`, result.reason);
+            console.error(`Problem image ${index} failed:`, result.reason);
+            return getNoImageBase64();
+          }
+        });
+
+        // Convert answer images to base64 on client side with error handling
+        const answerImagePromises = selectedAnswerImages.map(async (imagePath) => {
+          try {
+            return await imageToBase64Client(imagePath);
+          } catch (error) {
+            console.error(`Failed to process answer image ${imagePath}:`, error);
             return getNoImageBase64();
           }
         });
         
-        // Create document definition (now async)
-        const docDefinition = await createWorksheetDocDefinitionClient(
+        const base64AnswerImages = await Promise.allSettled(answerImagePromises);
+        const processedAnswerImages = base64AnswerImages.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            console.error(`Answer image ${index} failed:`, result.reason);
+            return getNoImageBase64();
+          }
+        });
+
+        // Prepare problem answer data (include all problems that have answer images)
+        const problemsWithAnswers = selectedProblems
+          .filter(problem => problem.answer_filename)
+          .map(problem => ({ answer: problem.answer || null }));
+        
+        // Create document definition with answers
+        const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
           selectedImages, 
-          processedImages, 
+          processedProblemImages,
+          selectedAnswerImages,
+          processedAnswerImages,
+          problemsWithAnswers,
           worksheetName, 
           creator
         );
@@ -170,7 +208,7 @@ function PdfContent() {
     };
     
     generatePdf();
-  }, [selectedImages, worksheetName, creator]);
+  }, [selectedImages, selectedAnswerImages, selectedProblems, worksheetName, creator]);
 
   if (problemsLoading || chaptersLoading) {
     return (

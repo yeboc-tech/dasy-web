@@ -4,13 +4,16 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const AWS = require('aws-sdk');
 
+// Add command line argument parsing for dry-run mode
+const DRY_RUN = process.argv.includes('--dry-run');
+
 // Configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // Use anon key for operations
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
-const S3_BUCKET = process.env.S3_BUCKET_NAME;
+const AWS_REGION = process.env.NEXT_PUBLIC_AWS_REGION || process.env.AWS_REGION || 'ap-northeast-2';
+const S3_BUCKET = process.env.NEXT_PUBLIC_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME;
 
 // Initialize clients
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -21,8 +24,70 @@ const s3 = new AWS.S3({
 });
 
 // Paths
-const PROBLEMS_DIR = path.join(__dirname, '../public/dummies');
-const METADATA_FILE = path.join(__dirname, '../public/dummies/problems-metadata.json');
+const PROBLEMS_DIR = path.join(__dirname, '../public/data');
+const METADATA_FILE = path.join(__dirname, '../public/data/정법-problems-metadata.json');
+
+// Validation functions
+async function validateEnvironment() {
+  console.log('🔍 Validating environment...');
+  
+  const missingVars = [];
+  if (!SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+  if (!SUPABASE_ANON_KEY) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  if (!AWS_ACCESS_KEY_ID) missingVars.push('AWS_ACCESS_KEY_ID');
+  if (!AWS_SECRET_ACCESS_KEY) missingVars.push('AWS_SECRET_ACCESS_KEY');
+  if (!S3_BUCKET) missingVars.push('NEXT_PUBLIC_S3_BUCKET_NAME or S3_BUCKET_NAME');
+  
+  if (missingVars.length > 0) {
+    throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
+  }
+  
+  console.log('✅ Environment variables validated');
+}
+
+async function validateDatabaseConnection() {
+  console.log('🔍 Testing database connection...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('problems')
+      .select('id')
+      .limit(1);
+      
+    if (error) {
+      throw error;
+    }
+    
+    console.log('✅ Database connection successful');
+  } catch (error) {
+    throw new Error(`Database connection failed: ${error.message}`);
+  }
+}
+
+async function validateChapterIds(problems) {
+  console.log('🔍 Validating chapter UUIDs...');
+  
+  const uniqueChapterIds = [...new Set(problems.map(p => p.chapter_id))];
+  
+  const { data: chapters, error } = await supabase
+    .from('chapters')
+    .select('id, name')
+    .in('id', uniqueChapterIds);
+    
+  if (error) {
+    throw new Error(`Failed to validate chapters: ${error.message}`);
+  }
+  
+  const foundChapterIds = chapters.map(c => c.id);
+  const missingChapterIds = uniqueChapterIds.filter(id => !foundChapterIds.includes(id));
+  
+  if (missingChapterIds.length > 0) {
+    throw new Error(`Invalid chapter UUIDs found: ${missingChapterIds.join(', ')}`);
+  }
+  
+  console.log(`✅ All ${uniqueChapterIds.length} chapter UUIDs validated`);
+  chapters.forEach(ch => console.log(`  - ${ch.id}: ${ch.name}`));
+}
 
 async function loadMetadata() {
   try {
@@ -36,6 +101,15 @@ async function loadMetadata() {
 
 async function uploadImageToS3(imagePath, s3Key) {
   try {
+    if (DRY_RUN) {
+      console.log(`🔍 [DRY RUN] Would upload ${path.basename(imagePath)} to S3 as ${s3Key}`);
+      return `https://dry-run-url/${s3Key}`;
+    }
+
+    if (!fs.existsSync(imagePath)) {
+      throw new Error(`Image file not found: ${imagePath}`);
+    }
+
     const fileContent = fs.readFileSync(imagePath);
     
     const params = {
@@ -57,6 +131,14 @@ async function uploadImageToS3(imagePath, s3Key) {
 
 async function insertProblemToDatabase(problemData) {
   try {
+    if (DRY_RUN) {
+      console.log(`🔍 [DRY RUN] Would insert problem to database:`, problemData.filename);
+      return { 
+        id: `dry-run-uuid-${Date.now()}`,
+        ...problemData 
+      };
+    }
+
     const { data, error } = await supabase
       .from('problems')
       .insert([problemData])
@@ -78,6 +160,11 @@ async function insertProblemToDatabase(problemData) {
 
 async function insertProblemSubjects(problemId, subjectNames) {
   try {
+    if (DRY_RUN) {
+      console.log(`🔍 [DRY RUN] Would insert problem-subject relationships for ${subjectNames.join(', ')}`);
+      return subjectNames.map((name, index) => ({ id: `dry-run-relation-${Date.now()}-${index}` }));
+    }
+
     // First, get the subject IDs for the given subject names
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
@@ -140,13 +227,13 @@ async function insertProblemSubjects(problemId, subjectNames) {
 
 async function processProblem(problem, index) {
   try {
-    console.log(`\n🔄 Processing problem ${index + 1}/69: ${problem.filename}`);
+    console.log(`\n🔄 Processing problem ${index + 1}: ${problem.filename}`);
     
     // 1. Check if problem already exists in database
     const { data: existingProblem, error: checkError } = await supabase
       .from('problems')
-      .select('id, filename')
-      .eq('filename', problem.filename)
+      .select('id, problem_filename')
+      .eq('problem_filename', problem.filename)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
@@ -162,9 +249,15 @@ async function processProblem(problem, index) {
       // 2. Prepare database data (without ID - let Supabase generate it)
       const dbData = {
         filename: problem.filename,
+        problem_filename: problem.problem_filename,
+        answer_filename: problem.answer_filename,
         chapter_id: problem.chapter_id,
         difficulty: problem.difficulty,
         problem_type: problem.problem_type,
+        correct_rate: problem.correct_rate,
+        source: problem.source,
+        tags: problem.tags,
+        answer: problem.answer,
         created_at: problem.created_at,
         updated_at: problem.updated_at
       };
@@ -174,33 +267,50 @@ async function processProblem(problem, index) {
       problemId = insertedProblem.id; // This is the real Supabase UUID
     }
     
-    // 4. Upload image to S3 using the real UUID
-    const imagePath = path.join(PROBLEMS_DIR, problem.filename);
-    const s3Key = `problems/${problemId}.png`; // Use real UUID for S3 key
+    // 4. Upload problem image to S3 using the real UUID
+    const problemImagePath = path.join(PROBLEMS_DIR, problem.filename);
+    const problemS3Key = `problems/${problemId}.png`; // Use real UUID for S3 key
     
-    if (!fs.existsSync(imagePath)) {
-      throw new Error(`Image file not found: ${imagePath}`);
+    if (!fs.existsSync(problemImagePath)) {
+      throw new Error(`Problem image file not found: ${problemImagePath}`);
     }
 
-    // 5. Upload to S3
-    const s3Url = await uploadImageToS3(imagePath, s3Key);
+    // 5. Upload problem image to S3
+    const problemS3Url = await uploadImageToS3(problemImagePath, problemS3Key);
+    
+    // 6. Upload answer image to S3 if it exists
+    let answerS3Url = null;
+    if (problem.answer_filename) {
+      const answerImagePath = path.join(PROBLEMS_DIR, problem.answer_filename);
+      const answerS3Key = `answers/${problemId}.png`; // Use real UUID for answer S3 key
+      
+      if (fs.existsSync(answerImagePath)) {
+        answerS3Url = await uploadImageToS3(answerImagePath, answerS3Key);
+        console.log(`✅ Uploaded answer image: ${problem.answer_filename} -> ${answerS3Key}`);
+      } else {
+        console.warn(`⚠️ Answer image not found: ${answerImagePath}`);
+      }
+    }
     
     // Note: S3 URL is constructed from UUID, so no need to store it separately
     // URL format: https://bucket.s3.region.amazonaws.com/problems/{uuid}.png
 
-    // 6. Insert problem-subject relationships (tags) - only if not already existing
-    if (problem.tags && problem.tags.length > 0) {
-      await insertProblemSubjects(problemId, problem.tags);
+    // 7. Insert problem-subject relationships - use related_subjects field
+    const subjectsToLink = problem.related_subjects || problem.tags || [];
+    if (subjectsToLink.length > 0) {
+      await insertProblemSubjects(problemId, subjectsToLink);
     }
     
-    console.log(`✅ Completed problem ${problemId}: ${problem.filename} -> ${s3Key}`);
+    console.log(`✅ Completed problem ${problemId}: ${problem.filename} -> ${problemS3Key}`);
     
     return {
       problemId,
-      filename: problem.filename,
-      s3Key,
+      problem_filename: problem.filename,
+      answer_filename: problem.answer_filename,
+      problemS3Key,
+      answerS3Key: answerS3Url ? `answers/${problemId}.png` : null,
       chapterId: problem.chapter_id,
-      subjectCount: problem.tags ? problem.tags.length : 0
+      subjectCount: subjectsToLink.length
     };
     
   } catch (error) {
@@ -211,19 +321,21 @@ async function processProblem(problem, index) {
 
 async function main() {
   try {
-    console.log('🚀 Starting problem upload to database and S3...');
+    console.log('🚀 Starting 정법 problem upload to database and S3...');
+    if (DRY_RUN) {
+      console.log('🔍 [DRY RUN MODE] - No actual changes will be made');
+    }
+    
+    // 1. Validate environment
+    await validateEnvironment();
+    
+    // 2. Test database connection
+    if (!DRY_RUN) {
+      await validateDatabaseConnection();
+    }
+    
+    // 3. Load metadata
     console.log('📊 Loading metadata...');
-    
-    // Validate environment variables
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error('Missing Supabase environment variables');
-    }
-    
-    if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !S3_BUCKET) {
-      throw new Error('Missing AWS environment variables');
-    }
-    
-    // Load metadata
     const metadata = await loadMetadata();
     const problems = metadata.problems;
     
@@ -232,6 +344,36 @@ async function main() {
     }
     
     console.log(`📋 Found ${problems.length} problems to process`);
+    
+    // 4. Validate chapter UUIDs
+    if (!DRY_RUN) {
+      await validateChapterIds(problems);
+    }
+    
+    // 5. Validate image files exist
+    console.log('🔍 Validating image files...');
+    const missingImages = [];
+    problems.forEach(problem => {
+      const problemPath = path.join(PROBLEMS_DIR, problem.filename);
+      const answerPath = path.join(PROBLEMS_DIR, problem.answer_filename);
+      
+      if (!fs.existsSync(problemPath)) {
+        missingImages.push(problem.filename);
+      }
+      if (problem.answer_filename && !fs.existsSync(answerPath)) {
+        missingImages.push(problem.answer_filename);
+      }
+    });
+    
+    if (missingImages.length > 0) {
+      console.warn(`⚠️ Missing ${missingImages.length} image files:`);
+      missingImages.slice(0, 5).forEach(img => console.warn(`  - ${img}`));
+      if (missingImages.length > 5) {
+        console.warn(`  ... and ${missingImages.length - 5} more`);
+      }
+    } else {
+      console.log('✅ All image files found');
+    }
     
     // Process each problem
     const results = [];
@@ -261,9 +403,10 @@ async function main() {
     console.log(`❌ Errors: ${errors.length} problems`);
     
     if (results.length > 0) {
-      console.log('\n📋 Successfully uploaded problems:');
+      console.log('\n📋 Successfully processed problems:');
       results.forEach((result, index) => {
-        console.log(`${index + 1}. ${result.filename} -> ${result.s3Key} (${result.subjectCount} subjects)`);
+        const answerInfo = result.answerS3Key ? ` + answer` : '';
+        console.log(`${index + 1}. ${result.problem_filename} -> ${result.problemS3Key}${answerInfo} (${result.subjectCount} subjects)`);
       });
     }
     

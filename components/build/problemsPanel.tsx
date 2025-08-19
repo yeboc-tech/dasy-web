@@ -83,7 +83,7 @@ export default function ProblemsPanel({
                 <div className="relative">
                   <Image 
                     src={getProblemImageUrl(problem.id)} 
-                    alt={problem.filename}
+                    alt={problem.problem_filename}
                     width={800}
                     height={600}
                     className="w-full h-auto object-contain"

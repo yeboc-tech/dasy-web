@@ -6,7 +6,9 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 
 export interface DatabaseProblem {
   id: string;
-  filename: string;
+  problem_filename: string;
+  answer_filename?: string;
+  answer?: number;
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
@@ -37,7 +39,9 @@ export function useProblems() {
           .from('problems')
           .select(`
             id,
-            filename,
+            problem_filename,
+            answer_filename,
+            answer,
             chapter_id,
             difficulty,
             problem_type,
@@ -47,7 +51,7 @@ export function useProblems() {
               subjects(name)
             )
           `)
-          .order('filename');
+          .order('problem_filename');
 
         if (fetchError) {
           throw new Error(`Failed to fetch problems: ${fetchError.message}`);
@@ -58,7 +62,9 @@ export function useProblems() {
           const typedProblem = problem as DatabaseProblem;
           return {
             id: typedProblem.id,
-            filename: typedProblem.filename,
+            problem_filename: typedProblem.problem_filename,
+            answer_filename: typedProblem.answer_filename,
+            answer: typedProblem.answer,
             chapter_id: typedProblem.chapter_id,
             difficulty: typedProblem.difficulty,
             problem_type: typedProblem.problem_type,
@@ -91,7 +97,9 @@ export function useProblems() {
         .from('problems')
         .select(`
           id,
-          filename,
+          problem_filename,
+          answer_filename,
+          answer,
           chapter_id,
           difficulty,
           problem_type,
@@ -101,7 +109,7 @@ export function useProblems() {
             subjects(name)
           )
         `)
-        .order('filename');
+        .order('problem_filename');
 
       if (fetchError) {
         throw new Error(`Failed to fetch problems: ${fetchError.message}`);
@@ -111,7 +119,9 @@ export function useProblems() {
         const typedProblem = problem as DatabaseProblem;
         return {
           id: typedProblem.id,
-          filename: typedProblem.filename,
+          problem_filename: typedProblem.problem_filename,
+          answer_filename: typedProblem.answer_filename,
+          answer: typedProblem.answer,
           chapter_id: typedProblem.chapter_id,
           difficulty: typedProblem.difficulty,
           problem_type: typedProblem.problem_type,

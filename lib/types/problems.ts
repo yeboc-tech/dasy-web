@@ -1,7 +1,9 @@
 // Problem and metadata related types
 export interface ProblemMetadata {
   id: string; // Changed from number to string (UUID)
-  filename: string;
+  problem_filename: string; // Problem image filename
+  answer_filename?: string; // Answer image filename
+  answer?: number; // Multiple choice answer (1-5)
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
