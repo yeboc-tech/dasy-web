@@ -23,7 +23,7 @@ async function loadPdfMake() {
     script.async = true;
     
     const fontsScript = document.createElement('script');
-    fontsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js';
+    fontsScript.src = '/fonts/vfs_fonts.js';
     fontsScript.async = true;
     
     // Wait for both scripts to load
@@ -33,23 +33,33 @@ async function loadPdfMake() {
           // Access the global pdfMake object
           pdfMake = (window as PdfMakeWindow).pdfMake || null;
           
-          // Configure Korean font support
+          // Configure fonts including custom fonts from VFS
           if (pdfMake) {
-            // Add Korean font configuration using base64 embedded fonts
-            // Note: This is a simplified approach using available system fonts
-            const koreanFontConfig = {
-              Roboto: {
-                normal: 'Roboto-Regular.ttf',
-                bold: 'Roboto-Medium.ttf',
-                italics: 'Roboto-Italic.ttf',
-                bolditalics: 'Roboto-MediumItalic.ttf'
-              }
-            };
-            
-            // Use default fonts without additional Korean font loading
             try {
-              (pdfMake as unknown as { fonts: unknown }).fonts = koreanFontConfig;
-            } catch (_e) {
+              // Check if VFS is loaded - the global vfs variable should be available
+              const globalVfs = (window as unknown as { vfs?: Record<string, string> }).vfs;
+              // Assign the global vfs to pdfMake.vfs
+              if (globalVfs) {
+                (pdfMake as unknown as { vfs: Record<string, string> }).vfs = globalVfs;
+              }
+              
+              // Configure CrimsonText since it's available in VFS
+              (pdfMake as unknown as { fonts: Record<string, unknown> }).fonts = {
+                CrimsonText: {
+                  normal: 'CrimsonText-Regular.ttf',
+                  bold: 'CrimsonText-Bold.ttf',
+                  italics: 'CrimsonText-Italic.ttf',
+                  bolditalics: 'CrimsonText-BoldItalic.ttf'
+                },
+                CrimsonTextSemiBold: {
+                  normal: 'CrimsonText-SemiBold.ttf',
+                  bold: 'CrimsonText-SemiBold.ttf',
+                  italics: 'CrimsonText-SemiBoldItalic.ttf',
+                  bolditalics: 'CrimsonText-SemiBoldItalic.ttf'
+                }
+              };
+            } catch (error) {
+              console.error('Failed to configure custom fonts:', error);
               console.log('Using default fonts');
             }
           }
@@ -207,7 +217,8 @@ function fillColumn(
   
   while (i < problems.length) {
     const problem = problems[i];
-    const problemHeightWithMargin = problem.height + 20; // Add margin
+    const numberingHeight = 15; // Reduced from 20 - Height for numbering text and margin
+    const problemHeightWithMargin = problem.height + numberingHeight + 15; // Reduced margin from 20 to 15
     
     // Check if adding this problem would exceed height limit
     if (currentHeight + problemHeightWithMargin > maxHeight && columnProblems.length > 0) {
@@ -230,36 +241,77 @@ function createColumnContent(columnProblems: Array<{ image: string; height: numb
   if (columnProblems.length === 0) return [];
   if (columnProblems.length === 1) {
     return [{
-      image: columnProblems[0].image,
-      width: 240,
-      alignment: 'center',
-      margin: [0, 0, 0, 0]
+      stack: [
+        {
+          text: `${columnProblems[0].index + 1}.`,
+          fontSize: 12,
+          bold: true,
+          alignment: 'left',
+          margin: [0, 0, 0, 5]
+        },
+        {
+          image: columnProblems[0].image,
+          width: 240,
+          alignment: 'center',
+          margin: [0, 0, 0, 0]
+        }
+      ],
+      unbreakable: true
     }];
   }
   
   // Calculate space between problems for justify distribution
-  const totalProblemHeight = columnProblems.reduce((sum, p) => sum + p.height, 0);
+  const totalProblemHeight = columnProblems.reduce((sum, p) => sum + p.height + 15, 0); // Include numbering height
   const availableSpaceForMargins = maxHeight - totalProblemHeight;
-  const spaceBetweenProblems = Math.max(10, availableSpaceForMargins / (columnProblems.length - 1));
+  const spaceBetweenProblems = Math.max(15, availableSpaceForMargins / (columnProblems.length - 1));
+  
   
   return columnProblems.map((problem, index) => ({
-    image: problem.image,
-    width: 240,
-    alignment: 'center',
+    stack: [
+      {
+        text: `${problem.index + 1}.`,
+        fontSize: 12,
+        bold: true,
+        alignment: 'left',
+        font: 'CrimsonTextSemiBold',
+        margin: [0, 0, 0, 5]
+      },
+      {
+        image: problem.image,
+        width: 240,
+        alignment: 'center',
+        margin: [0, 0, 0, 0]
+      }
+    ],
+    unbreakable: true,
     margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, spaceBetweenProblems]
   }));
 }
 
 // Create answer column content with smaller width (1/3 of total problem area)
 // Answer images should NOT use justify-between spacing, just start from top with minimal gaps
-function createAnswerColumnContent(columnProblems: Array<{ image: string; height: number; index: number }>, _maxHeight: number) {
+function createAnswerColumnContent(columnProblems: Array<{ image: string; height: number; index: number }>) {
   if (columnProblems.length === 0) return [];
   
   // For answers, use consistent small margin between images (no justify-between)
   return columnProblems.map((problem, index) => ({
-    image: problem.image,
-    width: 165, // 1/3 of total problem area (495px / 3 = 165px)
-    alignment: 'center',
+    stack: [
+      {
+        text: `${problem.index + 1}.`,
+        fontSize: 10,
+        bold: true,
+        alignment: 'left',
+        font: 'CrimsonTextSemiBold',
+        margin: [0, 0, 0, 3]
+      },
+      {
+        image: problem.image,
+        width: 165, // 1/3 of total problem area (495px / 3 = 165px)
+        alignment: 'center',
+        margin: [0, 0, 0, 0]
+      }
+    ],
+    unbreakable: true,
     margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, 15] // Fixed 15px gap
   }));
 }
@@ -337,22 +389,48 @@ export function createTwoColumnLayoutClient(problems: string[], base64Images: st
     const leftProblem = base64Images[i];
     const rightProblem = base64Images[i + 1];
     
-    const columnContent: Array<{ image: string; width: number; alignment: string; margin: number[] }> = [];
+    const columnContent: Array<{ stack: unknown[]; unbreakable: boolean; margin: number[] }> = [];
     
     if (leftProblem) {
       columnContent.push({
-        image: leftProblem,
-        width: 240,
-        alignment: 'center',
+        stack: [
+          {
+            text: `${i + 1}.`,
+            fontSize: 12,
+            bold: true,
+            alignment: 'left',
+              margin: [0, 0, 0, 5]
+          },
+          {
+            image: leftProblem,
+            width: 240,
+            alignment: 'center',
+            margin: [0, 0, 0, 0]
+          }
+        ],
+        unbreakable: true,
         margin: [0, 0, 0, 20]
       });
     }
     
     if (rightProblem) {
       columnContent.push({
-        image: rightProblem,
-        width: 240,
-        alignment: 'center',
+        stack: [
+          {
+            text: `${i + 2}.`,
+            fontSize: 12,
+            bold: true,
+            alignment: 'left',
+              margin: [0, 0, 0, 5]
+          },
+          {
+            image: rightProblem,
+            width: 240,
+            alignment: 'center',
+            margin: [0, 0, 0, 0]
+          }
+        ],
+        unbreakable: true,
         margin: [0, 0, 0, 20]
       });
     }
@@ -369,7 +447,7 @@ export function createTwoColumnLayoutClient(problems: string[], base64Images: st
   return columns;
 }
 
-export function createFooterClient(currentPage: number, _pageCount: number) {
+export function createFooterClient(currentPage: number) {
   return [
     {
       canvas: [
@@ -392,67 +470,11 @@ export function createFooterClient(currentPage: number, _pageCount: number) {
   ];
 }
 
-// Create answer grid table for PDF
-// Pattern: {index}{answer}{index}{answer}... - 5 pairs per row, index cells gray
-function createAnswerGridPdf(problems: Array<{ answer: number | null }>) {
-  const rows = [];
-  
-  for (let i = 0; i < problems.length; i += 5) {
-    const row = [];
-    
-    for (let j = 0; j < 5; j++) {
-      const problem = problems[i + j];
-      if (problem) {
-        // Index cell (gray background)
-        row.push({ 
-          text: (i + j + 1).toString(), 
-          alignment: 'center', 
-          fontSize: 9,
-          fillColor: '#f0f0f0' // Gray background for index
-        });
-        // Answer cell (white background)
-        row.push({ 
-          text: problem.answer?.toString() || '?', 
-          alignment: 'center', 
-          fontSize: 9, 
-          bold: true 
-        });
-      } else {
-        // Empty index cell (gray)
-        row.push({ text: '', alignment: 'center', fillColor: '#f0f0f0' });
-        // Empty answer cell (white)
-        row.push({ text: '', alignment: 'center' });
-      }
-    }
-    
-    rows.push(row);
-  }
-  
-  return {
-    table: {
-      headerRows: 0,
-      widths: ['*', '*', '*', '*', '*', '*', '*', '*', '*', '*'], // 10 columns (5 pairs)
-      body: rows
-    },
-    layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
-      hLineColor: () => '#666666',
-      vLineColor: () => '#666666',
-      paddingLeft: () => 2,
-      paddingRight: () => 2,
-      paddingTop: () => 2,
-      paddingBottom: () => 2
-    },
-    margin: [0, 0, 0, 15]
-  };
-}
 
 // Create answer pages layout with 3 columns
 export async function createAnswerPagesClient(
   answerImages: string[], 
-  base64AnswerImages: string[],
-  problems: Array<{ answer: number | null }>
+  base64AnswerImages: string[]
 ) {
   if (answerImages.length === 0) return [];
   
@@ -480,7 +502,7 @@ export async function createAnswerPagesClient(
     if (isFirstPage) {
       // Fill column 1 without grid (hidden for now)
       const column1Result = fillColumn(remainingAnswers, maxPageHeight);
-      const column1Content = createAnswerColumnContent(column1Result.columnProblems, maxPageHeight);
+      const column1Content = createAnswerColumnContent(column1Result.columnProblems);
       
       remainingAnswers = column1Result.remaining;
       
@@ -495,7 +517,7 @@ export async function createAnswerPagesClient(
     } else {
       // Regular column 1 for subsequent pages
       const column1Result = fillColumn(remainingAnswers, maxPageHeight);
-      const column1Content = createAnswerColumnContent(column1Result.columnProblems, maxPageHeight);
+      const column1Content = createAnswerColumnContent(column1Result.columnProblems);
       
       remainingAnswers = column1Result.remaining;
       
@@ -509,7 +531,7 @@ export async function createAnswerPagesClient(
     
     // Column 2
     const column2Result = fillColumn(remainingAnswers, maxPageHeight);
-    const column2Content = createAnswerColumnContent(column2Result.columnProblems, maxPageHeight);
+    const column2Content = createAnswerColumnContent(column2Result.columnProblems);
     
     remainingAnswers = column2Result.remaining;
     
@@ -522,7 +544,7 @@ export async function createAnswerPagesClient(
     
     // Column 3
     const column3Result = fillColumn(remainingAnswers, maxPageHeight);
-    const column3Content = createAnswerColumnContent(column3Result.columnProblems, maxPageHeight);
+    const column3Content = createAnswerColumnContent(column3Result.columnProblems);
     
     remainingAnswers = column3Result.remaining;
     
@@ -553,9 +575,7 @@ export async function createAnswerPagesClient(
 
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
-  base64Images: string[], 
-  _title?: string, 
-  _creator?: string
+  base64Images: string[]
 ) {
   // Use new column-based layout system
   const content = await createColumnBasedLayoutClient(images, base64Images);
@@ -590,16 +610,13 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   problemImages: string[], 
   base64ProblemImages: string[],
   answerImages: string[],
-  base64AnswerImages: string[],
-  problems: Array<{ answer: number | null }>,
-  _title?: string, 
-  _creator?: string
+  base64AnswerImages: string[]
 ) {
   // Create problem pages
   const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
   
   // Create answer pages
-  const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages, problems);
+  const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages);
   
   const allContent: unknown[] = [...problemContent];
   
@@ -614,7 +631,7 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
     pageMargins: [40, 60, 40, 30],
     footer: createFooterClient,
     defaultStyle: {
-      font: 'Roboto'
+      font: 'CrimsonText'
     },
     content: allContent
   };

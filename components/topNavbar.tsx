@@ -50,7 +50,7 @@ export function TopNavbar() {
         }`}
         onClick={handlePdfGeneration}
       >
-        PDF 생성
+        학습지 생성
       </Button>
     </div>
   );

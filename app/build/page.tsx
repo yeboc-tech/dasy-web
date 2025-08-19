@@ -12,7 +12,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 
 export default function Page() {
   const {selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects} = useWorksheetStore();
-  const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['e9393ef5-954d-41a8-b3cd-0b3c07d4143e']); // 통합사회 1 database ID
+  const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
   
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
   

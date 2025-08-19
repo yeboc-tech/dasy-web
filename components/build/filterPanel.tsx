@@ -149,15 +149,22 @@ export default function FilterPanel({
   };
 
   const handleSubjectToggle = (subject: string) => {
-    const newSelectedSubjects = selectedSubjects.includes(subject)
-      ? selectedSubjects.filter(s => s !== subject)
-      : [...selectedSubjects, subject];
+    const allSubjects = ['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'];
     
-    // Ensure at least one subject is always selected
-    if (newSelectedSubjects.length === 0) {
+    // If all subjects are currently selected (모두 is active), start fresh with just this subject
+    if (selectedSubjects.length === allSubjects.length) {
       setSelectedSubjects([subject]);
     } else {
-      setSelectedSubjects(newSelectedSubjects);
+      const newSelectedSubjects = selectedSubjects.includes(subject)
+        ? selectedSubjects.filter(s => s !== subject)
+        : [...selectedSubjects, subject];
+      
+      // Ensure at least one subject is always selected
+      if (newSelectedSubjects.length === 0) {
+        setSelectedSubjects([subject]);
+      } else {
+        setSelectedSubjects(newSelectedSubjects);
+      }
     }
   };
 
@@ -276,12 +283,22 @@ export default function FilterPanel({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    onClick={() => {
+                      const allSubjects = ['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'];
+                      setSelectedSubjects(allSubjects);
+                    }}
+                    variant="outline"
+                    className={selectedSubjects.length === 9 ? "border-black text-black bg-gray-100" : ""}
+                  >
+                    모두
+                  </Button>
                   {['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'].map((subject) => (
                     <Button 
                       key={subject} 
                       onClick={() => handleSubjectToggle(subject)} 
                       variant="outline"
-                      className={selectedSubjects.includes(subject) ? "border-black text-black bg-gray-100" : ""}
+                      className={selectedSubjects.includes(subject) && selectedSubjects.length < 9 ? "border-black text-black bg-gray-100" : ""}
                     >
                       {subject}
                     </Button>
@@ -336,23 +353,37 @@ export default function FilterPanel({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setSelectedDifficulties(['하', '중', '상']);
+                    }}
+                    variant="outline"
+                    className={selectedDifficulties.length === 3 ? "border-black text-black bg-gray-100" : ""}
+                  >
+                    모두
+                  </Button>
                   {['하', '중', '상'].map((level) => (
                     <Button 
                       key={level} 
                       onClick={() => {
-                        const newDifficulties = selectedDifficulties.includes(level)
-                          ? selectedDifficulties.filter(d => d !== level)
-                          : [...selectedDifficulties, level];
-                        
-                        // Ensure at least one difficulty is always selected
-                        if (newDifficulties.length === 0) {
+                        // If all difficulties are currently selected (모두 is active), start fresh with just this level
+                        if (selectedDifficulties.length === 3) {
                           setSelectedDifficulties([level]);
                         } else {
-                          setSelectedDifficulties(newDifficulties);
+                          const newDifficulties = selectedDifficulties.includes(level)
+                            ? selectedDifficulties.filter(d => d !== level)
+                            : [...selectedDifficulties, level];
+                          
+                          // Ensure at least one difficulty is always selected
+                          if (newDifficulties.length === 0) {
+                            setSelectedDifficulties([level]);
+                          } else {
+                            setSelectedDifficulties(newDifficulties);
+                          }
                         }
                       }} 
-                      variant="outline" 
-                      className={selectedDifficulties.includes(level) ? "border-black text-black bg-gray-100" : ""}
+                      variant="outline"
+                      className={selectedDifficulties.includes(level) && selectedDifficulties.length < 3 ? "border-black text-black bg-gray-100" : ""}
                     >
                       {level}
                     </Button>
@@ -368,23 +399,37 @@ export default function FilterPanel({
               </AccordionTrigger>
               <AccordionContent>
                 <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setSelectedProblemTypes(['기출문제', 'N제']);
+                    }}
+                    variant="outline"
+                    className={selectedProblemTypes.length === 2 ? "border-black text-black bg-gray-100" : ""}
+                  >
+                    모두
+                  </Button>
                   {['기출문제', 'N제'].map((type) => (
                     <Button 
                       key={type} 
                       onClick={() => {
-                        const newTypes = selectedProblemTypes.includes(type)
-                          ? selectedProblemTypes.filter(t => t !== type)
-                          : [...selectedProblemTypes, type];
-                        
-                        // Ensure at least one problem type is always selected
-                        if (newTypes.length === 0) {
+                        // If all problem types are currently selected (모두 is active), start fresh with just this type
+                        if (selectedProblemTypes.length === 2) {
                           setSelectedProblemTypes([type]);
                         } else {
-                          setSelectedProblemTypes(newTypes);
+                          const newTypes = selectedProblemTypes.includes(type)
+                            ? selectedProblemTypes.filter(t => t !== type)
+                            : [...selectedProblemTypes, type];
+                          
+                          // Ensure at least one problem type is always selected
+                          if (newTypes.length === 0) {
+                            setSelectedProblemTypes([type]);
+                          } else {
+                            setSelectedProblemTypes(newTypes);
+                          }
                         }
                       }} 
-                      variant="outline" 
-                      className={selectedProblemTypes.includes(type) ? "border-black text-black bg-gray-100" : ""}
+                      variant="outline"
+                      className={selectedProblemTypes.includes(type) && selectedProblemTypes.length < 2 ? "border-black text-black bg-gray-100" : ""}
                     >
                       {type}
                     </Button>

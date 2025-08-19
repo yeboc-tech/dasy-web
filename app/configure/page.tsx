@@ -173,10 +173,7 @@ function PdfContent() {
           selectedImages, 
           processedProblemImages,
           selectedAnswerImages,
-          processedAnswerImages,
-          problemsWithAnswers,
-          worksheetName, 
-          creator
+          processedAnswerImages
         );
         
         // Generate PDF blob

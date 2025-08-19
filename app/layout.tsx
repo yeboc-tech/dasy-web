@@ -10,6 +10,9 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="ko">
+      <head>
+        <script src="/fonts/vfs_fonts.js" async></script>
+      </head>
       <body>
         <div className="h-screen flex flex-col">
           <TopNavbar />
