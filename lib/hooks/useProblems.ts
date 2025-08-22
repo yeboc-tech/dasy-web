@@ -12,6 +12,7 @@ export interface DatabaseProblem {
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
+  correct_rate?: number;
   created_at: string;
   updated_at: string;
   problem_subjects?: {
@@ -45,6 +46,7 @@ export function useProblems() {
             chapter_id,
             difficulty,
             problem_type,
+            correct_rate,
             created_at,
             updated_at,
             problem_subjects(
@@ -68,6 +70,7 @@ export function useProblems() {
             chapter_id: typedProblem.chapter_id,
             difficulty: typedProblem.difficulty,
             problem_type: typedProblem.problem_type,
+            correct_rate: typedProblem.correct_rate,
             tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
             created_at: typedProblem.created_at,
             updated_at: typedProblem.updated_at
@@ -103,6 +106,7 @@ export function useProblems() {
           chapter_id,
           difficulty,
           problem_type,
+          correct_rate,
           created_at,
           updated_at,
           problem_subjects(
@@ -125,6 +129,7 @@ export function useProblems() {
           chapter_id: typedProblem.chapter_id,
           difficulty: typedProblem.difficulty,
           problem_type: typedProblem.problem_type,
+          correct_rate: typedProblem.correct_rate,
           tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
           created_at: typedProblem.created_at,
           updated_at: typedProblem.updated_at

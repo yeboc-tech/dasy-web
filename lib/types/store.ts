@@ -5,9 +5,11 @@ export interface WorksheetState {
   selectedDifficulties: string[]; // Multi-select for difficulties
   selectedProblemTypes: string[]; // Multi-select for problem types
   selectedSubjects: string[]; // IDs of selected related subjects
+  correctRateRange: [number, number]; // [min, max] correct rate percentage (0-100)
   setSelectedChapters: (chapters: string[]) => void;
   setProblemCount: (count: number) => void;
   setSelectedDifficulties: (difficulties: string[]) => void;
   setSelectedProblemTypes: (types: string[]) => void;
   setSelectedSubjects: (subjects: string[]) => void;
+  setCorrectRateRange: (range: [number, number]) => void;
 }

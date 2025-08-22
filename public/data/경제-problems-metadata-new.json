@@ -1,0 +1,3656 @@
+{
+  "problems": [
+    {
+      "filename": "경제455.png",
+      "problem_filename": "경제455.png",
+      "answer_filename": "경제455-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 74,
+      "source": "2021학년도 수능 12번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:00:00.000Z",
+      "updated_at": "2024-08-20T10:00:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 455,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제455.png",
+        "original_answer_filename": "경제455-a.png"
+      }
+    },
+    {
+      "filename": "경제456.png",
+      "problem_filename": "경제456.png",
+      "answer_filename": "경제456-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 62,
+      "source": "2023학년도 수능 19번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:01:00.000Z",
+      "updated_at": "2024-08-20T10:01:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 456,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제456.png",
+        "original_answer_filename": "경제456-a.png"
+      }
+    },
+    {
+      "filename": "경제457.png",
+      "problem_filename": "경제457.png",
+      "answer_filename": "경제457-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2022년 3월 학평 14번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:02:00.000Z",
+      "updated_at": "2024-08-20T10:02:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 457,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제457.png",
+        "original_answer_filename": "경제457-a.png"
+      }
+    },
+    {
+      "filename": "경제458.png",
+      "problem_filename": "경제458.png",
+      "answer_filename": "경제458-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 91,
+      "source": "2022학년도 수능 5번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:03:00.000Z",
+      "updated_at": "2024-08-20T10:03:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 458,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제458.png",
+        "original_answer_filename": "경제458-a.png"
+      }
+    },
+    {
+      "filename": "경제459(출처문제번호없음_2020년10월학평13번).png",
+      "problem_filename": "경제459(출처문제번호없음_2020년10월학평13번).png",
+      "answer_filename": "경제459-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2020년 10월 학평 13번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:04:00.000Z",
+      "updated_at": "2024-08-20T10:04:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 459,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제459(출처문제번호없음_2020년10월학평13번).png",
+        "original_answer_filename": "경제459-a.png"
+      }
+    },
+    {
+      "filename": "경제460.png",
+      "problem_filename": "경제460.png",
+      "answer_filename": "경제460-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2023년 3월 학평 7번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:05:00.000Z",
+      "updated_at": "2024-08-20T10:05:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 460,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제460.png",
+        "original_answer_filename": "경제460-a.png"
+      }
+    },
+    {
+      "filename": "경제461(출처문제번호없음_2023년7월학평12번).png",
+      "problem_filename": "경제461(출처문제번호없음_2023년7월학평12번).png",
+      "answer_filename": "경제461-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 64,
+      "source": "2023년 7월 학평 12번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:06:00.000Z",
+      "updated_at": "2024-08-20T10:06:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 461,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제461(출처문제번호없음_2023년7월학평12번).png",
+        "original_answer_filename": "경제461-a.png"
+      }
+    },
+    {
+      "filename": "경제462(문제출처확인필요).png",
+      "problem_filename": "경제462(문제출처확인필요).png",
+      "answer_filename": "경제462-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 52,
+      "source": "2024학년도 9월 모평 19번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:07:00.000Z",
+      "updated_at": "2024-08-20T10:07:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 462,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제462(문제출처확인필요).png",
+        "original_answer_filename": "경제462-a.png"
+      }
+    },
+    {
+      "filename": "경제463.png",
+      "problem_filename": "경제463.png",
+      "answer_filename": "경제463-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2025학년도 6월 모평 18번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:08:00.000Z",
+      "updated_at": "2024-08-20T10:08:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 463,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제463.png",
+        "original_answer_filename": "경제463-a.png"
+      }
+    },
+    {
+      "filename": "경제464.png",
+      "problem_filename": "경제464.png",
+      "answer_filename": "경제464-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2024년 4월 학평 14번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:09:00.000Z",
+      "updated_at": "2024-08-20T10:09:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 464,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제464.png",
+        "original_answer_filename": "경제464-a.png"
+      }
+    },
+    {
+      "filename": "경제465.png",
+      "problem_filename": "경제465.png",
+      "answer_filename": "경제465-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 79,
+      "source": "2022년 10월 학평 15번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:10:00.000Z",
+      "updated_at": "2024-08-20T10:10:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 465,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제465.png",
+        "original_answer_filename": "경제465-a.png"
+      }
+    },
+    {
+      "filename": "경제466.png",
+      "problem_filename": "경제466.png",
+      "answer_filename": "경제466-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2024년 3월 학평 5번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:11:00.000Z",
+      "updated_at": "2024-08-20T10:11:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 466,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제466.png",
+        "original_answer_filename": "경제466-a.png"
+      }
+    },
+    {
+      "filename": "경제467.png",
+      "problem_filename": "경제467.png",
+      "answer_filename": "경제467-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 41,
+      "source": "2022년 4월 학평 17번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:12:00.000Z",
+      "updated_at": "2024-08-20T10:12:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 467,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제467.png",
+        "original_answer_filename": "경제467-a.png"
+      }
+    },
+    {
+      "filename": "경제468.png",
+      "problem_filename": "경제468.png",
+      "answer_filename": "경제468-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2019년 4월 학평 9번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:13:00.000Z",
+      "updated_at": "2024-08-20T10:13:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 468,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제468.png",
+        "original_answer_filename": "경제468-a.png"
+      }
+    },
+    {
+      "filename": "경제469.png",
+      "problem_filename": "경제469.png",
+      "answer_filename": "경제469-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2021년 3월 학평 19번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:14:00.000Z",
+      "updated_at": "2024-08-20T10:14:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 469,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제469.png",
+        "original_answer_filename": "경제469-a.png"
+      }
+    },
+    {
+      "filename": "경제470.png",
+      "problem_filename": "경제470.png",
+      "answer_filename": "경제470-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2019년 3월 학평 17번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:15:00.000Z",
+      "updated_at": "2024-08-20T10:15:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 470,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제470.png",
+        "original_answer_filename": "경제470-a.png"
+      }
+    },
+    {
+      "filename": "경제471(출처문제번호없음_2021년10월학평3번).png",
+      "problem_filename": "경제471(출처문제번호없음_2021년10월학평3번).png",
+      "answer_filename": "경제471-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 85,
+      "source": "2021년 10월 학평 3번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:16:00.000Z",
+      "updated_at": "2024-08-20T10:16:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 471,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제471(출처문제번호없음_2021년10월학평3번).png",
+        "original_answer_filename": "경제471-a.png"
+      }
+    },
+    {
+      "filename": "경제472.png",
+      "problem_filename": "경제472.png",
+      "answer_filename": "경제472-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2024년 7월 학평 6번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:17:00.000Z",
+      "updated_at": "2024-08-20T10:17:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 472,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제472.png",
+        "original_answer_filename": "경제472-a.png"
+      }
+    },
+    {
+      "filename": "경제473.png",
+      "problem_filename": "경제473.png",
+      "answer_filename": "경제473-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 76,
+      "source": "2023학년도 9월 모평 8번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:18:00.000Z",
+      "updated_at": "2024-08-20T10:18:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 473,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제473.png",
+        "original_answer_filename": "경제473-a.png"
+      }
+    },
+    {
+      "filename": "경제474.png",
+      "problem_filename": "경제474.png",
+      "answer_filename": "경제474-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2020년 7월 학평 6번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:19:00.000Z",
+      "updated_at": "2024-08-20T10:19:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 474,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제474.png",
+        "original_answer_filename": "경제474-a.png"
+      }
+    },
+    {
+      "filename": "경제475.png",
+      "problem_filename": "경제475.png",
+      "answer_filename": "경제475-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 74,
+      "source": "2022학년도 6월 모평 18번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:20:00.000Z",
+      "updated_at": "2024-08-20T10:20:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 475,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제475.png",
+        "original_answer_filename": "경제475-a.png"
+      }
+    },
+    {
+      "filename": "경제476.png",
+      "problem_filename": "경제476.png",
+      "answer_filename": "경제476-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2020학년도 6월 모평 17번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:21:00.000Z",
+      "updated_at": "2024-08-20T10:21:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 476,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제476.png",
+        "original_answer_filename": "경제476-a.png"
+      }
+    },
+    {
+      "filename": "경제477.png",
+      "problem_filename": "경제477.png",
+      "answer_filename": "경제477-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 77,
+      "source": "2019년 10월 학평 5번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:22:00.000Z",
+      "updated_at": "2024-08-20T10:22:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 477,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제477.png",
+        "original_answer_filename": "경제477-a.png"
+      }
+    },
+    {
+      "filename": "경제479.png",
+      "problem_filename": "경제479.png",
+      "answer_filename": "경제479-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2023년 10월 학평 19번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:23:00.000Z",
+      "updated_at": "2024-08-20T10:23:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 479,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제479.png",
+        "original_answer_filename": "경제479-a.png"
+      }
+    },
+    {
+      "filename": "경제480.png",
+      "problem_filename": "경제480.png",
+      "answer_filename": "경제480-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 73,
+      "source": "2021학년도 9월 모평 14번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:24:00.000Z",
+      "updated_at": "2024-08-20T10:24:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 480,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제480.png",
+        "original_answer_filename": "경제480-a.png"
+      }
+    },
+    {
+      "filename": "경제481.png",
+      "problem_filename": "경제481.png",
+      "answer_filename": "경제481-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2022학년도 9월 모평 10번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:25:00.000Z",
+      "updated_at": "2024-08-20T10:25:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 481,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제481.png",
+        "original_answer_filename": "경제481-a.png"
+      }
+    },
+    {
+      "filename": "경제482.png",
+      "problem_filename": "경제482.png",
+      "answer_filename": "경제482-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 74,
+      "source": "2021년 7월 학평 18번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:26:00.000Z",
+      "updated_at": "2024-08-20T10:26:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 482,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제482.png",
+        "original_answer_filename": "경제482-a.png"
+      }
+    },
+    {
+      "filename": "경제483.png",
+      "problem_filename": "경제483.png",
+      "answer_filename": "경제483-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 82,
+      "source": "2024년 10월 학평 11번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:27:00.000Z",
+      "updated_at": "2024-08-20T10:27:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 483,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제483.png",
+        "original_answer_filename": "경제483-a.png"
+      }
+    },
+    {
+      "filename": "경제484.png",
+      "problem_filename": "경제484.png",
+      "answer_filename": "경제484-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 66,
+      "source": "2025학년도 9월 모평 4번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:28:00.000Z",
+      "updated_at": "2024-08-20T10:28:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 484,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제484.png",
+        "original_answer_filename": "경제484-a.png"
+      }
+    },
+    {
+      "filename": "경제485.png",
+      "problem_filename": "경제485.png",
+      "answer_filename": "경제485-a.png",
+      "chapter_id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 60,
+      "source": "2025학년도 수능 17번",
+      "tags": [
+        "환율 변동의 영향"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:29:00.000Z",
+      "updated_at": "2024-08-20T10:29:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 485,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "국제 분업과 무역",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제485.png",
+        "original_answer_filename": "경제485-a.png"
+      }
+    },
+    {
+      "filename": "경제486.png",
+      "problem_filename": "경제486.png",
+      "answer_filename": "경제486-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 64,
+      "source": "2025학년도 9월 모평 16번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:30:00.000Z",
+      "updated_at": "2024-08-20T10:30:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 486,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제486.png",
+        "original_answer_filename": "경제486-a.png"
+      }
+    },
+    {
+      "filename": "경제487.png",
+      "problem_filename": "경제487.png",
+      "answer_filename": "경제487-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2024년 4월 학평 12번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:31:00.000Z",
+      "updated_at": "2024-08-20T10:31:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 487,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제487.png",
+        "original_answer_filename": "경제487-a.png"
+      }
+    },
+    {
+      "filename": "경제488.png",
+      "problem_filename": "경제488.png",
+      "answer_filename": "경제488-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2021학년도 6월 모평 17번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:32:00.000Z",
+      "updated_at": "2024-08-20T10:32:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 488,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제488.png",
+        "original_answer_filename": "경제488-a.png"
+      }
+    },
+    {
+      "filename": "경제489.png",
+      "problem_filename": "경제489.png",
+      "answer_filename": "경제489-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 80,
+      "source": "2019년 3월 학평 13번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:33:00.000Z",
+      "updated_at": "2024-08-20T10:33:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 489,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제489.png",
+        "original_answer_filename": "경제489-a.png"
+      }
+    },
+    {
+      "filename": "경제490.png",
+      "problem_filename": "경제490.png",
+      "answer_filename": "경제490-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 76,
+      "source": "2021학년도 수능 17번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:34:00.000Z",
+      "updated_at": "2024-08-20T10:34:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 490,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제490.png",
+        "original_answer_filename": "경제490-a.png"
+      }
+    },
+    {
+      "filename": "경제491.png",
+      "problem_filename": "경제491.png",
+      "answer_filename": "경제491-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2021년 3월 학평 17번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:35:00.000Z",
+      "updated_at": "2024-08-20T10:35:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 491,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제491.png",
+        "original_answer_filename": "경제491-a.png"
+      }
+    },
+    {
+      "filename": "경제492.png",
+      "problem_filename": "경제492.png",
+      "answer_filename": "경제492-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2022년 3월 학평 19번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:36:00.000Z",
+      "updated_at": "2024-08-20T10:36:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 492,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제492.png",
+        "original_answer_filename": "경제492-a.png"
+      }
+    },
+    {
+      "filename": "경제493.png",
+      "problem_filename": "경제493.png",
+      "answer_filename": "경제493-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2019년 7월 학평 2번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:37:00.000Z",
+      "updated_at": "2024-08-20T10:37:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 493,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제493.png",
+        "original_answer_filename": "경제493-a.png"
+      }
+    },
+    {
+      "filename": "경제494.png",
+      "problem_filename": "경제494.png",
+      "answer_filename": "경제494-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 65,
+      "source": "2023학년도 9월 모평 10번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:38:00.000Z",
+      "updated_at": "2024-08-20T10:38:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 494,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제494.png",
+        "original_answer_filename": "경제494-a.png"
+      }
+    },
+    {
+      "filename": "경제495.png",
+      "problem_filename": "경제495.png",
+      "answer_filename": "경제495-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 77,
+      "source": "2023학년도 수능 4번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:39:00.000Z",
+      "updated_at": "2024-08-20T10:39:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 495,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제495.png",
+        "original_answer_filename": "경제495-a.png"
+      }
+    },
+    {
+      "filename": "경제496.png",
+      "problem_filename": "경제496.png",
+      "answer_filename": "경제496-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 74,
+      "source": "2024학년도 6월 모평 18번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:40:00.000Z",
+      "updated_at": "2024-08-20T10:40:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 496,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제496.png",
+        "original_answer_filename": "경제496-a.png"
+      }
+    },
+    {
+      "filename": "경제497.png",
+      "problem_filename": "경제497.png",
+      "answer_filename": "경제497-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2022년 7월 학평 2번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:41:00.000Z",
+      "updated_at": "2024-08-20T10:41:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 497,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제497.png",
+        "original_answer_filename": "경제497-a.png"
+      }
+    },
+    {
+      "filename": "경제498.png",
+      "problem_filename": "경제498.png",
+      "answer_filename": "경제498-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2023학년도 6월 모평 9번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:42:00.000Z",
+      "updated_at": "2024-08-20T10:42:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 498,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제498.png",
+        "original_answer_filename": "경제498-a.png"
+      }
+    },
+    {
+      "filename": "경제499.png",
+      "problem_filename": "경제499.png",
+      "answer_filename": "경제499-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 95,
+      "source": "2021학년도 9월 모평 3번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:43:00.000Z",
+      "updated_at": "2024-08-20T10:43:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 499,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제499.png",
+        "original_answer_filename": "경제499-a.png"
+      }
+    },
+    {
+      "filename": "경제500.png",
+      "problem_filename": "경제500.png",
+      "answer_filename": "경제500-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 77,
+      "source": "2022학년도 6월 모평 11번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:44:00.000Z",
+      "updated_at": "2024-08-20T10:44:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 500,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제500.png",
+        "original_answer_filename": "경제500-a.png"
+      }
+    },
+    {
+      "filename": "경제501.png",
+      "problem_filename": "경제501.png",
+      "answer_filename": "경제501-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2024년 7월 학평 12번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:45:00.000Z",
+      "updated_at": "2024-08-20T10:45:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 501,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제501.png",
+        "original_answer_filename": "경제501-a.png"
+      }
+    },
+    {
+      "filename": "경제502.png",
+      "problem_filename": "경제502.png",
+      "answer_filename": "경제502-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 60,
+      "source": "2021년 4월 학평 20번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:46:00.000Z",
+      "updated_at": "2024-08-20T10:46:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 502,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제502.png",
+        "original_answer_filename": "경제502-a.png"
+      }
+    },
+    {
+      "filename": "경제503.png",
+      "problem_filename": "경제503.png",
+      "answer_filename": "경제503-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 92,
+      "source": "2024학년도 6월 모평 3번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:47:00.000Z",
+      "updated_at": "2024-08-20T10:47:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 503,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제503.png",
+        "original_answer_filename": "경제503-a.png"
+      }
+    },
+    {
+      "filename": "경제504.png",
+      "problem_filename": "경제504.png",
+      "answer_filename": "경제504-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 43,
+      "source": "2023년 4월 학평 19번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:48:00.000Z",
+      "updated_at": "2024-08-20T10:48:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 504,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제504.png",
+        "original_answer_filename": "경제504-a.png"
+      }
+    },
+    {
+      "filename": "경제505.png",
+      "problem_filename": "경제505.png",
+      "answer_filename": "경제505-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 41,
+      "source": "2020년 4월 학평 19번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:49:00.000Z",
+      "updated_at": "2024-08-20T10:49:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 505,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제505.png",
+        "original_answer_filename": "경제505-a.png"
+      }
+    },
+    {
+      "filename": "경제506.png",
+      "problem_filename": "경제506.png",
+      "answer_filename": "경제506-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 47,
+      "source": "2023년 7월 학평 8번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:50:00.000Z",
+      "updated_at": "2024-08-20T10:50:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 506,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제506.png",
+        "original_answer_filename": "경제506-a.png"
+      }
+    },
+    {
+      "filename": "경제507.png",
+      "problem_filename": "경제507.png",
+      "answer_filename": "경제507-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 29,
+      "source": "2019년 4월 학평 3번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:51:00.000Z",
+      "updated_at": "2024-08-20T10:51:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 507,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제507.png",
+        "original_answer_filename": "경제507-a.png"
+      }
+    },
+    {
+      "filename": "경제508.png",
+      "problem_filename": "경제508.png",
+      "answer_filename": "경제508-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2021년 10월 학평 20번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:52:00.000Z",
+      "updated_at": "2024-08-20T10:52:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 508,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제508.png",
+        "original_answer_filename": "경제508-a.png"
+      }
+    },
+    {
+      "filename": "경제509.png",
+      "problem_filename": "경제509.png",
+      "answer_filename": "경제509-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 47,
+      "source": "2022년 10월 학평 12번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:53:00.000Z",
+      "updated_at": "2024-08-20T10:53:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 509,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제509.png",
+        "original_answer_filename": "경제509-a.png"
+      }
+    },
+    {
+      "filename": "경제510.png",
+      "problem_filename": "경제510.png",
+      "answer_filename": "경제510-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 60,
+      "source": "2024학년도 9월 모평 11번",
+      "tags": [
+        "금융과 금융시장"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:54:00.000Z",
+      "updated_at": "2024-08-20T10:54:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 510,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제510.png",
+        "original_answer_filename": "경제510-a.png"
+      }
+    },
+    {
+      "filename": "경제511(문제출처확인필).png",
+      "problem_filename": "경제511(문제출처확인필).png",
+      "answer_filename": "경제511-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 62,
+      "source": "2024학년도 9월 모평 16번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:55:00.000Z",
+      "updated_at": "2024-08-20T10:55:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 511,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제511(문제출처확인필).png",
+        "original_answer_filename": "경제511-a.png"
+      }
+    },
+    {
+      "filename": "경제512.png",
+      "problem_filename": "경제512.png",
+      "answer_filename": "경제512-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2023년 10월 학평 18번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:56:00.000Z",
+      "updated_at": "2024-08-20T10:56:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 512,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제512.png",
+        "original_answer_filename": "경제512-a.png"
+      }
+    },
+    {
+      "filename": "경제513.png",
+      "problem_filename": "경제513.png",
+      "answer_filename": "경제513-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 34,
+      "source": "2024학년도 수능 19번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:57:00.000Z",
+      "updated_at": "2024-08-20T10:57:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 513,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제513.png",
+        "original_answer_filename": "경제513-a.png"
+      }
+    },
+    {
+      "filename": "경제514.png",
+      "problem_filename": "경제514.png",
+      "answer_filename": "경제514-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2024년 3월 학평 14번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:58:00.000Z",
+      "updated_at": "2024-08-20T10:58:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 514,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제514.png",
+        "original_answer_filename": "경제514-a.png"
+      }
+    },
+    {
+      "filename": "경제515.png",
+      "problem_filename": "경제515.png",
+      "answer_filename": "경제515-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2024년 10월 학평 17번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:59:00.000Z",
+      "updated_at": "2024-08-20T10:59:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 515,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제515.png",
+        "original_answer_filename": "경제515-a.png"
+      }
+    },
+    {
+      "filename": "경제516.png",
+      "problem_filename": "경제516.png",
+      "answer_filename": "경제516-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2025학년도 수능 8번",
+      "tags": [
+        "수입과 지출 및 신용 관리"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:00:00.000Z",
+      "updated_at": "2024-08-20T11:00:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 516,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제516.png",
+        "original_answer_filename": "경제516-a.png"
+      }
+    },
+    {
+      "filename": "경제517.png",
+      "problem_filename": "경제517.png",
+      "answer_filename": "경제517-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 83,
+      "source": "2020학년도 9월 모평 9번",
+      "tags": [
+        "자산 관리의 원칙"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:01:00.000Z",
+      "updated_at": "2024-08-20T11:01:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 517,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제517.png",
+        "original_answer_filename": "경제517-a.png"
+      }
+    },
+    {
+      "filename": "경제518.png",
+      "problem_filename": "경제518.png",
+      "answer_filename": "경제518-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 84,
+      "source": "2019년 3월 학평 2번",
+      "tags": [
+        "자산 관리의 원칙 + 금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:02:00.000Z",
+      "updated_at": "2024-08-20T11:02:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 518,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제518.png",
+        "original_answer_filename": "경제518-a.png"
+      }
+    },
+    {
+      "filename": "경제519.png",
+      "problem_filename": "경제519.png",
+      "answer_filename": "경제519-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 81,
+      "source": "2019학년도 6월 모평 4번",
+      "tags": [
+        "자산 관리의 원칙 + 금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:03:00.000Z",
+      "updated_at": "2024-08-20T11:03:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 519,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제519.png",
+        "original_answer_filename": "경제519-a.png"
+      }
+    },
+    {
+      "filename": "경제520.png",
+      "problem_filename": "경제520.png",
+      "answer_filename": "경제520-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 89,
+      "source": "2025학년도 6월 모평 9번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:04:00.000Z",
+      "updated_at": "2024-08-20T11:04:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 520,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제520.png",
+        "original_answer_filename": "경제520-a.png"
+      }
+    },
+    {
+      "filename": "경제521.png",
+      "problem_filename": "경제521.png",
+      "answer_filename": "경제521-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 69,
+      "source": "2022학년도 수능 14번",
+      "tags": [
+        "자산 관리의 원칙"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:05:00.000Z",
+      "updated_at": "2024-08-20T11:05:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 521,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제521.png",
+        "original_answer_filename": "경제521-a.png"
+      }
+    },
+    {
+      "filename": "경제522.png",
+      "problem_filename": "경제522.png",
+      "answer_filename": "경제522-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2023년 4월 학평 17번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:06:00.000Z",
+      "updated_at": "2024-08-20T11:06:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 522,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제522.png",
+        "original_answer_filename": "경제522-a.png"
+      }
+    },
+    {
+      "filename": "경제523.png",
+      "problem_filename": "경제523.png",
+      "answer_filename": "경제523-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 65,
+      "source": "2021학년도 9월 모평 16번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:07:00.000Z",
+      "updated_at": "2024-08-20T11:07:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 523,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제523.png",
+        "original_answer_filename": "경제523-a.png"
+      }
+    },
+    {
+      "filename": "경제524.png",
+      "problem_filename": "경제524.png",
+      "answer_filename": "경제524-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2022학년도 9월 모평 11번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:08:00.000Z",
+      "updated_at": "2024-08-20T11:08:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 524,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제524.png",
+        "original_answer_filename": "경제524-a.png"
+      }
+    },
+    {
+      "filename": "경제525.png",
+      "problem_filename": "경제525.png",
+      "answer_filename": "경제525-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2022년 4월 학평 5번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:09:00.000Z",
+      "updated_at": "2024-08-20T11:09:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 525,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제525.png",
+        "original_answer_filename": "경제525-a.png"
+      }
+    },
+    {
+      "filename": "경제526.png",
+      "problem_filename": "경제526.png",
+      "answer_filename": "경제526-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 62,
+      "source": "2024년 3월 학평 2번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:10:00.000Z",
+      "updated_at": "2024-08-20T11:10:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 526,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제526.png",
+        "original_answer_filename": "경제526-a.png"
+      }
+    },
+    {
+      "filename": "경제527.png",
+      "problem_filename": "경제527.png",
+      "answer_filename": "경제527-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2023년 7월 학평 5번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:11:00.000Z",
+      "updated_at": "2024-08-20T11:11:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 527,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제527.png",
+        "original_answer_filename": "경제527-a.png"
+      }
+    },
+    {
+      "filename": "경제528.png",
+      "problem_filename": "경제528.png",
+      "answer_filename": "경제528-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 76,
+      "source": "2019년 10월 학평 12번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:12:00.000Z",
+      "updated_at": "2024-08-20T11:12:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 528,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제528.png",
+        "original_answer_filename": "경제528-a.png"
+      }
+    },
+    {
+      "filename": "경제529.png",
+      "problem_filename": "경제529.png",
+      "answer_filename": "경제529-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2020학년도 수능 11번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:13:00.000Z",
+      "updated_at": "2024-08-20T11:13:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 529,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제529.png",
+        "original_answer_filename": "경제529-a.png"
+      }
+    },
+    {
+      "filename": "경제530.png",
+      "problem_filename": "경제530.png",
+      "answer_filename": "경제530-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 87,
+      "source": "2021년 10월 학평 19번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:14:00.000Z",
+      "updated_at": "2024-08-20T11:14:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 530,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제530.png",
+        "original_answer_filename": "경제530-a.png"
+      }
+    },
+    {
+      "filename": "경제531.png",
+      "problem_filename": "경제531.png",
+      "answer_filename": "경제531-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2021년 7월 학평 10번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:15:00.000Z",
+      "updated_at": "2024-08-20T11:15:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 531,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제531.png",
+        "original_answer_filename": "경제531-a.png"
+      }
+    },
+    {
+      "filename": "경제532.png",
+      "problem_filename": "경제532.png",
+      "answer_filename": "경제532-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 85,
+      "source": "2021년 4월 학평 19번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:16:00.000Z",
+      "updated_at": "2024-08-20T11:16:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 532,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제532.png",
+        "original_answer_filename": "경제532-a.png"
+      }
+    },
+    {
+      "filename": "경제533.png",
+      "problem_filename": "경제533.png",
+      "answer_filename": "경제533-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2022년 3월 학평 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:17:00.000Z",
+      "updated_at": "2024-08-20T11:17:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 533,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제533.png",
+        "original_answer_filename": "경제533-a.png"
+      }
+    },
+    {
+      "filename": "경제534.png",
+      "problem_filename": "경제534.png",
+      "answer_filename": "경제534-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2023학년도 6월 모평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:18:00.000Z",
+      "updated_at": "2024-08-20T11:18:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 534,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제534.png",
+        "original_answer_filename": "경제534-a.png"
+      }
+    },
+    {
+      "filename": "경제535.png",
+      "problem_filename": "경제535.png",
+      "answer_filename": "경제535-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2022년 4월 학평 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:19:00.000Z",
+      "updated_at": "2024-08-20T11:19:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 535,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제535.png",
+        "original_answer_filename": "경제535-a.png"
+      }
+    },
+    {
+      "filename": "경제536.png",
+      "problem_filename": "경제536.png",
+      "answer_filename": "경제536-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2025학년도 6월 모평 14번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:20:00.000Z",
+      "updated_at": "2024-08-20T11:20:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 536,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제536.png",
+        "original_answer_filename": "경제536-a.png"
+      }
+    },
+    {
+      "filename": "경제537.png",
+      "problem_filename": "경제537.png",
+      "answer_filename": "경제537-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 79,
+      "source": "2022학년도 6월 모평 3번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:21:00.000Z",
+      "updated_at": "2024-08-20T11:21:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 537,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제537.png",
+        "original_answer_filename": "경제537-a.png"
+      }
+    },
+    {
+      "filename": "경제538.png",
+      "problem_filename": "경제538.png",
+      "answer_filename": "경제538-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2023학년도 6월 모평 14번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:22:00.000Z",
+      "updated_at": "2024-08-20T11:22:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 538,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제538.png",
+        "original_answer_filename": "경제538-a.png"
+      }
+    },
+    {
+      "filename": "경제539.png",
+      "problem_filename": "경제539.png",
+      "answer_filename": "경제539-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2022년 3월 학평 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:23:00.000Z",
+      "updated_at": "2024-08-20T11:23:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 539,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제539.png",
+        "original_answer_filename": "경제539-a.png"
+      }
+    },
+    {
+      "filename": "경제540.png",
+      "problem_filename": "경제540.png",
+      "answer_filename": "경제540-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 69,
+      "source": "2024년 4월 학평 16번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:24:00.000Z",
+      "updated_at": "2024-08-20T11:24:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 540,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제540.png",
+        "original_answer_filename": "경제540-a.png"
+      }
+    },
+    {
+      "filename": "경제541.png",
+      "problem_filename": "경제541.png",
+      "answer_filename": "경제541-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 82,
+      "source": "2023학년도 수능 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:25:00.000Z",
+      "updated_at": "2024-08-20T11:25:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 541,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제541.png",
+        "original_answer_filename": "경제541-a.png"
+      }
+    },
+    {
+      "filename": "경제542.png",
+      "problem_filename": "경제542.png",
+      "answer_filename": "경제542-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 54,
+      "source": "2023학년도 수능 14번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:26:00.000Z",
+      "updated_at": "2024-08-20T11:26:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 542,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제542.png",
+        "original_answer_filename": "경제542-a.png"
+      }
+    },
+    {
+      "filename": "경제543.png",
+      "problem_filename": "경제543.png",
+      "answer_filename": "경제543-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 73,
+      "source": "2021학년도 6월 모평 5번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:27:00.000Z",
+      "updated_at": "2024-08-20T11:27:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 543,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제543.png",
+        "original_answer_filename": "경제543-a.png"
+      }
+    },
+    {
+      "filename": "경제544.png",
+      "problem_filename": "경제544.png",
+      "answer_filename": "경제544-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2021년 7월 학평 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:28:00.000Z",
+      "updated_at": "2024-08-20T11:28:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 544,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제544.png",
+        "original_answer_filename": "경제544-a.png"
+      }
+    },
+    {
+      "filename": "경제545.png",
+      "problem_filename": "경제545.png",
+      "answer_filename": "경제545-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 76,
+      "source": "2023년 3월 학평 17번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:29:00.000Z",
+      "updated_at": "2024-08-20T11:29:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 545,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제545.png",
+        "original_answer_filename": "경제545-a.png"
+      }
+    },
+    {
+      "filename": "경제546.png",
+      "problem_filename": "경제546.png",
+      "answer_filename": "경제546-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2023학년도 9월 모평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:30:00.000Z",
+      "updated_at": "2024-08-20T11:30:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 546,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제546.png",
+        "original_answer_filename": "경제546-a.png"
+      }
+    },
+    {
+      "filename": "경제547.png",
+      "problem_filename": "경제547.png",
+      "answer_filename": "경제547-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 80,
+      "source": "2024년 10월 학평 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:31:00.000Z",
+      "updated_at": "2024-08-20T11:31:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 547,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제547.png",
+        "original_answer_filename": "경제547-a.png"
+      }
+    },
+    {
+      "filename": "경제548.png",
+      "problem_filename": "경제548.png",
+      "answer_filename": "경제548-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 86,
+      "source": "2021년 3월 학평 2번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:32:00.000Z",
+      "updated_at": "2024-08-20T11:32:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 548,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제548.png",
+        "original_answer_filename": "경제548-a.png"
+      }
+    },
+    {
+      "filename": "경제549.png",
+      "problem_filename": "경제549.png",
+      "answer_filename": "경제549-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2025학년도 9월 모평 9번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:33:00.000Z",
+      "updated_at": "2024-08-20T11:33:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 549,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제549.png",
+        "original_answer_filename": "경제549-a.png"
+      }
+    },
+    {
+      "filename": "경제550.png",
+      "problem_filename": "경제550.png",
+      "answer_filename": "경제550-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 83,
+      "source": "2024학년도 6월 모평 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:34:00.000Z",
+      "updated_at": "2024-08-20T11:34:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 550,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제550.png",
+        "original_answer_filename": "경제550-a.png"
+      }
+    },
+    {
+      "filename": "경제551.png",
+      "problem_filename": "경제551.png",
+      "answer_filename": "경제551-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 72,
+      "source": "2019년 7월 학평 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:35:00.000Z",
+      "updated_at": "2024-08-20T11:35:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 551,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제551.png",
+        "original_answer_filename": "경제551-a.png"
+      }
+    },
+    {
+      "filename": "경제552.png",
+      "problem_filename": "경제552.png",
+      "answer_filename": "경제552-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 72,
+      "source": "2022학년도 9월 모평 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:36:00.000Z",
+      "updated_at": "2024-08-20T11:36:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 552,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제552.png",
+        "original_answer_filename": "경제552-a.png"
+      }
+    },
+    {
+      "filename": "경제553.png",
+      "problem_filename": "경제553.png",
+      "answer_filename": "경제553-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2020학년도 6월 모평 18번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:37:00.000Z",
+      "updated_at": "2024-08-20T11:37:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 553,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제553.png",
+        "original_answer_filename": "경제553-a.png"
+      }
+    },
+    {
+      "filename": "경제554.png",
+      "problem_filename": "경제554.png",
+      "answer_filename": "경제554-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 62,
+      "source": "2020년 10월 학평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:38:00.000Z",
+      "updated_at": "2024-08-20T11:38:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 554,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제554.png",
+        "original_answer_filename": "경제554-a.png"
+      }
+    },
+    {
+      "filename": "경제556.png",
+      "problem_filename": "경제556.png",
+      "answer_filename": "경제556-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 81,
+      "source": "2024학년도 9월 모평 12번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:39:00.000Z",
+      "updated_at": "2024-08-20T11:39:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 556,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제556.png",
+        "original_answer_filename": "경제556-a.png"
+      }
+    },
+    {
+      "filename": "경제557.png",
+      "problem_filename": "경제557.png",
+      "answer_filename": "경제557-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 77,
+      "source": "2023년 10월 학평 9번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:40:00.000Z",
+      "updated_at": "2024-08-20T11:40:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 557,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제557.png",
+        "original_answer_filename": "경제557-a.png"
+      }
+    },
+    {
+      "filename": "경제558.png",
+      "problem_filename": "경제558.png",
+      "answer_filename": "경제558-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2023년 10월 학평 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:41:00.000Z",
+      "updated_at": "2024-08-20T11:41:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 558,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제558.png",
+        "original_answer_filename": "경제558-a.png"
+      }
+    },
+    {
+      "filename": "경제559.png",
+      "problem_filename": "경제559.png",
+      "answer_filename": "경제559-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 83,
+      "source": "2024학년도 수능 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:42:00.000Z",
+      "updated_at": "2024-08-20T11:42:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 559,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제559.png",
+        "original_answer_filename": "경제559-a.png"
+      }
+    },
+    {
+      "filename": "경제560.png",
+      "problem_filename": "경제560.png",
+      "answer_filename": "경제560-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 34,
+      "source": "2023년 4월 학평 9번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:43:00.000Z",
+      "updated_at": "2024-08-20T11:43:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 560,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제560.png",
+        "original_answer_filename": "경제560-a.png"
+      }
+    },
+    {
+      "filename": "경제561.png",
+      "problem_filename": "경제561.png",
+      "answer_filename": "경제561-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 56,
+      "source": "2020년 4월 학평 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:44:00.000Z",
+      "updated_at": "2024-08-20T11:44:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 561,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제561.png",
+        "original_answer_filename": "경제561-a.png"
+      }
+    },
+    {
+      "filename": "경제562.png",
+      "problem_filename": "경제562.png",
+      "answer_filename": "경제562-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 87,
+      "source": "2022학년도 수능 13벙",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:45:00.000Z",
+      "updated_at": "2024-08-20T11:45:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 562,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제562.png",
+        "original_answer_filename": "경제562-a.png"
+      }
+    },
+    {
+      "filename": "경제563.png",
+      "problem_filename": "경제563.png",
+      "answer_filename": "경제563-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2024년 7월 학평 9번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:46:00.000Z",
+      "updated_at": "2024-08-20T11:46:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 563,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제563.png",
+        "original_answer_filename": "경제563-a.png"
+      }
+    },
+    {
+      "filename": "경제564.png",
+      "problem_filename": "경제564.png",
+      "answer_filename": "경제564-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 83,
+      "source": "2020년 10월 학평 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:47:00.000Z",
+      "updated_at": "2024-08-20T11:47:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 564,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제564.png",
+        "original_answer_filename": "경제564-a.png"
+      }
+    },
+    {
+      "filename": "경제565.png",
+      "problem_filename": "경제565.png",
+      "answer_filename": "경제565-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2022학년도 9월 모평 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:48:00.000Z",
+      "updated_at": "2024-08-20T11:48:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 565,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제565.png",
+        "original_answer_filename": "경제565-a.png"
+      }
+    },
+    {
+      "filename": "경제567.png",
+      "problem_filename": "경제567.png",
+      "answer_filename": "경제567-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 66,
+      "source": "2020학년도 수능 8번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:49:00.000Z",
+      "updated_at": "2024-08-20T11:49:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 567,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제567.png",
+        "original_answer_filename": "경제567-a.png"
+      }
+    },
+    {
+      "filename": "경제568.png",
+      "problem_filename": "경제568.png",
+      "answer_filename": "경제568-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2019년 10월 학평 19번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:50:00.000Z",
+      "updated_at": "2024-08-20T11:50:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 568,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제568.png",
+        "original_answer_filename": "경제568-a.png"
+      }
+    },
+    {
+      "filename": "경제569.png",
+      "problem_filename": "경제569.png",
+      "answer_filename": "경제569-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 17,
+      "source": "2019학년도 9월 모평 16번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:51:00.000Z",
+      "updated_at": "2024-08-20T11:51:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 569,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제569.png",
+        "original_answer_filename": "경제569-a.png"
+      }
+    },
+    {
+      "filename": "경제570.png",
+      "problem_filename": "경제570.png",
+      "answer_filename": "경제570-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 87,
+      "source": "2021학년도 수능 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:52:00.000Z",
+      "updated_at": "2024-08-20T11:52:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 570,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제570.png",
+        "original_answer_filename": "경제570-a.png"
+      }
+    },
+    {
+      "filename": "경제571.png",
+      "problem_filename": "경제571.png",
+      "answer_filename": "경제571-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2020년 7월 학평 16번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:53:00.000Z",
+      "updated_at": "2024-08-20T11:53:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 571,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제571.png",
+        "original_answer_filename": "경제571-a.png"
+      }
+    },
+    {
+      "filename": "경제572.png",
+      "problem_filename": "경제572.png",
+      "answer_filename": "경제572-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 47,
+      "source": "2022년 7월 학평 14벙",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:54:00.000Z",
+      "updated_at": "2024-08-20T11:54:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 572,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제572.png",
+        "original_answer_filename": "경제572-a.png"
+      }
+    },
+    {
+      "filename": "경제573.png",
+      "problem_filename": "경제573.png",
+      "answer_filename": "경제573-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 54,
+      "source": "2021학년도 수능 10번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:55:00.000Z",
+      "updated_at": "2024-08-20T11:55:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 573,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제573.png",
+        "original_answer_filename": "경제573-a.png"
+      }
+    },
+    {
+      "filename": "경제574.png",
+      "problem_filename": "경제574.png",
+      "answer_filename": "경제574-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2020년 3월 학평 7번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:56:00.000Z",
+      "updated_at": "2024-08-20T11:56:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 574,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제574.png",
+        "original_answer_filename": "경제574-a.png"
+      }
+    },
+    {
+      "filename": "경제575.png",
+      "problem_filename": "경제575.png",
+      "answer_filename": "경제575-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 72,
+      "source": "2019년 4월 학평 17번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:57:00.000Z",
+      "updated_at": "2024-08-20T11:57:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 575,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제575.png",
+        "original_answer_filename": "경제575-a.png"
+      }
+    },
+    {
+      "filename": "경제576(출처문제번호빠져있음_22년10월학평17번).png",
+      "problem_filename": "경제576(출처문제번호빠져있음_22년10월학평17번).png",
+      "answer_filename": "경제576-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 34,
+      "source": "2022년 10월 학평 17번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:58:00.000Z",
+      "updated_at": "2024-08-20T11:58:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 576,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제576(출처문제번호빠져있음_22년10월학평17번).png",
+        "original_answer_filename": "경제576-a.png"
+      }
+    },
+    {
+      "filename": "경제577.png",
+      "problem_filename": "경제577.png",
+      "answer_filename": "경제577-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2021학년도 9월 모평 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:59:00.000Z",
+      "updated_at": "2024-08-20T11:59:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 577,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제577.png",
+        "original_answer_filename": "경제577-a.png"
+      }
+    },
+    {
+      "filename": "경제578.png",
+      "problem_filename": "경제578.png",
+      "answer_filename": "경제578-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 38,
+      "source": "2025학년도 6월 모평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:00:00.000Z",
+      "updated_at": "2024-08-20T12:00:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 578,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제578.png",
+        "original_answer_filename": "경제578-a.png"
+      }
+    },
+    {
+      "filename": "경제579.png",
+      "problem_filename": "경제579.png",
+      "answer_filename": "경제579-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 34,
+      "source": "2024학년도 수능 15번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:01:00.000Z",
+      "updated_at": "2024-08-20T12:01:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 579,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제579.png",
+        "original_answer_filename": "경제579-a.png"
+      }
+    },
+    {
+      "filename": "경제580.png",
+      "problem_filename": "경제580.png",
+      "answer_filename": "경제580-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 57,
+      "source": "2020학년도 6월 모평 19번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:02:00.000Z",
+      "updated_at": "2024-08-20T12:02:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 580,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제580.png",
+        "original_answer_filename": "경제580-a.png"
+      }
+    },
+    {
+      "filename": "경제581.png",
+      "problem_filename": "경제581.png",
+      "answer_filename": "경제581-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 91,
+      "source": "2024년 10월 학평 13번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:03:00.000Z",
+      "updated_at": "2024-08-20T12:03:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 581,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제581.png",
+        "original_answer_filename": "경제581-a.png"
+      }
+    },
+    {
+      "filename": "경제582.png",
+      "problem_filename": "경제582.png",
+      "answer_filename": "경제582-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2021학년도 6월 모평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:04:00.000Z",
+      "updated_at": "2024-08-20T12:04:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 582,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제582.png",
+        "original_answer_filename": "경제582-a.png"
+      }
+    },
+    {
+      "filename": "경제583.png",
+      "problem_filename": "경제583.png",
+      "answer_filename": "경제583-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 42,
+      "source": "2025학년도 9월 모평 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:05:00.000Z",
+      "updated_at": "2024-08-20T12:05:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 583,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제583.png",
+        "original_answer_filename": "경제583-a.png"
+      }
+    },
+    {
+      "filename": "경제584.png",
+      "problem_filename": "경제584.png",
+      "answer_filename": "경제584-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2022년 10월 학평 2번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:06:00.000Z",
+      "updated_at": "2024-08-20T12:06:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 584,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제584.png",
+        "original_answer_filename": "경제584-a.png"
+      }
+    },
+    {
+      "filename": "경제585.png",
+      "problem_filename": "경제585.png",
+      "answer_filename": "경제585-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 64,
+      "source": "2025학년도 수능 18번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:07:00.000Z",
+      "updated_at": "2024-08-20T12:07:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 585,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제585.png",
+        "original_answer_filename": "경제585-a.png"
+      }
+    },
+    {
+      "filename": "경제586.png",
+      "problem_filename": "경제586.png",
+      "answer_filename": "경제586-a.png",
+      "chapter_id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 30,
+      "source": "2025학년도 수능 20번",
+      "tags": [
+        "금융상품"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T12:08:00.000Z",
+      "updated_at": "2024-08-20T12:08:00.000Z",
+      "related_subjects": [
+        "경제"
+      ],
+      "_metadata": {
+        "excel_id": 586,
+        "volume": "통합사회2",
+        "chapter": "시장 경제와 지속가능발전",
+        "sub_chapter": "자산 관리와 금융 생활 설계",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "경제586.png",
+        "original_answer_filename": "경제586-a.png"
+      }
+    }
+  ],
+  "metadata": {
+    "total_problems": 129,
+    "source": "Excel import - 경제",
+    "subjects": [
+      {
+        "id": "7ec63358-5e6b-49be-89a4-8b5639f3f9c0",
+        "name": "통합사회 2"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "69c7c854-480b-4fd9-8cf2-509118b68cca",
+        "name": "국제 분업과 무역"
+      },
+      {
+        "id": "74c3276e-144d-4098-9d78-c6df80ef1ffe",
+        "name": "자본주의의 전개 과정과 경제 체제"
+      },
+      {
+        "id": "5a5a8ff7-c908-42da-bea1-52914b550a0b",
+        "name": "자산 관리와 금융 생활 설계"
+      },
+      {
+        "id": "36477a86-54b2-40e1-bb16-1f8fd287eec1",
+        "name": "합리적 선택과 경제 주체의 역할"
+      }
+    ],
+    "difficulties": [
+      "하",
+      "중",
+      "상"
+    ],
+    "problem_types": [
+      "기출문제",
+      "N제"
+    ],
+    "created_at": "2025-08-21T21:27:02.766Z",
+    "version": "1.0-경제",
+    "notes": "Converted from 통합사회 문제 은행 프로젝트_경제.xlsx - Only problems with images included"
+  }
+}

@@ -11,7 +11,7 @@ import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import type { ProblemMetadata } from '@/lib/types/problems';
 
 export default function Page() {
-  const {selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects} = useWorksheetStore();
+  const {selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange} = useWorksheetStore();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
   
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
@@ -29,12 +29,13 @@ export default function Page() {
       selectedProblemTypes,
       selectedSubjects,
       problemCount,
-      contentTree
+      contentTree,
+      correctRateRange
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     setFilteredProblems(filtered);
-  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree]);
+  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange]);
 
   const handleMainSubjectToggle = (subject: string) => {
     const newSelectedMainSubjects = selectedMainSubjects.includes(subject)

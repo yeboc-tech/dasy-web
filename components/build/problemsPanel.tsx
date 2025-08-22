@@ -50,6 +50,23 @@ export default function ProblemsPanel({
   const chapterLookupMap = useMemo(() => {
     return createChapterLookupMap(contentTree);
   }, [contentTree]);
+
+  // Log all UUIDs and filenames when filteredProblems changes
+  useMemo(() => {
+    if (filteredProblems.length > 0) {
+      console.log('=== Currently Previewing Images ===');
+      filteredProblems.forEach((problem, index) => {
+        console.log(`${index + 1}. UUID: ${problem.id}`);
+        console.log(`   Filename: ${problem.problem_filename}`);
+        console.log(`   Correct Rate: ${problem.correct_rate ?? 'N/A'}%`);
+        console.log(`   Chapter: ${getChapterName(problem.chapter_id, chapterLookupMap)}`);
+        console.log(`   Difficulty: ${problem.difficulty}`);
+        console.log('---');
+      });
+      console.log(`Total: ${filteredProblems.length} problems`);
+      console.log('================================');
+    }
+  }, [filteredProblems, chapterLookupMap]);
   return (
     <div className="w-1/2 flex flex-col min-h-0 overflow-y-scroll">
       {/* Loading overlay for problems */}

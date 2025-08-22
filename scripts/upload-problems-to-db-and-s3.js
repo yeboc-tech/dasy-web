@@ -25,7 +25,7 @@ const s3 = new AWS.S3({
 
 // Paths
 const PROBLEMS_DIR = path.join(__dirname, '../public/data');
-const METADATA_FILE = path.join(__dirname, '../public/data/정법-problems-metadata.json');
+const METADATA_FILE = path.join(__dirname, '../public/data/생윤-problems-metadata.json');
 
 // Validation functions
 async function validateEnvironment() {
@@ -321,7 +321,7 @@ async function processProblem(problem, index) {
 
 async function main() {
   try {
-    console.log('🚀 Starting 정법 problem upload to database and S3...');
+    console.log('🚀 Starting 생활과 윤리 problem upload to database and S3...');
     if (DRY_RUN) {
       console.log('🔍 [DRY RUN MODE] - No actual changes will be made');
     }

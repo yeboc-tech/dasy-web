@@ -8,6 +8,7 @@ interface FilterOptions {
   selectedSubjects: string[];
   problemCount: number;
   contentTree: ChapterTreeItem[];
+  correctRateRange: [number, number]; // [min, max] correct rate percentage (0-100)
 }
 
 export class ProblemFilter {
@@ -53,6 +54,22 @@ export class ProblemFilter {
         )
       );
     }
+
+    // Filter by correct rate range
+    if (filters.correctRateRange) {
+      const [minRate, maxRate] = filters.correctRateRange;
+      filtered = filtered.filter(problem => {
+        const rate = problem.correct_rate ?? 0;
+        return rate >= minRate && rate <= maxRate;
+      });
+    }
+
+    // Sort by correct rate (high to low) - easier problems first
+    filtered.sort((a, b) => {
+      const aRate = a.correct_rate ?? 0;
+      const bRate = b.correct_rate ?? 0;
+      return bRate - aRate; // High to low (descending)
+    });
 
     // Limit by problem count
     if (filters.problemCount > 0) {

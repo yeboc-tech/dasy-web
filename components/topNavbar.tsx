@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 export function TopNavbar() {
   const pathname = usePathname();
   const isBuildPage = pathname === '/build';
-  const { selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects } = useWorksheetStore();
+  const { selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange } = useWorksheetStore();
 
   const handlePdfGeneration = () => {
     const params = new URLSearchParams();
@@ -20,6 +20,8 @@ export function TopNavbar() {
     if (selectedSubjects && selectedSubjects.length > 0) {
       params.set('selectedSubjects', selectedSubjects.join(','));
     }
+    // Add correctRateRange
+    params.set('correctRateRange', correctRateRange.join(','));
     
     console.log('TopNavbar - Passing parameters:', {
       selectedChapters,
@@ -27,6 +29,7 @@ export function TopNavbar() {
       selectedDifficulties,
       selectedProblemTypes,
       selectedSubjects,
+      correctRateRange,
       url: `/configure?${params.toString()}`
     });
     

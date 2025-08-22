@@ -8,6 +8,7 @@ export interface ProblemMetadata {
   difficulty: string;
   problem_type: string;
   tags: string[];
+  correct_rate?: number; // Correct rate percentage (0-100)
   created_at: string;
   updated_at: string;
 }

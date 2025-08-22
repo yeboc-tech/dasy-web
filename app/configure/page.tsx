@@ -64,13 +64,16 @@ function PdfContent() {
     const selectedProblemTypes = searchParams.get('selectedProblemTypes')?.split(',').filter(Boolean) || [];
     const selectedSubjects = searchParams.get('selectedSubjects')?.split(',').filter(Boolean) || [];
 
+    const correctRateRange = searchParams.get('correctRateRange')?.split(',').map(Number) || [0, 100];
+
     const filters = {
       selectedChapters,
       selectedDifficulties,
       selectedProblemTypes,
       selectedSubjects,
       problemCount,
-      contentTree
+      contentTree,
+      correctRateRange: [correctRateRange[0], correctRateRange[1]] as [number, number]
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);

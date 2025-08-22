@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import type { ChapterTreeItem } from '@/lib/types';
@@ -34,7 +35,9 @@ export default function FilterPanel({
     selectedProblemTypes, 
     setSelectedProblemTypes, 
     selectedSubjects, 
-    setSelectedSubjects
+    setSelectedSubjects,
+    correctRateRange,
+    setCorrectRateRange
   } = useWorksheetStore();
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -174,10 +177,11 @@ export default function FilterPanel({
     const isChecked = checkedItems.has(item.id);
     const allChildrenChecked = hasChildren ? areAllChildrenChecked(item) : false;
     const someChildrenChecked = hasChildren ? areSomeChildrenChecked(item) : false;
+    const isDisabled = isChapterDisabled(item);
 
     return (
       <React.Fragment key={item.id}>
-        <div className={`min-h-[36px] flex items-center tree-item ${isExpanded ? 'expanded' : ''} cursor-pointer transition-colors duration-200`} onClick={() => toggleExpanded(item.id)}>
+        <div className={`min-h-[36px] flex items-center tree-item ${isExpanded ? 'expanded' : ''} ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} transition-colors duration-200`} onClick={() => !isDisabled && toggleExpanded(item.id)}>
           <div className="flex">
             {level > 0 && (<div className="w-6"></div>)}
             {level > 1 && (<div className="w-6"></div>)}
@@ -203,18 +207,34 @@ export default function FilterPanel({
               <div className="w-6 h-6"></div>
             )}
           </div>
-          <div className="cursor-pointer pl-1 flex items-center hover:cursor-pointer" onClick={(e) => e.stopPropagation()}>
+          <div className={`pl-1 flex items-center ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer hover:cursor-pointer'}`} onClick={(e) => e.stopPropagation()}>
             <Checkbox 
               checked={hasChildren ? allChildrenChecked : isChecked}
+              disabled={isDisabled}
               ref={(ref) => {
                 if (ref && hasChildren) {
                   (ref as HTMLInputElement).indeterminate = someChildrenChecked && !allChildrenChecked;
                 }
+                if (ref && isDisabled) {
+                  // Apply red styling to disabled checkboxes with opacity
+                  const element = ref as HTMLElement;
+                  element.style.backgroundColor = '#fef2f2'; // red-50 to match buttons
+                  element.style.opacity = '0.6';
+                }
               }}
-              onCheckedChange={() => handleCheckboxChange(item.id, item, level)}
+              onCheckedChange={() => !isDisabled && handleCheckboxChange(item.id, item, level)}
+              className={isDisabled ? 'opacity-60' : ''}
+              style={isDisabled ? {
+                backgroundColor: '#fef2f2',
+                opacity: '0.6'
+              } : {}}
             />
           </div>
-          <div className="pl-2 flex items-center flex-1 text-sm"><span className="tree-title">{item.label}</span></div>
+          <div className="pl-2 flex items-center flex-1 text-sm">
+            <span className={`tree-title ${isDisabled ? 'text-black opacity-60' : ''}`}>
+              {item.label}
+            </span>
+          </div>
         </div>
         
         {hasChildren && isExpanded && item.children && (
@@ -229,22 +249,33 @@ export default function FilterPanel({
   // Filter content tree based on selected main subjects
   const filteredContentTree = contentTree.filter(item => selectedMainSubjects.includes(item.id));
 
+  // Define disabled chapters and buttons
+  const disabledChapters = new Set([
+    '03. 다양한 불평등 현상과 정의로운 사회 실현',
+    'IV. 세계화와 평화', 
+    'V. 미래와 지속가능한 삶'
+  ]);
+
+  // Check if a chapter should be disabled
+  const isChapterDisabled = (item: ChapterTreeItem): boolean => {
+    return disabledChapters.has(item.label);
+  };
+
   return (
     <div className="w-1/2 flex flex-col min-h-0 overflow-y-scroll border-r border-gray-200">
       {/* Subject Filter Bar */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex gap-2">
-          <Button
-            onClick={() => onMainSubjectToggle('e9393ef5-954d-41a8-b3cd-0b3c07d4143e')} // 통합사회 1 database ID
-            variant="outline"
-            className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
-              selectedMainSubjects.includes('e9393ef5-954d-41a8-b3cd-0b3c07d4143e')
-                ? 'border-black text-black bg-gray-100'
-                : 'bg-white text-black border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            통합사회 1
-          </Button>
+          <div className="cursor-not-allowed">
+            <Button
+              onClick={() => {}} // Disabled - no action
+              variant="outline"
+              disabled={true}
+              className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+            >
+              통합사회 1
+            </Button>
+          </div>
           <Button
             onClick={() => onMainSubjectToggle('7ec63358-5e6b-49be-89a4-8b5639f3f9c0')} // 통합사회 2 database ID
             variant="outline"
@@ -261,7 +292,7 @@ export default function FilterPanel({
       
       <div className="flex-1 p-4 pt-0 min-h-0">
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "difficulty", "problemType"]}>
+          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "correctRate", "difficulty", "problemType"]}>
             {/* 단원·유형별 Section */}
             <AccordionItem value="chapters" className="border-none">
               <AccordionTrigger className="hover:no-underline">
@@ -293,16 +324,31 @@ export default function FilterPanel({
                   >
                     모두
                   </Button>
-                  {['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'].map((subject) => (
-                    <Button 
-                      key={subject} 
-                      onClick={() => handleSubjectToggle(subject)} 
-                      variant="outline"
-                      className={selectedSubjects.includes(subject) && selectedSubjects.length < 9 ? "border-black text-black bg-gray-100" : ""}
-                    >
-                      {subject}
-                    </Button>
-                  ))}
+                  {['생활과 윤리', '경제', '정치와 법', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '사회·문화'].map((subject) => {
+                    const enabledSubjects = ['정치와 법', '생활과 윤리', '경제'];
+                    const isSubjectDisabled = !enabledSubjects.includes(subject);
+                    return isSubjectDisabled ? (
+                      <div key={subject} className="cursor-not-allowed">
+                        <Button 
+                          onClick={() => {}} // No action for disabled
+                          variant="outline"
+                          disabled={true}
+                          className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+                        >
+                          {subject}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        key={subject} 
+                        onClick={() => handleSubjectToggle(subject)} 
+                        variant="outline"
+                        className={selectedSubjects.includes(subject) && selectedSubjects.length < 9 ? "border-black text-black bg-gray-100" : ""}
+                      >
+                        {subject}
+                      </Button>
+                    );
+                  })}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -341,6 +387,58 @@ export default function FilterPanel({
                       placeholder="1-100"
                     />
                     <span className="text-sm font-medium text-black">문제</span>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 정답률 Section */}
+            <AccordionItem value="correctRate" className="border-none">
+              <AccordionTrigger className="hover:no-underline">
+                <span>정답률</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4">
+                  <div className="h-9 mb-3 flex items-center">
+                    <Slider
+                      value={[100 - correctRateRange[1], 100 - correctRateRange[0]]}
+                      onValueChange={(value) => setCorrectRateRange([100 - value[1], 100 - value[0]])}
+                      max={100}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={correctRateRange[1]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 100;
+                        const clampedValue = Math.max(0, Math.min(100, value));
+                        setCorrectRateRange([correctRateRange[0], clampedValue]);
+                      }}
+                      className="w-[80px] focus-visible:ring-0 border-black"
+                      placeholder="100"
+                    />
+                    <span className="text-sm font-medium text-black">%</span>
+                    <span className="text-sm">~</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={correctRateRange[0]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        const clampedValue = Math.max(0, Math.min(100, value));
+                        setCorrectRateRange([clampedValue, correctRateRange[1]]);
+                      }}
+                      className="w-[80px] focus-visible:ring-0 border-black"
+                      placeholder="0"
+                    />
+                    <span className="text-sm font-medium text-black">%</span>
                   </div>
                 </div>
               </AccordionContent>
@@ -408,32 +506,46 @@ export default function FilterPanel({
                   >
                     모두
                   </Button>
-                  {['기출문제', 'N제'].map((type) => (
-                    <Button 
-                      key={type} 
-                      onClick={() => {
-                        // If all problem types are currently selected (모두 is active), start fresh with just this type
-                        if (selectedProblemTypes.length === 2) {
-                          setSelectedProblemTypes([type]);
-                        } else {
-                          const newTypes = selectedProblemTypes.includes(type)
-                            ? selectedProblemTypes.filter(t => t !== type)
-                            : [...selectedProblemTypes, type];
-                          
-                          // Ensure at least one problem type is always selected
-                          if (newTypes.length === 0) {
-                            setSelectedProblemTypes([type]);
-                          } else {
-                            setSelectedProblemTypes(newTypes);
-                          }
-                        }
-                      }} 
-                      variant="outline"
-                      className={selectedProblemTypes.includes(type) && selectedProblemTypes.length < 2 ? "border-black text-black bg-gray-100" : ""}
-                    >
-                      {type}
-                    </Button>
-                  ))}
+                  {['기출문제', 'N제'].map((type) => {
+                    const isNjeDisabled = type === 'N제';
+                    return isNjeDisabled ? (
+                        <div key={type} className="cursor-not-allowed">
+                          <Button 
+                            onClick={() => {}} // No action for disabled
+                            variant="outline"
+                            disabled={true}
+                            className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+                          >
+                            {type}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button 
+                          key={type} 
+                          onClick={() => {
+                            // If all problem types are currently selected (모두 is active), start fresh with just this type
+                            if (selectedProblemTypes.length === 2) {
+                              setSelectedProblemTypes([type]);
+                            } else {
+                              const newTypes = selectedProblemTypes.includes(type)
+                                ? selectedProblemTypes.filter(t => t !== type)
+                                : [...selectedProblemTypes, type];
+                              
+                              // Ensure at least one problem type is always selected
+                              if (newTypes.length === 0) {
+                                setSelectedProblemTypes([type]);
+                              } else {
+                                setSelectedProblemTypes(newTypes);
+                              }
+                            }
+                          }} 
+                          variant="outline"
+                          className={selectedProblemTypes.includes(type) && selectedProblemTypes.length < 2 ? "border-black text-black bg-gray-100" : ""}
+                        >
+                          {type}
+                        </Button>
+                      );
+                  })}
                 </div>
               </AccordionContent>
             </AccordionItem>
