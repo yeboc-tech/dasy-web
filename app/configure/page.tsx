@@ -43,8 +43,8 @@ function PdfContent() {
   const searchParams = useSearchParams();
   const problemCount = parseInt(searchParams.get('problemCount') || '0', 10);
   
-  const worksheetName = '';
-  const creator = '';
+  const worksheetName = '수능 문제지';
+  const creator = 'DASY';
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -166,17 +166,19 @@ function PdfContent() {
           }
         });
 
-        // Prepare problem answer data (include all problems that have answer images)
-        const problemsWithAnswers = selectedProblems
-          .filter(problem => problem.answer_filename)
-          .map(problem => ({ answer: problem.answer || null }));
+        // Note: problemsWithAnswers data is available if needed for future features
+        // const problemsWithAnswers = selectedProblems
+        //   .filter(problem => problem.answer_filename)
+        //   .map(problem => ({ answer: problem.answer || null }));
         
         // Create document definition with answers
         const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
           selectedImages, 
           processedProblemImages,
           selectedAnswerImages,
-          processedAnswerImages
+          processedAnswerImages,
+          worksheetName,
+          creator
         );
         
         // Generate PDF blob

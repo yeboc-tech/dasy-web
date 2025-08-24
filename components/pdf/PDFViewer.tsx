@@ -250,9 +250,13 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
 
   // Download function
   const downloadPDF = () => {
+    const now = new Date();
+    const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '_'); // YYYY_MM_DDTHH_MM_SS
+    const filename = `worksheet_${timestamp}.pdf`;
+    
     const link = document.createElement('a');
     link.href = pdfUrl;
-    link.download = 'worksheet.pdf';
+    link.download = filename;
     link.click();
   };
 
@@ -467,6 +471,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
         {/* Render all pages as images */}
         <div className="flex flex-col gap-5 items-center">
           {pageImages.map((imageData, index) => (
+            // eslint-disable-next-line @next/next/no-img-element
             <img 
               key={index}
               ref={(el) => {

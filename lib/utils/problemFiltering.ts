@@ -12,6 +12,27 @@ interface FilterOptions {
 }
 
 export class ProblemFilter {
+  /**
+   * Get difficulty level based on correct rate
+   * 상: 0-39%, 중: 40-59%, 하: 60-100%
+   */
+  private static getDifficultyFromCorrectRate(problem: ProblemMetadata): string {
+    const correctRate = problem.correct_rate ?? 50;
+    
+    if (correctRate <= 39) return '상';
+    if (correctRate <= 59) return '중';
+    return '하';
+  }
+  
+  private static getDifficultyWeight(difficulty: string): number {
+    switch (difficulty) {
+      case '하': return 1;
+      case '중': return 3; 
+      case '상': return 5;
+      default: return 3; // Default to middle difficulty
+    }
+  }
+
   static filterProblems(problems: ProblemMetadata[], filters: FilterOptions): ProblemMetadata[] {
     let filtered = [...problems];
 
@@ -32,11 +53,12 @@ export class ProblemFilter {
       filtered = [];
     }
 
-    // Filter by selected difficulties
+    // Filter by selected difficulties (using correct rate based difficulty)
     if (filters.selectedDifficulties.length > 0) {
-      filtered = filtered.filter(problem => 
-        filters.selectedDifficulties.includes(problem.difficulty)
-      );
+      filtered = filtered.filter(problem => {
+        const calculatedDifficulty = this.getDifficultyFromCorrectRate(problem);
+        return filters.selectedDifficulties.includes(calculatedDifficulty);
+      });
     }
 
     // Filter by selected problem types
@@ -64,11 +86,13 @@ export class ProblemFilter {
       });
     }
 
-    // Sort by correct rate (high to low) - easier problems first
+    // Sort by difficulty based on correct rate (easier problems first: 하 -> 중 -> 상)
     filtered.sort((a, b) => {
-      const aRate = a.correct_rate ?? 0;
-      const bRate = b.correct_rate ?? 0;
-      return bRate - aRate; // High to low (descending)
+      const aDifficulty = this.getDifficultyWeight(this.getDifficultyFromCorrectRate(a));
+      const bDifficulty = this.getDifficultyWeight(this.getDifficultyFromCorrectRate(b));
+      
+      // Sort by difficulty (easier problems first)
+      return aDifficulty - bDifficulty;
     });
 
     // Limit by problem count

@@ -43,7 +43,7 @@ async function loadPdfMake() {
                 (pdfMake as unknown as { vfs: Record<string, string> }).vfs = globalVfs;
               }
               
-              // Configure CrimsonText since it's available in VFS
+              // Configure CrimsonText, ONEMobile, and GmarketSans fonts since they're available in VFS
               (pdfMake as unknown as { fonts: Record<string, unknown> }).fonts = {
                 CrimsonText: {
                   normal: 'CrimsonText-Regular.ttf',
@@ -56,6 +56,18 @@ async function loadPdfMake() {
                   bold: 'CrimsonText-SemiBold.ttf',
                   italics: 'CrimsonText-SemiBoldItalic.ttf',
                   bolditalics: 'CrimsonText-SemiBoldItalic.ttf'
+                },
+                ONEMobileTitle: {
+                  normal: 'ONE Mobile Title.ttf',
+                  bold: 'ONE Mobile Bold.ttf',
+                  italics: 'ONE Mobile Title.ttf',
+                  bolditalics: 'ONE Mobile Bold.ttf'
+                },
+                GmarketSans: {
+                  normal: 'GmarketSansTTFMedium.ttf',
+                  bold: 'GmarketSansTTFBold.ttf',
+                  italics: 'GmarketSansTTFMedium.ttf',
+                  bolditalics: 'GmarketSansTTFBold.ttf'
                 }
               };
             } catch (error) {
@@ -196,6 +208,17 @@ async function getAllImageHeights(base64Images: string[], fixedWidth: number = 2
   return Promise.all(heightPromises);
 }
 
+// Calculate header height (title row + metadata row + border + margins)
+function getHeaderHeight(): number {
+  const titleRowHeight = 20; // fontSize 20
+  const titleBottomMargin = 20;
+  const metadataRowHeight = 55 + 11.25; // 55 top margin + 11.25 fontSize for bottom text
+  const metadataBottomMargin = 20;
+  const borderBottomMargin = 20;
+  
+  return titleRowHeight + titleBottomMargin + metadataRowHeight + metadataBottomMargin + borderBottomMargin; // ~146 points
+}
+
 // Calculate available height per page for problems
 function getAvailablePageHeight(): number {
   const pageHeight = 842; // A4 height in points
@@ -204,6 +227,14 @@ function getAvailablePageHeight(): number {
   const footerHeight = 30; // Space for footer
   
   return pageHeight - topMargin - bottomMargin - footerHeight; // ~722 points
+}
+
+// Calculate available height for first page (with header)
+function getFirstPageAvailableHeight(): number {
+  const baseHeight = getAvailablePageHeight();
+  const headerHeight = getHeaderHeight();
+  
+  return baseHeight - headerHeight; // ~576 points
 }
 
 // Fill a column with problems until height limit is reached
@@ -323,6 +354,7 @@ export async function createColumnBasedLayoutClient(problems: string[], base64Im
   
   // Step 2: Get available page height
   const maxPageHeight = getAvailablePageHeight();
+  const firstPageHeight = getFirstPageAvailableHeight();
   
   // Step 3: Create problem objects with heights
   let remainingProblems = base64Images.map((image, index) => ({
@@ -332,18 +364,22 @@ export async function createColumnBasedLayoutClient(problems: string[], base64Im
   }));
   
   const pages = [];
+  let isFirstPage = true;
   
   // Step 4: Fill pages column by column
   while (remainingProblems.length > 0) {
+    // Use reduced height for first page (has header), normal height for subsequent pages
+    const currentPageHeight = isFirstPage ? firstPageHeight : maxPageHeight;
+    
     // Fill left column
-    const leftColumnResult = fillColumn(remainingProblems, maxPageHeight);
-    const leftColumnContent = createColumnContent(leftColumnResult.columnProblems, maxPageHeight);
+    const leftColumnResult = fillColumn(remainingProblems, currentPageHeight);
+    const leftColumnContent = createColumnContent(leftColumnResult.columnProblems, currentPageHeight);
     
     remainingProblems = leftColumnResult.remaining;
     
     // Fill right column
-    const rightColumnResult = fillColumn(remainingProblems, maxPageHeight);
-    const rightColumnContent = createColumnContent(rightColumnResult.columnProblems, maxPageHeight);
+    const rightColumnResult = fillColumn(remainingProblems, currentPageHeight);
+    const rightColumnContent = createColumnContent(rightColumnResult.columnProblems, currentPageHeight);
     
     remainingProblems = rightColumnResult.remaining;
     
@@ -376,6 +412,9 @@ export async function createColumnBasedLayoutClient(problems: string[], base64Im
     if (remainingProblems.length > 0) {
       pages.push({ pageBreak: 'after', text: '' });
     }
+    
+    // After first page, subsequent pages don't have headers
+    isFirstPage = false;
   }
   
   return pages;
@@ -483,6 +522,7 @@ export async function createAnswerPagesClient(
   
   // Get available page height
   const maxPageHeight = getAvailablePageHeight();
+  const firstPageHeight = getFirstPageAvailableHeight();
   
   // Create answer objects with heights
   let remainingAnswers = base64AnswerImages.map((image, index) => ({
@@ -498,10 +538,13 @@ export async function createAnswerPagesClient(
   while (remainingAnswers.length > 0) {
     const pageColumns = [];
     
+    // Use reduced height for first page (has header), normal height for subsequent pages
+    const currentPageHeight = isFirstPage ? firstPageHeight : maxPageHeight;
+    
     // Column 1: Special content on first page
     if (isFirstPage) {
       // Fill column 1 without grid (hidden for now)
-      const column1Result = fillColumn(remainingAnswers, maxPageHeight);
+      const column1Result = fillColumn(remainingAnswers, currentPageHeight);
       const column1Content = createAnswerColumnContent(column1Result.columnProblems);
       
       remainingAnswers = column1Result.remaining;
@@ -516,7 +559,7 @@ export async function createAnswerPagesClient(
       isFirstPage = false;
     } else {
       // Regular column 1 for subsequent pages
-      const column1Result = fillColumn(remainingAnswers, maxPageHeight);
+      const column1Result = fillColumn(remainingAnswers, currentPageHeight);
       const column1Content = createAnswerColumnContent(column1Result.columnProblems);
       
       remainingAnswers = column1Result.remaining;
@@ -530,7 +573,7 @@ export async function createAnswerPagesClient(
     }
     
     // Column 2
-    const column2Result = fillColumn(remainingAnswers, maxPageHeight);
+    const column2Result = fillColumn(remainingAnswers, currentPageHeight);
     const column2Content = createAnswerColumnContent(column2Result.columnProblems);
     
     remainingAnswers = column2Result.remaining;
@@ -543,7 +586,7 @@ export async function createAnswerPagesClient(
     }
     
     // Column 3
-    const column3Result = fillColumn(remainingAnswers, maxPageHeight);
+    const column3Result = fillColumn(remainingAnswers, currentPageHeight);
     const column3Content = createAnswerColumnContent(column3Result.columnProblems);
     
     remainingAnswers = column3Result.remaining;
@@ -575,31 +618,18 @@ export async function createAnswerPagesClient(
 
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
-  base64Images: string[]
+  base64Images: string[],
+  title?: string,
+  creator?: string
 ) {
   // Use new column-based layout system
   const content = await createColumnBasedLayoutClient(images, base64Images);
   
   return {
     pageSize: "A4",
-    pageMargins: [40, 60, 40, 30],
+    pageMargins: [40, 30, 40, 30],
     footer: createFooterClient,
     content: [
-      // Header with title and creator (commented out for now)
-      // {
-      //   text: title || "Worksheet",
-      //   fontSize: 24,
-      //   bold: true,
-      //   alignment: 'center',
-      //   margin: [0, 0, 0, 20]
-      // },
-      // {
-      //   text: `Created by: ${creator || "Teacher"}`,
-      //   fontSize: 12,
-      //   alignment: 'center',
-      //   color: '#666666',
-      //   margin: [0, 0, 0, 30]
-      // },
       ...content
     ]
   };
@@ -610,7 +640,9 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   problemImages: string[], 
   base64ProblemImages: string[],
   answerImages: string[],
-  base64AnswerImages: string[]
+  base64AnswerImages: string[],
+  title?: string,
+  creator?: string
 ) {
   // Create problem pages
   const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
@@ -618,17 +650,297 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   // Create answer pages
   const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages);
   
-  const allContent: unknown[] = [...problemContent];
+  const allContent: unknown[] = [];
+  
+  // Add header to first page
+  // Load logo and QR code directly from public path
+  const [logoBase64, qrBase64] = await Promise.all([
+    new Promise<string>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = function() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            console.error('Cannot get canvas context for logo');
+            resolve('');
+            return;
+          }
+          
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+          
+          const base64 = canvas.toDataURL('image/jpeg');
+          resolve(base64);
+        } catch (error) {
+          console.error('Error converting logo to base64:', error);
+          resolve('');
+        }
+      };
+      
+      img.onerror = function(error) {
+        console.error('Failed to load logo:', error);
+        resolve('');
+      };
+      
+      img.src = '/images/minlab_logo.jpeg';
+    }),
+    new Promise<string>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = function() {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            console.error('Cannot get canvas context for QR code');
+            resolve('');
+            return;
+          }
+          
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          ctx.drawImage(img, 0, 0);
+          
+          const base64 = canvas.toDataURL('image/png');
+          resolve(base64);
+        } catch (error) {
+          console.error('Error converting QR code to base64:', error);
+          resolve('');
+        }
+      };
+      
+      img.onerror = function(error) {
+        console.error('Failed to load QR code:', error);
+        resolve('');
+      };
+      
+      img.src = '/images/textbook_qr_code.png';
+    })
+  ]);
+
+  // Get current date in Korean format
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const dateString = `${year}.${month}.${day}`;
+  
+  // Create subtitle with dynamic info
+  const problemCount = base64ProblemImages.length;
+
+  // Row 1: Header with title and logo
+  allContent.push({
+    columns: [
+      {
+        text: "통합사회",
+        fontSize: 20,
+        font: 'ONEMobileTitle',
+        color: '#FF00A1',
+        alignment: 'left',
+        width: '*'
+      },
+      ...(logoBase64 ? [{
+        image: logoBase64,
+        width: 111,
+        alignment: 'right'
+      }] : [])
+    ],
+    margin: [0, 0, 0, 20]
+  });
+
+  // Row 2: Metadata and QR section with justify-between layout
+  allContent.push({
+    columns: [
+      {
+        text: `${dateString} | ${problemCount}문제 | 이름 _______________`,
+        fontSize: 9,
+        font: 'GmarketSans',
+        color: '#888888',
+        alignment: 'left',
+        margin: [0, 55, 0, 0], // Increased to align with QR group bottom
+        width: 'auto'
+      },
+      {
+        text: '', // Empty spacer to push QR section to right
+        width: '*'
+      },
+      ...(qrBase64 ? [{
+        table: {
+          body: [
+            [
+              {
+                text: "자세한 통합사회 ▶",
+                fontSize: 7,
+                font: 'GmarketSans',
+                color: '#666666',
+                alignment: 'right',
+                border: [false, false, false, false],
+                margin: [15, 37, 0, 0] // Left margin 15 to move right, top margin 37 for vertical alignment
+              },
+              {
+                image: qrBase64,
+                width: 45,
+                alignment: 'right',
+                border: [false, false, false, false],
+                margin: [0, 0, 0, 0]
+              }
+            ],
+            [
+              {
+                text: "수능과 내신을 한권에 담다",
+                fontSize: 11.25, // 15px converted to points
+                font: 'GmarketSans',
+                color: '#666666',
+                alignment: 'right',
+                border: [false, false, false, false],
+                colSpan: 2,
+                margin: [0, 1, 0, 0] // Reduced top margin to minimize gap with QR
+              },
+              {}
+            ]
+          ]
+        },
+        layout: 'noBorders',
+        width: 'auto'
+      }] : [])
+    ],
+    columnGap: 0,
+    margin: [0, 0, 0, 20] // Bottom margin for spacing with border
+  });
+
+  // Add bottom border for the whole header (mimicking footer style)
+  allContent.push({
+    canvas: [
+      {
+        type: 'line',
+        x1: 0,
+        y1: 0,
+        x2: 595, // Full page width like footer
+        y2: 0,
+        lineWidth: 1, // Same as footer
+        lineColor: '#e0e0e0' // Same color as footer
+      }
+    ],
+    margin: [-40, 0, 0, 20] // Negative left margin to start from dead left edge
+  });
+  
+  // Add problem content
+  allContent.push(...problemContent);
   
   // Add page break before answers if there are answers
   if (answerContent.length > 0) {
     allContent.push({ pageBreak: 'after', text: '' });
+    
+    // Add same header to answer pages first page
+    // Row 1: Header with title and logo
+    allContent.push({
+      columns: [
+        {
+          text: "통합사회",
+          fontSize: 20,
+          font: 'ONEMobileTitle',
+          color: '#FF00A1',
+          alignment: 'left',
+          width: '*'
+        },
+        ...(logoBase64 ? [{
+          image: logoBase64,
+          width: 111,
+          alignment: 'right'
+        }] : [])
+      ],
+      margin: [0, 0, 0, 20]
+    });
+
+    // Row 2: Metadata and QR section with justify-between layout
+    allContent.push({
+      columns: [
+        {
+          text: `${dateString} | ${problemCount}문제 | 이름 _______________`,
+          fontSize: 9,
+          font: 'GmarketSans',
+          color: '#888888',
+          alignment: 'left',
+          margin: [0, 55, 0, 0],
+          width: 'auto'
+        },
+        {
+          text: '', // Empty spacer
+          width: '*'
+        },
+        ...(qrBase64 ? [{
+          table: {
+            body: [
+              [
+                {
+                  text: "자세한 통합사회 ▶",
+                  fontSize: 7,
+                  font: 'GmarketSans',
+                  color: '#666666',
+                  alignment: 'right',
+                  border: [false, false, false, false],
+                  margin: [15, 37, 0, 0]
+                },
+                {
+                  image: qrBase64,
+                  width: 45,
+                  alignment: 'right',
+                  border: [false, false, false, false],
+                  margin: [0, 0, 0, 0]
+                }
+              ],
+              [
+                {
+                  text: "수능과 내신을 한권에 담다",
+                  fontSize: 11.25,
+                  font: 'GmarketSans',
+                  color: '#666666',
+                  alignment: 'right',
+                  border: [false, false, false, false],
+                  colSpan: 2,
+                  margin: [0, 1, 0, 0]
+                },
+                {}
+              ]
+            ]
+          },
+          layout: 'noBorders',
+          width: 'auto'
+        }] : [])
+      ],
+      columnGap: 0,
+      margin: [0, 0, 0, 20]
+    });
+
+    // Add border line
+    allContent.push({
+      canvas: [
+        {
+          type: 'line',
+          x1: 0,
+          y1: 0,
+          x2: 595, // Full page width like footer
+          y2: 0,
+          lineWidth: 1, // Same as footer
+          lineColor: '#e0e0e0' // Same color as footer
+        }
+      ],
+      margin: [-40, 0, 0, 20] // Negative left margin to start from dead left edge
+    });
+    
     allContent.push(...answerContent);
   }
   
   return {
     pageSize: "A4",
-    pageMargins: [40, 60, 40, 30],
+    pageMargins: [40, 30, 40, 30],
     footer: createFooterClient,
     defaultStyle: {
       font: 'CrimsonText'

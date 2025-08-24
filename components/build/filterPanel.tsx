@@ -292,7 +292,7 @@ export default function FilterPanel({
       
       <div className="flex-1 p-4 pt-0 min-h-0">
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "correctRate", "difficulty", "problemType"]}>
+          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "difficulty", "correctRate", "problemType"]}>
             {/* 단원·유형별 Section */}
             <AccordionItem value="chapters" className="border-none">
               <AccordionTrigger className="hover:no-underline">
@@ -392,58 +392,6 @@ export default function FilterPanel({
               </AccordionContent>
             </AccordionItem>
 
-            {/* 정답률 Section */}
-            <AccordionItem value="correctRate" className="border-none">
-              <AccordionTrigger className="hover:no-underline">
-                <span>정답률</span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-4">
-                  <div className="h-9 mb-3 flex items-center">
-                    <Slider
-                      value={[100 - correctRateRange[1], 100 - correctRateRange[0]]}
-                      onValueChange={(value) => setCorrectRateRange([100 - value[1], 100 - value[0]])}
-                      max={100}
-                      min={0}
-                      step={1}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={correctRateRange[1]}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 100;
-                        const clampedValue = Math.max(0, Math.min(100, value));
-                        setCorrectRateRange([correctRateRange[0], clampedValue]);
-                      }}
-                      className="w-[80px] focus-visible:ring-0 border-black"
-                      placeholder="100"
-                    />
-                    <span className="text-sm font-medium text-black">%</span>
-                    <span className="text-sm">~</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={correctRateRange[0]}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        const clampedValue = Math.max(0, Math.min(100, value));
-                        setCorrectRateRange([clampedValue, correctRateRange[1]]);
-                      }}
-                      className="w-[80px] focus-visible:ring-0 border-black"
-                      placeholder="0"
-                    />
-                    <span className="text-sm font-medium text-black">%</span>
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-
             {/* 난이도 Section */}
             <AccordionItem value="difficulty" className="border-none">
               <AccordionTrigger className="hover:no-underline">
@@ -453,14 +401,14 @@ export default function FilterPanel({
                 <div className="flex gap-2">
                   <Button 
                     onClick={() => {
-                      setSelectedDifficulties(['하', '중', '상']);
+                      setSelectedDifficulties(['상', '중', '하']);
                     }}
                     variant="outline"
                     className={selectedDifficulties.length === 3 ? "border-black text-black bg-gray-100" : ""}
                   >
                     모두
                   </Button>
-                  {['하', '중', '상'].map((level) => (
+                  {['상', '중', '하'].map((level) => (
                     <Button 
                       key={level} 
                       onClick={() => {
@@ -486,6 +434,58 @@ export default function FilterPanel({
                       {level}
                     </Button>
                   ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 정답률 Section */}
+            <AccordionItem value="correctRate" className="border-none">
+              <AccordionTrigger className="hover:no-underline">
+                <span>정답률</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4">
+                  <div className="h-9 mb-3 flex items-center">
+                    <Slider
+                      value={correctRateRange}
+                      onValueChange={(value) => setCorrectRateRange([value[0], value[1]])}
+                      max={100}
+                      min={0}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={correctRateRange[0]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        const clampedValue = Math.max(0, Math.min(100, value));
+                        setCorrectRateRange([clampedValue, correctRateRange[1]]);
+                      }}
+                      className="w-[80px] focus-visible:ring-0 border-black"
+                      placeholder="0"
+                    />
+                    <span className="text-sm font-medium text-black">%</span>
+                    <span className="text-sm">~</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={correctRateRange[1]}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 100;
+                        const clampedValue = Math.max(0, Math.min(100, value));
+                        setCorrectRateRange([correctRateRange[0], clampedValue]);
+                      }}
+                      className="w-[80px] focus-visible:ring-0 border-black"
+                      placeholder="100"
+                    />
+                    <span className="text-sm font-medium text-black">%</span>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
