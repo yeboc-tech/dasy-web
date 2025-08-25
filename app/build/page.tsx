@@ -9,6 +9,7 @@ import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import type { ProblemMetadata } from '@/lib/types/problems';
+import type { ChapterTreeItem } from '@/lib/types';
 
 export default function Page() {
   const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange} = useWorksheetStore();
@@ -34,10 +35,10 @@ export default function Page() {
       
       if (tonghapsahoe2Item) {
         // Use the same logic as handleCheckboxChange when checking a parent
-        const getAllChildIds = (item: any): string[] => {
+        const getAllChildIds = (item: ChapterTreeItem): string[] => {
           const childIds: string[] = [];
           if (item.children && item.children.length > 0) {
-            item.children.forEach((child: any) => {
+            item.children.forEach((child: ChapterTreeItem) => {
               childIds.push(child.id);
               childIds.push(...getAllChildIds(child));
             });
