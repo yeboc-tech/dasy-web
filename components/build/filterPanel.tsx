@@ -42,6 +42,10 @@ export default function FilterPanel({
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const checkedItems = new Set(selectedChapters);
+  
+  // Debug logging
+  console.log('FilterPanel - selectedChapters:', selectedChapters);
+  console.log('FilterPanel - checkedItems:', checkedItems);
 
   // Handle loading and error states
   if (loading) {
@@ -179,6 +183,21 @@ export default function FilterPanel({
     const someChildrenChecked = hasChildren ? areSomeChildrenChecked(item) : false;
     const isDisabled = isChapterDisabled(item);
 
+    // Debug logging for 통합사회 2 specifically
+    if (item.label?.includes('통합사회')) {
+      console.log(`${item.label} renderTreeItem debug:`, {
+        itemId: item.id,
+        itemLabel: item.label,
+        isChecked,
+        hasChildren,
+        allChildrenChecked,
+        checkboxWillShow: hasChildren ? allChildrenChecked : isChecked,
+        checkedItemsHasId: checkedItems.has(item.id),
+        checkedItemsSize: checkedItems.size,
+        checkedItemsArray: Array.from(checkedItems)
+      });
+    }
+
     return (
       <React.Fragment key={item.id}>
         <div className={`min-h-[36px] flex items-center tree-item ${isExpanded ? 'expanded' : ''} ${isDisabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} transition-colors duration-200`} onClick={() => !isDisabled && toggleExpanded(item.id)}>
@@ -209,7 +228,7 @@ export default function FilterPanel({
           </div>
           <div className={`pl-1 flex items-center ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer hover:cursor-pointer'}`} onClick={(e) => e.stopPropagation()}>
             <Checkbox 
-              checked={hasChildren ? allChildrenChecked : isChecked}
+              checked={isChecked || (hasChildren ? allChildrenChecked : false)}
               disabled={isDisabled}
               ref={(ref) => {
                 if (ref && hasChildren) {
@@ -248,6 +267,13 @@ export default function FilterPanel({
 
   // Filter content tree based on selected main subjects
   const filteredContentTree = contentTree.filter(item => selectedMainSubjects.includes(item.id));
+  
+  // Debug logging for filtered tree
+  console.log('FilterPanel - filteredContentTree:', filteredContentTree);
+  console.log('FilterPanel - contentTree length:', contentTree.length);
+  if (contentTree.length > 0) {
+    console.log('FilterPanel - first contentTree item:', contentTree[0]);
+  }
 
   // Define disabled chapters and buttons
   const disabledChapters = new Set([

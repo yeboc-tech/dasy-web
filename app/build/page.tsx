@@ -11,13 +11,51 @@ import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import type { ProblemMetadata } from '@/lib/types/problems';
 
 export default function Page() {
-  const {selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange} = useWorksheetStore();
+  const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange} = useWorksheetStore();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
-  
+  const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
+  
+  // Debug logging
+  console.log('Build Page - selectedChapters from store:', selectedChapters);
+  console.log('Build Page - selectedMainSubjects:', selectedMainSubjects);
+  console.log('Build Page - contentTree length:', contentTree?.length || 0);
+  console.log('Build Page - chaptersLoading:', chaptersLoading);
+  if (chaptersError) console.log('Build Page - chaptersError:', chaptersError);
+
+  // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
+  useEffect(() => {
+    if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
+      const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
+      const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
+      
+      if (tonghapsahoe2Item) {
+        // Use the same logic as handleCheckboxChange when checking a parent
+        const getAllChildIds = (item: any): string[] => {
+          const childIds: string[] = [];
+          if (item.children && item.children.length > 0) {
+            item.children.forEach((child: any) => {
+              childIds.push(child.id);
+              childIds.push(...getAllChildIds(child));
+            });
+          }
+          return childIds;
+        };
+
+        // Simulate checking 통합사회 2 - add parent + all children (same as FilterPanel logic)
+        const allChildIds = getAllChildIds(tonghapsahoe2Item);
+        const itemsToAdd = [tonghapsahoe2Id, ...allChildIds];
+        const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
+        
+        console.log('Simulating 통합사회 2 checkbox click - selecting parent and all children:', newSelectedChapters);
+        setSelectedChapters(newSelectedChapters);
+        setHasSetDefaultSelection(true);
+      }
+    }
+  }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters]);
 
   // Filter problems when any filter changes
   useEffect(() => {

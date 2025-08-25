@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { WorksheetState } from '@/lib/types';
 
 export const useWorksheetStore = create<WorksheetState>((set) => ({
-  selectedChapters: ['de04dbf4-eeb1-4b4b-8043-fc656743d528'], // Default chapter from 통합사회2
+  selectedChapters: [], // Will be set by simulating checkbox click
   problemCount: 50,
   selectedDifficulties: ['상', '중', '하'], // Default to all selected
   selectedProblemTypes: ['기출문제', 'N제'], // Default to all selected
