@@ -40,6 +40,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
   const [totalPages, setTotalPages] = useState(0);
   const [pageInputValue, setPageInputValue] = useState('1');
   const [zoom, setZoom] = useState(1.0);
+  const [isInitialZoom, setIsInitialZoom] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]);
@@ -128,7 +129,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
 
   // Calculate fit-to-width zoom on first load
   useLayoutEffect(() => {
-    if (pageImages.length > 0 && containerRef.current && zoom === 1.0) {
+    if (pageImages.length > 0 && containerRef.current && zoom === 1.0 && isInitialZoom) {
       const container = containerRef.current;
       if (container.clientWidth > 0) {
         // Calculate based on first image
@@ -138,12 +139,13 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
           const scaleToFitWidth = containerWidth / tempImg.width;
           if (scaleToFitWidth > 0) {
             setZoom(Math.min(scaleToFitWidth, 1.0)); // Start with fit-to-width, capped at 100%
+            setIsInitialZoom(false);
           }
         };
         tempImg.src = pageImages[0];
       }
     }
-  }, [pageImages, zoom]);
+  }, [pageImages, zoom, isInitialZoom]);
 
   // Update current page based on scroll position
   useEffect(() => {
@@ -274,33 +276,26 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
 
   // Zoom functions
   const zoomIn = () => {
-    setZoom(prevZoom => Math.min(prevZoom * 1.2, 1.0));
+    setZoom(prevZoom => {
+      const newZoom = Math.min(prevZoom * 1.2, 1.0);
+      setIsInitialZoom(false);
+      return newZoom;
+    });
   };
 
   const zoomOut = () => {
-    setZoom(prevZoom => Math.max(prevZoom / 1.2, 0.1));
+    setZoom(prevZoom => {
+      const newZoom = Math.max(prevZoom / 1.2, 0.1);
+      setIsInitialZoom(false);
+      return newZoom;
+    });
   };
 
 
   const fitToPage = () => {
-    // Calculate and set zoom to fit width
-    const container = containerRef.current;
-    if (container && pageImages.length > 0) {
-      console.log('Fit to page clicked, container:', container.clientWidth, 'images:', pageImages.length);
-      const tempImg = new Image();
-      tempImg.onload = () => {
-        // Account for p-4 padding (16px on each side = 32px total)
-        const containerWidth = container.clientWidth - 32;
-        // Images are rendered at 2.0 scale, so we need to account for that
-        const actualImageWidth = tempImg.width / 2.0;
-        const scaleToFitWidth = containerWidth / actualImageWidth;
-        console.log('Container width:', containerWidth, 'Image width:', tempImg.width, 'Actual width:', actualImageWidth, 'Scale:', scaleToFitWidth);
-        if (scaleToFitWidth > 0) {
-          setZoom(Math.min(scaleToFitWidth, 1.0));
-        }
-      };
-      tempImg.src = pageImages[0];
-    }
+    // Set zoom to 100% when maximize button is clicked
+    setZoom(1.0);
+    setIsInitialZoom(false);
   };
 
   // Download function

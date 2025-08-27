@@ -75,7 +75,30 @@ export default function Page() {
       correctRateRange
     };
 
+    console.log('🔍 Build Page - Filtering with:', {
+      totalProblems: problems.length,
+      selectedChapters: selectedChapters.length,
+      selectedDifficulties,
+      selectedProblemTypes,
+      selectedSubjects,
+      problemCount,
+      correctRateRange
+    });
+
     const filtered = ProblemFilter.filterProblems(problems, filters);
+    console.log('✅ Build Page - Filtered results:', {
+      filteredCount: filtered.length,
+      problemIds: filtered.map(p => p.id),
+      problems: filtered.map(p => ({ 
+        id: p.id, 
+        filename: p.problem_filename, 
+        difficulty: p.difficulty,
+        type: p.problem_type,
+        correctRate: p.correct_rate,
+        chapterId: p.chapter_id 
+      }))
+    });
+    
     setFilteredProblems(filtered);
   }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange]);
 

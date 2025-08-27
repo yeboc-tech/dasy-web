@@ -145,6 +145,22 @@ export async function getWorksheet(
   };
 }
 
+export async function updateWorksheet(
+  supabase: SupabaseClient,
+  id: string,
+  updates: { title?: string; author?: string }
+): Promise<void> {
+  const { error } = await supabase
+    .from('worksheets')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating worksheet:', error);
+    throw new Error('Failed to update worksheet');
+  }
+}
+
 export async function publishWorksheet(
   supabase: SupabaseClient,
   id: string

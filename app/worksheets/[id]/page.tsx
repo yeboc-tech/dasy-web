@@ -268,18 +268,36 @@ export default function ConfigurePage() {
     console.log('🔵 handleEdit called AFTER setShowEditDialog');
   }, [loading, pdfUrl, pdfError, showEditDialog, showLoader, selectedImages.length]);
 
-  const handleEditSubmit = (data: { title: string; author: string }) => {
+  const handleEditSubmit = useCallback(async (data: { title: string; author: string }) => {
     // Only update state and URL if title or author actually changed
     const titleChanged = data.title !== worksheetTitle;
     const authorChanged = data.author !== worksheetAuthor;
     
     if (titleChanged || authorChanged) {
-      // Update state - this will trigger PDF regeneration
-      setWorksheetTitle(data.title);
-      setWorksheetAuthor(data.author);
+      try {
+        // Update database first
+        const { createClient } = await import('@/lib/supabase/client');
+        const { updateWorksheet } = await import('@/lib/supabase/services/worksheetService');
+        
+        const supabase = createClient();
+        await updateWorksheet(supabase, worksheetId, {
+          title: data.title,
+          author: data.author
+        });
+        
+        // Update state - this will trigger PDF regeneration
+        setWorksheetTitle(data.title);
+        setWorksheetAuthor(data.author);
+        
+        console.log('Worksheet metadata updated successfully');
+      } catch (error) {
+        console.error('Failed to update worksheet metadata:', error);
+        // Show error to user - you might want to add a toast notification here
+        alert('Failed to update worksheet metadata. Please try again.');
+      }
     }
     // If nothing changed, dialog just closes without any updates
-  };
+  }, [worksheetTitle, worksheetAuthor, worksheetId]);
 
   const handleSave = useCallback(() => {
     setShowPublishDialog(true);
