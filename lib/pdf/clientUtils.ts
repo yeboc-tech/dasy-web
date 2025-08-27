@@ -129,8 +129,8 @@ export async function imageToBase64Client(imagePath: string): Promise<string> {
       }
     };
     
-    img.onerror = function(error) {
-      console.error(`Failed to load image via proxy: ${imagePath}`, error);
+    img.onerror = function() {
+      // Silently fall back to placeholder image to avoid console noise during loading
       resolve(getNoImageBase64());
     };
     
@@ -618,9 +618,7 @@ export async function createAnswerPagesClient(
 
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
-  base64Images: string[],
-  title?: string,
-  creator?: string
+  base64Images: string[]
 ) {
   // Use new column-based layout system
   const content = await createColumnBasedLayoutClient(images, base64Images);
@@ -752,14 +750,32 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
         alignment: 'right'
       }] : [])
     ],
-    margin: [0, 0, 0, 20]
+    margin: [0, 0, 0, 8]
   });
+  
+  // Add worksheet title below if provided
+  if (title) {
+    allContent.push({
+      text: title,
+      fontSize: 16,
+      font: 'ONEMobileTitle',
+      color: '#6A6A6A',
+      alignment: 'left',
+      margin: [0, 0, 0, 20]
+    });
+  } else {
+    // Add spacing if no title
+    allContent.push({
+      text: '',
+      margin: [0, 0, 0, 12]
+    });
+  }
 
   // Row 2: Metadata and QR section with justify-between layout
   allContent.push({
     columns: [
       {
-        text: `${dateString} | ${problemCount}문제 | 이름 _______________`,
+        text: `${dateString} | ${problemCount}문제 | ${creator || ''} | 이름 _______________`,
         fontSize: 9,
         font: 'GmarketSans',
         color: '#888888',
@@ -856,14 +872,32 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
           alignment: 'right'
         }] : [])
       ],
-      margin: [0, 0, 0, 20]
+      margin: [0, 0, 0, 8]
     });
+    
+    // Add worksheet title below if provided (answer pages)
+    if (title) {
+      allContent.push({
+        text: title,
+        fontSize: 16,
+        font: 'ONEMobileTitle',
+        color: '#6A6A6A',
+        alignment: 'left',
+        margin: [0, 0, 0, 20]
+      });
+    } else {
+      // Add spacing if no title
+      allContent.push({
+        text: '',
+        margin: [0, 0, 0, 12]
+      });
+    }
 
     // Row 2: Metadata and QR section with justify-between layout
     allContent.push({
       columns: [
         {
-          text: `${dateString} | ${problemCount}문제 | 이름 _______________`,
+          text: `${dateString} | ${problemCount}문제 | ${creator || ''} | 이름 _______________`,
           fontSize: 9,
           font: 'GmarketSans',
           color: '#888888',

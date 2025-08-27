@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState, Suspense, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Loader } from "lucide-react";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { useChapters } from '@/lib/hooks/useChapters';
-import { useProblems } from '@/lib/hooks/useProblems';
 import { imageToBase64Client, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
+import { PublishConfirmDialog } from '@/components/worksheets/PublishConfirmDialog';
 import IsolatedPDFContainer from '@/components/pdf/IsolatedPDFContainer';
+import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
+import type { ProblemMetadata } from '@/lib/types/problems';
 
 // Helper function to generate a simple "No Image" base64 as fallback
 function getNoImageBase64(): string {
@@ -27,72 +29,91 @@ function getNoImageBase64(): string {
   const base64 = btoa(unescape(encodeURIComponent(svg)));
   return `data:image/svg+xml;base64,${base64}`;
 }
-import { ProblemFilter } from '@/lib/utils/problemFiltering';
-import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 
-function PdfContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const problemCount = parseInt(searchParams.get('problemCount') || '0', 10);
+interface WorksheetData {
+  worksheet: {
+    id: string;
+    title: string;
+    author: string;
+    filters: Record<string, unknown>;
+    created_at: string;
+    selected_problem_ids: string[];
+    is_public: boolean;
+  };
+  problems: ProblemMetadata[];
+}
+
+export default function ConfigurePage() {
+  const params = useParams();
+  const worksheetId = params.id as string;
   
-  const [worksheetTitle, setWorksheetTitle] = useState(() => searchParams.get('title') || '수능 문제지');
-  const [worksheetAuthor, setWorksheetAuthor] = useState(() => searchParams.get('author') || 'DASY');
+  const [worksheetData, setWorksheetData] = useState<WorksheetData | null>(null);
+  const [worksheetTitle, setWorksheetTitle] = useState('수능 문제지');
+  const [worksheetAuthor, setWorksheetAuthor] = useState('DASY');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showLoader, setShowLoader] = useState(false);
+  const [showLoader, setShowLoader] = useState(true); // Start with loader visible
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [worksheetReady, setWorksheetReady] = useState(false); // New flag to control PDF generation
 
   // Fetch chapters from database
-  const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
-  const { problems, loading: problemsLoading, error: problemsError } = useProblems();
+  const { loading: chaptersLoading, error: chaptersError } = useChapters();
 
-  // Stable search params to prevent unnecessary re-renders
-  const searchParamsString = searchParams.toString();
-  
-  // Filter and select problems based on criteria
-  const { selectedProblems, selectedImages, selectedAnswerImages } = useMemo(() => {
-    if (!problems || problems.length === 0 || problemsLoading) {
-      return { selectedProblems: [], selectedImages: [], selectedAnswerImages: [] };
-    }
-
-    const urlParams = new URLSearchParams(searchParamsString);
-    const selectedChapters = urlParams.get('selectedChapters')?.split(',').filter(Boolean) || [];
-    const selectedDifficulties = urlParams.get('selectedDifficulties')?.split(',').filter(Boolean) || [];
-    const selectedProblemTypes = urlParams.get('selectedProblemTypes')?.split(',').filter(Boolean) || [];
-    const selectedSubjects = urlParams.get('selectedSubjects')?.split(',').filter(Boolean) || [];
-
-    const correctRateRange = urlParams.get('correctRateRange')?.split(',').map(Number) || [0, 100];
-
-    const filters = {
-      selectedChapters,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount,
-      contentTree,
-      correctRateRange: [correctRateRange[0], correctRateRange[1]] as [number, number]
+  // Fetch worksheet data
+  useEffect(() => {
+    const fetchWorksheet = async () => {
+      try {
+        setLoading(true);
+        setFetchError(null);
+        
+        const { createClient } = await import('@/lib/supabase/client');
+        const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
+        
+        const supabase = createClient();
+        const data = await getWorksheet(supabase, worksheetId);
+        
+        setWorksheetData(data);
+        setWorksheetTitle(data.worksheet.title);
+        setWorksheetAuthor(data.worksheet.author);
+        setWorksheetReady(true); // Mark worksheet as ready for PDF generation
+        
+      } catch (error) {
+        console.error('Error fetching worksheet:', error);
+        setFetchError(error instanceof Error ? error.message : '워크시트를 불러오는데 실패했습니다.');
+        setShowLoader(false);
+        setLoading(false);
+      }
     };
 
-    const filtered = ProblemFilter.filterProblems(problems, filters);
-    
-    // Convert to S3 image URLs with error handling
+    if (worksheetId) {
+      fetchWorksheet();
+    }
+  }, [worksheetId]);
+
+  // Generate image URLs and filter problems
+  const { selectedImages, selectedAnswerImages } = useMemo(() => {
+    if (!worksheetData?.problems) {
+      return { selectedImages: [], selectedAnswerImages: [] };
+    }
+
     try {
-      const problemImages = filtered.map(problem => getProblemImageUrl(problem.id));
-      const answerImages = filtered
+      const problemImages = worksheetData.problems.map(problem => getProblemImageUrl(problem.id));
+      const answerImages = worksheetData.problems
         .filter(problem => problem.answer_filename)
         .map(problem => getAnswerImageUrl(problem.id));
       
       return { 
-        selectedProblems: filtered, 
         selectedImages: problemImages, 
         selectedAnswerImages: answerImages 
       };
     } catch (error) {
       console.error('Failed to generate image URLs:', error);
-      return { selectedProblems: [], selectedImages: [], selectedAnswerImages: [] };
+      return { selectedImages: [], selectedAnswerImages: [] };
     }
-  }, [problems, problemCount, contentTree, problemsLoading, searchParamsString]);
+  }, [worksheetData?.problems]);
 
   // Track PDF visibility states
   useEffect(() => {
@@ -105,10 +126,16 @@ function PdfContent() {
     });
   }, [loading, pdfUrl, pdfError, showEditDialog]);
 
-  // Generate PDF when selectedImages changes
+  // Generate PDF when selectedImages changes - but only when worksheet is ready
   const lastProcessedImages = useRef<string>('');
   
   useEffect(() => {
+    // Don't start PDF generation until worksheet data is fully loaded
+    if (!worksheetReady) {
+      console.log('🟡 Waiting for worksheet data to be ready...');
+      return;
+    }
+
     // Create a unique key for the current selection using only the data that should trigger regeneration
     const selectionKey = JSON.stringify({
       imageUrls: selectedImages.join(','),
@@ -121,7 +148,7 @@ function PdfContent() {
     console.log('  - selectionKey:', selectionKey);
     console.log('  - previous:', lastProcessedImages.current);
     console.log('  - selectedImages.length:', selectedImages.length);
-    console.log('  - current states:', { loading, showLoader, pdfUrl: !!pdfUrl, pdfError: !!pdfError });
+    console.log('  - worksheetReady:', worksheetReady);
     
     // Skip if we've already processed this exact selection
     if (selectionKey === lastProcessedImages.current) {
@@ -133,38 +160,34 @@ function PdfContent() {
       setPdfUrl(null);
       setPdfError(null);
       setLoading(false);
+      setShowLoader(false);
       lastProcessedImages.current = selectionKey;
       return;
     }
 
     const generatePdf = async () => {
-      let loaderTimeout: NodeJS.Timeout | undefined;
       try {
-        console.log('🔴 Setting loading=true, showLoader will be true after 100ms');
+        console.log('🔴 Starting PDF generation - keeping loader visible');
         setLoading(true);
-        // Delay showing loader to prevent flash on quick operations
-        loaderTimeout = setTimeout(() => {
-          console.log('🔴 Setting showLoader=true (after 100ms delay)');
-          setShowLoader(true);
-        }, 100);
+        // Keep showLoader true - no need to delay since we want consistent loading
         setPdfError(null);
         
         // Convert problem images to base64 on client side with error handling
         const problemImagePromises = selectedImages.map(async (imagePath) => {
           try {
             return await imageToBase64Client(imagePath);
-          } catch (error) {
-            console.error(`Failed to process problem image ${imagePath}:`, error);
+          } catch {
+            // Silently fall back to placeholder image
             return getNoImageBase64();
           }
         });
         
         const base64ProblemImages = await Promise.allSettled(problemImagePromises);
-        const processedProblemImages = base64ProblemImages.map((result, index) => {
+        const processedProblemImages = base64ProblemImages.map((result) => {
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            console.error(`Problem image ${index} failed:`, result.reason);
+            // Silently fall back to placeholder for failed images
             return getNoImageBase64();
           }
         });
@@ -173,26 +196,21 @@ function PdfContent() {
         const answerImagePromises = selectedAnswerImages.map(async (imagePath) => {
           try {
             return await imageToBase64Client(imagePath);
-          } catch (error) {
-            console.error(`Failed to process answer image ${imagePath}:`, error);
+          } catch {
+            // Silently fall back to placeholder image
             return getNoImageBase64();
           }
         });
         
         const base64AnswerImages = await Promise.allSettled(answerImagePromises);
-        const processedAnswerImages = base64AnswerImages.map((result, index) => {
+        const processedAnswerImages = base64AnswerImages.map((result) => {
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            console.error(`Answer image ${index} failed:`, result.reason);
+            // Silently fall back to placeholder for failed images
             return getNoImageBase64();
           }
         });
-
-        // Note: problemsWithAnswers data is available if needed for future features
-        // const problemsWithAnswers = selectedProblems
-        //   .filter(problem => problem.answer_filename)
-        //   .map(problem => ({ answer: problem.answer || null }));
         
         // Create document definition with answers
         const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
@@ -228,15 +246,14 @@ function PdfContent() {
         setPdfError(errorMessage);
         lastProcessedImages.current = selectionKey;
       } finally {
-        if (loaderTimeout) clearTimeout(loaderTimeout);
-        console.log('🔴 Setting loading=false, showLoader=false');
+        console.log('🔴 PDF generation complete - hiding loader');
         setLoading(false);
         setShowLoader(false);
       }
     };
     
     generatePdf();
-  }, [selectedImages, selectedAnswerImages, selectedProblems, worksheetTitle, worksheetAuthor, loading, pdfError, pdfUrl, showLoader]);
+  }, [selectedImages, selectedAnswerImages, worksheetTitle, worksheetAuthor, worksheetReady]);
 
   const handleEdit = useCallback(() => {
     console.log('🔵 handleEdit called BEFORE setShowEditDialog - PDF states:', {
@@ -260,37 +277,38 @@ function PdfContent() {
       // Update state - this will trigger PDF regeneration
       setWorksheetTitle(data.title);
       setWorksheetAuthor(data.author);
-      
-      // Update URL parameters to reflect the changes
-      const currentParams = new URLSearchParams(searchParams.toString());
-      currentParams.set('title', data.title);
-      currentParams.set('author', data.author);
-      router.replace(`/configure?${currentParams.toString()}`);
     }
     // If nothing changed, dialog just closes without any updates
   };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
+    setShowPublishDialog(true);
+  }, []);
+
+  const handlePublishConfirm = useCallback(async () => {
     try {
-      // TODO: Implement save to database
-      console.log('Saving worksheet:', {
-        title: worksheetTitle,
-        author: worksheetAuthor,
-        selectedImages,
-        selectedProblems
-      });
-      alert('학습지가 저장되었습니다!');
+      const { createClient } = await import('@/lib/supabase/client');
+      const { publishWorksheet } = await import('@/lib/supabase/services/worksheetService');
+      
+      const supabase = createClient();
+      await publishWorksheet(supabase, worksheetId);
+      
+      // Update local state to reflect the change
+      setWorksheetData(prev => 
+        prev ? { ...prev, worksheet: { ...prev.worksheet, is_public: true } } : null
+      );
     } catch (error) {
-      console.error('Error saving worksheet:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      console.error('Error publishing worksheet:', error);
+      alert('목록 추가 중 오류가 발생했습니다.');
     }
-  }, [worksheetTitle, worksheetAuthor, selectedImages, selectedProblems]);
+  }, [worksheetId]);
 
   const handlePDFError = useCallback((error: string) => {
     setPdfError(error || null);
   }, []);
 
-  if (problemsLoading || chaptersLoading) {
+  // Show loading state while fetching worksheet OR generating PDF
+  if ((!worksheetData && loading) || (worksheetReady && showLoader)) {
     return (
       <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
         <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
@@ -302,13 +320,40 @@ function PdfContent() {
     );
   }
 
-  if (problemsError || chaptersError) {
+  // Show error state
+  if (fetchError) {
     return (
       <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
         <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
           <div className="flex-1 bg-white flex items-center justify-center">
             <div className="text-center text-gray-600">
-              {problemsError ? `문제 데이터 오류: ${problemsError}` : `단원 정보 오류: ${chaptersError}`}
+              {fetchError}
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (chaptersLoading) {
+    return (
+      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
+        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
+          <div className="flex-1 bg-white flex items-center justify-center">
+            <Loader className="animate-spin w-4 h-4" />
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (chaptersError) {
+    return (
+      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
+        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
+          <div className="flex-1 bg-white flex items-center justify-center">
+            <div className="text-center text-gray-600">
+              단원 정보 오류: {chaptersError}
             </div>
           </div>
         </Card>
@@ -329,6 +374,9 @@ function PdfContent() {
             onEdit={handleEdit}
             onSave={handleSave}
             selectedImagesLength={selectedImages.length}
+            worksheetTitle={worksheetTitle}
+            worksheetAuthor={worksheetAuthor}
+            isPublic={worksheetData?.worksheet.is_public}
           />
         </Card>
       </div>
@@ -340,26 +388,13 @@ function PdfContent() {
         initialData={{ title: worksheetTitle, author: worksheetAuthor }}
         isEditing={true}
       />
+      
+      <PublishConfirmDialog
+        open={showPublishDialog}
+        onOpenChange={setShowPublishDialog}
+        onConfirm={handlePublishConfirm}
+        worksheetTitle={worksheetTitle}
+      />
     </>
-  );
-}
-
-function Fallback() {
-  return (
-    <div className="px-4 pt-0 pb-4 max-w-6xl mx-auto w-full h-full">
-      <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-        <div className="flex-1 bg-white flex items-center justify-center">
-          <Loader className="animate-spin w-4 h-4 text-gray-600" />
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<Fallback />}>
-      <PdfContent />
-    </Suspense>
   );
 }

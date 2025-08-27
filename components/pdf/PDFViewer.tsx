@@ -24,21 +24,48 @@ if (typeof window !== 'undefined') {
 interface PDFViewerProps {
   pdfUrl: string;
   onError?: (error: string) => void;
+  onEdit?: () => void;
+  onSave?: () => void;
+  worksheetTitle?: string;
+  worksheetAuthor?: string;
+  isPublic?: boolean;
 }
 
-export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
+const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, worksheetTitle, worksheetAuthor, isPublic }: PDFViewerProps) {
+  console.log('🟠 PDFViewer component render - pdfUrl:', !!pdfUrl);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<{[key: number]: HTMLImageElement | null}>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [pageInputValue, setPageInputValue] = useState('1');
   const [zoom, setZoom] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]);
   
+  // Track prop changes
+  const prevProps = useRef({ pdfUrl, onError, onEdit, onSave });
+  useEffect(() => {
+    const prev = prevProps.current;
+    const changes = [];
+    
+    if (prev.pdfUrl !== pdfUrl) changes.push(`pdfUrl: ${prev.pdfUrl} -> ${pdfUrl}`);
+    if (prev.onError !== onError) changes.push('onError changed');
+    if (prev.onEdit !== onEdit) changes.push('onEdit changed');
+    if (prev.onSave !== onSave) changes.push('onSave changed');
+    
+    if (changes.length > 0) {
+      console.log('🟠 PDFViewer prop changes:', changes);
+    }
+    
+    prevProps.current = { pdfUrl, onError, onEdit, onSave };
+  });
+  
 
   // Load PDF document and render all pages
   useEffect(() => {
+    console.log('🟠 PDFViewer useEffect (loadAndRenderPDF) triggered for pdfUrl:', pdfUrl);
     const loadAndRenderPDF = async () => {
       try {
         setLoading(true);
@@ -54,6 +81,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
         
         setTotalPages(pdf.numPages);
         setCurrentPage(1);
+        setPageInputValue('1');
         
         // Pre-render all pages as images
         const images: string[] = [];
@@ -109,7 +137,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
           const containerWidth = container.clientWidth - 32; // Account for p-4 padding
           const scaleToFitWidth = containerWidth / tempImg.width;
           if (scaleToFitWidth > 0) {
-            setZoom(scaleToFitWidth); // Start with fit-to-width
+            setZoom(Math.min(scaleToFitWidth, 1.0)); // Start with fit-to-width, capped at 100%
           }
         };
         tempImg.src = pageImages[0];
@@ -152,6 +180,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
 
       if (newCurrentPage !== currentPage) {
         setCurrentPage(newCurrentPage);
+        setPageInputValue(newCurrentPage.toString());
       }
     };
 
@@ -164,6 +193,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
     if (currentPage > 1) {
       const newPage = currentPage - 1;
       setCurrentPage(newPage);
+      setPageInputValue(newPage.toString());
       scrollToPage(newPage);
     }
   };
@@ -172,6 +202,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
     if (currentPage < totalPages) {
       const newPage = currentPage + 1;
       setCurrentPage(newPage);
+      setPageInputValue(newPage.toString());
       scrollToPage(newPage);
     }
   };
@@ -179,7 +210,31 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
   const goToPage = (pageNum: number) => {
     if (pageNum >= 1 && pageNum <= totalPages) {
       setCurrentPage(pageNum);
+      setPageInputValue(pageNum.toString());
       scrollToPage(pageNum);
+    }
+  };
+
+  // Handle page input changes (allow empty values)
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPageInputValue(e.target.value);
+  };
+
+  // Handle page input submit (Enter key or blur)
+  const handlePageInputSubmit = () => {
+    const pageNum = parseInt(pageInputValue);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      goToPage(pageNum);
+    } else {
+      // Reset to current page if invalid
+      setPageInputValue(currentPage.toString());
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handlePageInputSubmit();
+      e.currentTarget.blur();
     }
   };
 
@@ -219,7 +274,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
 
   // Zoom functions
   const zoomIn = () => {
-    setZoom(prevZoom => prevZoom * 1.2);
+    setZoom(prevZoom => Math.min(prevZoom * 1.2, 1.0));
   };
 
   const zoomOut = () => {
@@ -241,7 +296,7 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
         const scaleToFitWidth = containerWidth / actualImageWidth;
         console.log('Container width:', containerWidth, 'Image width:', tempImg.width, 'Actual width:', actualImageWidth, 'Scale:', scaleToFitWidth);
         if (scaleToFitWidth > 0) {
-          setZoom(scaleToFitWidth);
+          setZoom(Math.min(scaleToFitWidth, 1.0));
         }
       };
       tempImg.src = pageImages[0];
@@ -250,9 +305,20 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
 
   // Download function
   const downloadPDF = () => {
-    const now = new Date();
-    const timestamp = now.toISOString().slice(0, 19).replace(/[:.]/g, '_'); // YYYY_MM_DDTHH_MM_SS
-    const filename = `worksheet_${timestamp}.pdf`;
+    // Create filename from title and author
+    let filename = 'worksheet.pdf';
+    
+    if (worksheetTitle || worksheetAuthor) {
+      const titlePart = worksheetTitle || '';
+      const authorPart = worksheetAuthor || '';
+      const nameParts = [titlePart, authorPart].filter(part => part.trim().length > 0);
+      
+      if (nameParts.length > 0) {
+        // Clean up the filename by removing invalid characters
+        const cleanName = nameParts.join('_').replace(/[<>:"/\\|?*]/g, '').trim();
+        filename = `${cleanName}.pdf`;
+      }
+    }
     
     const link = document.createElement('a');
     link.href = pdfUrl;
@@ -350,8 +416,54 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
       <style dangerouslySetInnerHTML={{ __html: printStyles }} />
       
       <div className="flex flex-col h-full bg-white print:h-auto">
-        {/* Custom PDF Toolbar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-black text-white border-b border-gray-800 print:hidden">
+        {/* Worksheet Header Bar */}
+        {(worksheetTitle || onEdit || onSave) && (
+          <div className="flex items-center justify-between px-3 bg-white print:hidden h-[49px]">
+            <div className="flex items-center space-x-3">
+              {worksheetTitle && (
+                <div className="text-sm font-medium text-gray-800">
+                  {worksheetTitle}
+                </div>
+              )}
+              {worksheetAuthor && (
+                <div className="text-xs text-gray-500">
+                  {worksheetAuthor}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              {onEdit && !isPublic && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={onEdit}
+                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
+                  title="학습지 제목 및 출제자 정보 수정"
+                >
+                  정보 수정
+                </Button>
+              )}
+              
+              {onSave && !isPublic && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={onSave}
+                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
+                  title="학습지를 공개 목록에 추가"
+                >
+                  목록 추가
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PDF Toolbar and Viewer Group */}
+        <div className="flex-1 flex flex-col overflow-hidden rounded-lg">
+          {/* PDF Toolbar */}
+          <div className="flex items-center justify-between px-3 py-2 bg-black text-white border-b border-gray-800 print:hidden rounded-t-lg">
         {/* Left Section */}
         <div className="flex items-center space-x-2">
           {/* Page Navigation */}
@@ -370,11 +482,14 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
             <div className="flex items-center space-x-1 text-xs">
               <input
                 type="number"
-                value={currentPage}
-                onChange={(e) => goToPage(parseInt(e.target.value) || 1)}
+                value={pageInputValue}
+                onChange={handlePageInputChange}
+                onKeyDown={handlePageInputKeyDown}
+                onBlur={handlePageInputSubmit}
                 className="w-10 px-1 py-0.5 text-center bg-gray-800 border border-gray-600 rounded text-white text-xs"
                 min="1"
                 max={totalPages}
+                placeholder="Page"
               />
               <span>/</span>
               <span>{totalPages}</span>
@@ -408,14 +523,15 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
               className="h-8 text-xs text-white flex items-center justify-center bg-transparent"
               style={{ width: '45px' }}
             >
-{Math.round(zoom * 100)}%
+{Math.min(Math.round(zoom * 100), 100)}%
             </div>
             
             <Button 
               variant="ghost"
               size="icon"
               onClick={zoomIn}
-              className="h-8 w-8 text-white"
+              disabled={zoom >= 1.0}
+              className="h-8 w-8 text-white disabled:opacity-50"
               title="Zoom in"
             >
               <Plus size={16} />
@@ -440,11 +556,10 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
             size="icon"
             onClick={downloadPDF}
             className="h-8 w-8 text-white"
-            title="Download"
+            title="Download PDF"
           >
             <Download size={16} />
           </Button>
-          
           <Button 
             variant="ghost"
             size="icon"
@@ -489,7 +604,10 @@ export default function PDFViewer({ pdfUrl, onError }: PDFViewerProps) {
           ))}
         </div>
       </div>
+        </div>
     </div>
     </>
   );
-}
+});
+
+export default PDFViewer;

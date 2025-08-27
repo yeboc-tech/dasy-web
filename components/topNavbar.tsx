@@ -1,60 +1,33 @@
 'use client';
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { useWorksheetStore } from "@/lib/zustand/worksheetStore";
 import { usePathname } from "next/navigation";
 
 export function TopNavbar() {
   const pathname = usePathname();
-  const isBuildPage = pathname === '/build';
-  const { selectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange } = useWorksheetStore();
-
-  const handlePdfGeneration = () => {
-    const params = new URLSearchParams();
-    if (selectedChapters.length > 0) params.set('selectedChapters', selectedChapters.join(','));
-    params.set('problemCount', String(problemCount));
-    params.set('selectedDifficulties', selectedDifficulties.join(','));
-    params.set('selectedProblemTypes', selectedProblemTypes.join(','));
-    // Add selectedSubjects if available
-    if (selectedSubjects && selectedSubjects.length > 0) {
-      params.set('selectedSubjects', selectedSubjects.join(','));
-    }
-    // Add correctRateRange
-    params.set('correctRateRange', correctRateRange.join(','));
-    
-    console.log('TopNavbar - Passing parameters:', {
-      selectedChapters,
-      problemCount,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      correctRateRange,
-      url: `/configure?${params.toString()}`
-    });
-    
-    window.location.href = `/configure?${params.toString()}`;
-  };
-
-  
-  const isPdfButtonDisabled = selectedChapters.length === 0;
 
   return (
     <div className="w-full h-[60px] max-w-4xl mx-auto p-4 flex justify-between items-center shrink-0">
       <Link href="/" className="w-fit block text-lg font-semibold">통합사회 학습지 제작 도구</Link>
-      <Button 
-        size="sm" 
-        variant="outline" 
-        disabled={isPdfButtonDisabled}
-        className={`w-fit ${isBuildPage ? '' : 'invisible'} ${
-          isPdfButtonDisabled 
-            ? 'opacity-50 cursor-not-allowed' 
-            : 'hover:bg-gray-50 cursor-pointer'
-        }`}
-        onClick={handlePdfGeneration}
-      >
-        학습지 생성
-      </Button>
+      
+      <nav className="flex items-center gap-6">
+        <Link 
+          href="/worksheets" 
+          className={`text-sm font-medium transition-colors hover:text-gray-900 ${
+            pathname === '/worksheets' ? 'text-black' : 'text-gray-600'
+          }`}
+        >
+          학습지 목록
+        </Link>
+        <Link 
+          href="/build" 
+          className={`text-sm font-medium transition-colors hover:text-gray-900 ${
+            pathname === '/build' ? 'text-black' : 'text-gray-600'
+          }`}
+        >
+          학습지 만들기
+        </Link>
+      </nav>
     </div>
   );
 }
