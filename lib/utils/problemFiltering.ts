@@ -86,16 +86,16 @@ export class ProblemFilter {
       });
     }
 
-    // Sort by difficulty based on correct rate (easier problems first: 하 -> 중 -> 상)
+    // Sort by correct rate (highest first = easiest problems first)
     filtered.sort((a, b) => {
-      const aDifficulty = this.getDifficultyWeight(this.getDifficultyFromCorrectRate(a));
-      const bDifficulty = this.getDifficultyWeight(this.getDifficultyFromCorrectRate(b));
+      const aCorrectRate = a.correct_rate ?? 0;
+      const bCorrectRate = b.correct_rate ?? 0;
       
-      // Sort by difficulty (easier problems first)
-      return aDifficulty - bDifficulty;
+      // Sort by correct rate descending (highest correct rate first)
+      return bCorrectRate - aCorrectRate;
     });
 
-    // Limit by problem count
+    // Limit by problem count (skip limit if -1 = show all)
     if (filters.problemCount > 0) {
       filtered = filtered.slice(0, filters.problemCount);
     }

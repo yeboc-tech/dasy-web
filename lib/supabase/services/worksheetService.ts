@@ -89,30 +89,46 @@ export async function getWorksheet(
   }
 
   // Fetch the actual problems using the stored problem IDs
-  const { data: problems, error: problemsError } = await supabase
-    .from('problems')
-    .select(`
-      id,
-      problem_filename,
-      answer_filename,
-      answer,
-      chapter_id,
-      difficulty,
-      problem_type,
-      correct_rate,
-      created_at,
-      updated_at,
-      problem_subjects(
-        subjects(name)
-      )
-    `)
-    .in('id', worksheet.selected_problem_ids)
-    .order('problem_filename');
+  // Handle large result sets by batching queries to avoid URL/query limits
+  const batchSize = 100; // Safe batch size to avoid URL/query limits
+  const problemIds = worksheet.selected_problem_ids;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let allProblems: any[] = [];
 
-  if (problemsError) {
-    console.error('Error fetching problems:', problemsError);
-    throw new Error('Failed to fetch problems');
+  console.log(`Fetching ${problemIds.length} problems in batches of ${batchSize}`);
+
+  for (let i = 0; i < problemIds.length; i += batchSize) {
+    const batch = problemIds.slice(i, i + batchSize);
+    console.log(`Fetching batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(problemIds.length/batchSize)} (${batch.length} problems)`);
+    
+    const { data: batchProblems, error: batchError } = await supabase
+      .from('problems')
+      .select(`
+        id,
+        problem_filename,
+        answer_filename,
+        answer,
+        chapter_id,
+        difficulty,
+        problem_type,
+        correct_rate,
+        created_at,
+        updated_at,
+        problem_subjects(
+          subjects(name)
+        )
+      `)
+      .in('id', batch);
+
+    if (batchError) {
+      console.error(`Error fetching problems batch ${Math.floor(i/batchSize) + 1}:`, batchError);
+      throw new Error(`Failed to fetch problems batch: ${batchError.message || JSON.stringify(batchError)}`);
+    }
+
+    allProblems = allProblems.concat(batchProblems || []);
   }
+
+  const problems = allProblems;
 
   // Transform problems to match ProblemMetadata interface
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -130,6 +146,13 @@ export async function getWorksheet(
     created_at: problem.created_at,
     updated_at: problem.updated_at
   }));
+
+  // Sort problems by correct rate (highest first = easiest problems first)
+  transformedProblems.sort((a, b) => {
+    const aCorrectRate = a.correct_rate ?? 0;
+    const bCorrectRate = b.correct_rate ?? 0;
+    return bCorrectRate - aCorrectRate;
+  });
 
   return {
     worksheet: {

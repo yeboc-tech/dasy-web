@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,13 @@ export default function FilterPanel({
   } = useWorksheetStore();
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [problemCountInput, setProblemCountInput] = useState<string>(problemCount.toString());
   const checkedItems = new Set(selectedChapters);
+  
+  // Sync input display with store value when store changes externally
+  useEffect(() => {
+    setProblemCountInput(problemCount.toString());
+  }, [problemCount]);
   
   // Debug logging
   console.log('FilterPanel - selectedChapters:', selectedChapters);
@@ -400,13 +406,32 @@ export default function FilterPanel({
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
-                      type="number"
-                      max="100"
-                      value={problemCount}
+                      type="text"
+                      value={problemCountInput}
                       onChange={(e) => {
-                        const value = parseInt(e.target.value);
-                        if (value <= 100) {
+                        const inputValue = e.target.value;
+                        
+                        // Update local display state immediately
+                        setProblemCountInput(inputValue);
+                        
+                        // Allow empty string, single minus sign, or partial typing
+                        if (inputValue === '' || inputValue === '-') {
+                          // Don't update store yet, allow user to continue typing
+                          return;
+                        }
+                        
+                        const value = parseInt(inputValue);
+                        
+                        // Update store only for valid values
+                        if (!isNaN(value) && (value === -1 || (value >= 1 && value <= 100))) {
                           setProblemCount(value);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // On blur, if field is empty or just "-", reset to previous valid value
+                        const inputValue = e.target.value;
+                        if (inputValue === '' || inputValue === '-') {
+                          setProblemCountInput(problemCount.toString()); // Reset display to store value
                         }
                       }}
                       className="w-[80px] focus-visible:ring-0 border-black"
