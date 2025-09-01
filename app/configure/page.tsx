@@ -94,16 +94,7 @@ function PdfContent() {
     }
   }, [problems, problemCount, contentTree, problemsLoading, searchParamsString]);
 
-  // Track PDF visibility states
-  useEffect(() => {
-    console.log('PDF visibility states changed:', {
-      loading,
-      pdfUrl: !!pdfUrl,
-      pdfError: !!pdfError,
-      showEditDialog,
-      shouldShowPDF: !!(pdfUrl && !loading && !pdfError)
-    });
-  }, [loading, pdfUrl, pdfError, showEditDialog]);
+  // Track PDF visibility states - logging removed
 
   // Generate PDF when selectedImages changes
   const lastProcessedImages = useRef<string>('');
@@ -117,15 +108,11 @@ function PdfContent() {
       author: worksheetAuthor
     });
     
-    console.log('🟡 PDF Generation useEffect triggered:');
-    console.log('  - selectionKey:', selectionKey);
-    console.log('  - previous:', lastProcessedImages.current);
-    console.log('  - selectedImages.length:', selectedImages.length);
-    console.log('  - current states:', { loading, showLoader, pdfUrl: !!pdfUrl, pdfError: !!pdfError });
+    // PDF Generation logging removed
     
     // Skip if we've already processed this exact selection
     if (selectionKey === lastProcessedImages.current) {
-      console.log('SKIPPING - same selection key');
+      // Skipping - same selection key
       return;
     }
     
@@ -140,11 +127,11 @@ function PdfContent() {
     const generatePdf = async () => {
       let loaderTimeout: NodeJS.Timeout | undefined;
       try {
-        console.log('🔴 Setting loading=true, showLoader will be true after 100ms');
+        // Setting loading=true
         setLoading(true);
         // Delay showing loader to prevent flash on quick operations
         loaderTimeout = setTimeout(() => {
-          console.log('🔴 Setting showLoader=true (after 100ms delay)');
+          // Setting showLoader=true after delay
           setShowLoader(true);
         }, 100);
         setPdfError(null);
@@ -229,7 +216,7 @@ function PdfContent() {
         lastProcessedImages.current = selectionKey;
       } finally {
         if (loaderTimeout) clearTimeout(loaderTimeout);
-        console.log('🔴 Setting loading=false, showLoader=false');
+        // Setting loading=false, showLoader=false
         setLoading(false);
         setShowLoader(false);
       }
@@ -239,16 +226,7 @@ function PdfContent() {
   }, [selectedImages, selectedAnswerImages, selectedProblems, worksheetTitle, worksheetAuthor, loading, pdfError, pdfUrl, showLoader]);
 
   const handleEdit = useCallback(() => {
-    console.log('🔵 handleEdit called BEFORE setShowEditDialog - PDF states:', {
-      loading,
-      pdfUrl: !!pdfUrl,
-      pdfError: !!pdfError,
-      showEditDialog,
-      showLoader,
-      selectedImagesLength: selectedImages.length
-    });
     setShowEditDialog(true);
-    console.log('🔵 handleEdit called AFTER setShowEditDialog');
   }, [loading, pdfUrl, pdfError, showEditDialog, showLoader, selectedImages.length]);
 
   const handleEditSubmit = (data: { title: string; author: string }) => {
@@ -273,12 +251,7 @@ function PdfContent() {
   const handleSave = useCallback(async () => {
     try {
       // TODO: Implement save to database
-      console.log('Saving worksheet:', {
-        title: worksheetTitle,
-        author: worksheetAuthor,
-        selectedImages,
-        selectedProblems
-      });
+      // Saving worksheet
       alert('학습지가 저장되었습니다!');
     } catch (error) {
       console.error('Error saving worksheet:', error);

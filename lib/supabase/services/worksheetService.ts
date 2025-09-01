@@ -32,15 +32,10 @@ export async function createWorksheet(
   supabase: SupabaseClient, 
   params: CreateWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, filters, problems, contentTree = [] } = params;
+  const { title, author, filters, problems } = params;
   
-  // Filter problems to get the exact selection
-  const filteredProblems = ProblemFilter.filterProblems(problems, {
-    ...filters,
-    contentTree
-  });
-  
-  const selectedProblemIds = filteredProblems.map(problem => problem.id);
+  // Use the provided problems directly (they're already filtered from the preview)
+  const selectedProblemIds = problems.map(problem => problem.id);
 
   if (selectedProblemIds.length === 0) {
     throw new Error('No problems match the selected filters');
@@ -95,11 +90,11 @@ export async function getWorksheet(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let allProblems: any[] = [];
 
-  console.log(`Fetching ${problemIds.length} problems in batches of ${batchSize}`);
+  // Fetching problems in batches
 
   for (let i = 0; i < problemIds.length; i += batchSize) {
     const batch = problemIds.slice(i, i + batchSize);
-    console.log(`Fetching batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(problemIds.length/batchSize)} (${batch.length} problems)`);
+    // Fetching batch
     
     const { data: batchProblems, error: batchError } = await supabase
       .from('problems')

@@ -117,13 +117,7 @@ export default function ConfigurePage() {
 
   // Track PDF visibility states
   useEffect(() => {
-    console.log('PDF visibility states changed:', {
-      loading,
-      pdfUrl: !!pdfUrl,
-      pdfError: !!pdfError,
-      showEditDialog,
-      shouldShowPDF: !!(pdfUrl && !loading && !pdfError)
-    });
+    // PDF visibility states logging removed
   }, [loading, pdfUrl, pdfError, showEditDialog]);
 
   // Generate PDF when selectedImages changes - but only when worksheet is ready
@@ -132,7 +126,7 @@ export default function ConfigurePage() {
   useEffect(() => {
     // Don't start PDF generation until worksheet data is fully loaded
     if (!worksheetReady) {
-      console.log('🟡 Waiting for worksheet data to be ready...');
+      // Waiting for worksheet data to be ready
       return;
     }
 
@@ -144,15 +138,11 @@ export default function ConfigurePage() {
       author: worksheetAuthor
     });
     
-    console.log('🟡 PDF Generation useEffect triggered:');
-    console.log('  - selectionKey:', selectionKey);
-    console.log('  - previous:', lastProcessedImages.current);
-    console.log('  - selectedImages.length:', selectedImages.length);
-    console.log('  - worksheetReady:', worksheetReady);
+    // PDF Generation logging removed
     
     // Skip if we've already processed this exact selection
     if (selectionKey === lastProcessedImages.current) {
-      console.log('SKIPPING - same selection key');
+      // Skipping - same selection key
       return;
     }
     
@@ -167,7 +157,7 @@ export default function ConfigurePage() {
 
     const generatePdf = async () => {
       try {
-        console.log('🔴 Starting PDF generation - keeping loader visible');
+        // Starting PDF generation
         setLoading(true);
         // Keep showLoader true - no need to delay since we want consistent loading
         setPdfError(null);
@@ -219,7 +209,8 @@ export default function ConfigurePage() {
           selectedAnswerImages,
           processedAnswerImages,
           worksheetTitle,
-          worksheetAuthor
+          worksheetAuthor,
+          worksheetData?.worksheet.created_at
         );
         
         // Generate PDF blob
@@ -246,7 +237,7 @@ export default function ConfigurePage() {
         setPdfError(errorMessage);
         lastProcessedImages.current = selectionKey;
       } finally {
-        console.log('🔴 PDF generation complete - hiding loader');
+        // PDF generation complete
         setLoading(false);
         setShowLoader(false);
       }
@@ -256,16 +247,7 @@ export default function ConfigurePage() {
   }, [selectedImages, selectedAnswerImages, worksheetTitle, worksheetAuthor, worksheetReady]);
 
   const handleEdit = useCallback(() => {
-    console.log('🔵 handleEdit called BEFORE setShowEditDialog - PDF states:', {
-      loading,
-      pdfUrl: !!pdfUrl,
-      pdfError: !!pdfError,
-      showEditDialog,
-      showLoader,
-      selectedImagesLength: selectedImages.length
-    });
     setShowEditDialog(true);
-    console.log('🔵 handleEdit called AFTER setShowEditDialog');
   }, [loading, pdfUrl, pdfError, showEditDialog, showLoader, selectedImages.length]);
 
   const handleEditSubmit = useCallback(async (data: { title: string; author: string }) => {
@@ -289,7 +271,7 @@ export default function ConfigurePage() {
         setWorksheetTitle(data.title);
         setWorksheetAuthor(data.author);
         
-        console.log('Worksheet metadata updated successfully');
+        // Worksheet metadata updated successfully
       } catch (error) {
         console.error('Failed to update worksheet metadata:', error);
         // Show error to user - you might want to add a toast notification here

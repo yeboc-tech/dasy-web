@@ -49,9 +49,7 @@ export default function FilterPanel({
     setProblemCountInput(problemCount.toString());
   }, [problemCount]);
   
-  // Debug logging
-  console.log('FilterPanel - selectedChapters:', selectedChapters);
-  console.log('FilterPanel - checkedItems:', checkedItems);
+  // Debug logging removed for cleaner testing
 
   // Handle loading and error states
   if (loading) {
@@ -275,11 +273,7 @@ export default function FilterPanel({
   const filteredContentTree = contentTree.filter(item => selectedMainSubjects.includes(item.id));
   
   // Debug logging for filtered tree
-  console.log('FilterPanel - filteredContentTree:', filteredContentTree);
-  console.log('FilterPanel - contentTree length:', contentTree.length);
-  if (contentTree.length > 0) {
-    console.log('FilterPanel - first contentTree item:', contentTree[0]);
-  }
+  // Debug logging removed
 
   // Define disabled chapters and buttons
   const disabledChapters = new Set([

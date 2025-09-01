@@ -55,10 +55,22 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="ko">
       <head>
         <script src="/fonts/vfs_fonts.js" async></script>
+        {isProduction && (
+          <Script id="google-tag-manager">
+            {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-WJVQJ2MH');`}
+          </Script>
+        )}
       </head>
       <body>
         {isProduction && (
           <>
+            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WJVQJ2MH"
+              height="0" width="0" style={{display:'none',visibility:'hidden'}}></iframe></noscript>
+            
             <Script src="https://www.googletagmanager.com/gtag/js?id=G-3WZLFV9KR7" />
             <Script id="google-analytics">
               {`

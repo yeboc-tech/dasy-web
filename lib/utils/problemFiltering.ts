@@ -12,6 +12,8 @@ interface FilterOptions {
 }
 
 export class ProblemFilter {
+  // Removed seeded random function - using truly random selection
+
   /**
    * Get difficulty level based on correct rate
    * 상: 0-39%, 중: 40-59%, 하: 60-100%
@@ -86,6 +88,23 @@ export class ProblemFilter {
       });
     }
 
+    // Randomly select problems if count is specified and positive
+    if (filters.problemCount > 0 && filtered.length > filters.problemCount) {
+      // Shuffle array using Fisher-Yates algorithm with TRUE randomization
+      const shuffled = [...filtered];
+      
+      console.log(`🎲 ProblemFilter: Randomly shuffling ${shuffled.length} problems...`);
+      console.log(`   Selected problems before shuffle: ${shuffled.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
+      
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      filtered = shuffled.slice(0, filters.problemCount);
+      
+      console.log(`   Selected problems after shuffle: ${filtered.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
+    }
+
     // Sort by correct rate (highest first = easiest problems first)
     filtered.sort((a, b) => {
       const aCorrectRate = a.correct_rate ?? 0;
@@ -94,11 +113,6 @@ export class ProblemFilter {
       // Sort by correct rate descending (highest correct rate first)
       return bCorrectRate - aCorrectRate;
     });
-
-    // Limit by problem count (skip limit if -1 = show all)
-    if (filters.problemCount > 0) {
-      filtered = filtered.slice(0, filters.problemCount);
-    }
 
     return filtered;
   }

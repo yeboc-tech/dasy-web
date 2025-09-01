@@ -23,12 +23,7 @@ export default function Page() {
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
   
-  // Debug logging
-  console.log('Build Page - selectedChapters from store:', selectedChapters);
-  console.log('Build Page - selectedMainSubjects:', selectedMainSubjects);
-  console.log('Build Page - contentTree length:', contentTree?.length || 0);
-  console.log('Build Page - chaptersLoading:', chaptersLoading);
-  if (chaptersError) console.log('Build Page - chaptersError:', chaptersError);
+  // Debug logging - removed for cleaner testing
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
@@ -54,7 +49,7 @@ export default function Page() {
         const itemsToAdd = [tonghapsahoe2Id, ...allChildIds];
         const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
         
-        console.log('Simulating 통합사회 2 checkbox click - selecting parent and all children:', newSelectedChapters);
+        // Simulating 통합사회 2 checkbox click - selecting parent and all children
         setSelectedChapters(newSelectedChapters);
         setHasSetDefaultSelection(true);
       }
@@ -75,29 +70,7 @@ export default function Page() {
       correctRateRange
     };
 
-    console.log('🔍 Build Page - Filtering with:', {
-      totalProblems: problems.length,
-      selectedChapters: selectedChapters.length,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount,
-      correctRateRange
-    });
-
     const filtered = ProblemFilter.filterProblems(problems, filters);
-    console.log('✅ Build Page - Filtered results:', {
-      filteredCount: filtered.length,
-      problemIds: filtered.map(p => p.id),
-      problems: filtered.map(p => ({ 
-        id: p.id, 
-        filename: p.problem_filename, 
-        difficulty: p.difficulty,
-        type: p.problem_type,
-        correctRate: p.correct_rate,
-        chapterId: p.chapter_id 
-      }))
-    });
     
     setFilteredProblems(filtered);
   }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange]);
@@ -138,7 +111,7 @@ export default function Page() {
         title: data.title,
         author: data.author,
         filters,
-        problems,
+        problems: filteredProblems, // Use the already-filtered problems from preview
         contentTree
       });
 

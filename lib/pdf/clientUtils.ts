@@ -618,7 +618,8 @@ export async function createAnswerPagesClient(
 
 export async function createWorksheetDocDefinitionClient(
   images: string[], 
-  base64Images: string[]
+  base64Images: string[],
+  createdAt?: string
 ) {
   // Use new column-based layout system
   const content = await createColumnBasedLayoutClient(images, base64Images);
@@ -640,7 +641,8 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   answerImages: string[],
   base64AnswerImages: string[],
   title?: string,
-  creator?: string
+  creator?: string,
+  createdAt?: string
 ) {
   // Create problem pages
   const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
@@ -723,11 +725,11 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
     })
   ]);
 
-  // Get current date in Korean format
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
+  // Get date in Korean format (use createdAt if provided, otherwise current date)
+  const dateToUse = createdAt ? new Date(createdAt) : new Date();
+  const year = dateToUse.getFullYear();
+  const month = String(dateToUse.getMonth() + 1).padStart(2, '0');
+  const day = String(dateToUse.getDate()).padStart(2, '0');
   const dateString = `${year}.${month}.${day}`;
   
   // Create subtitle with dynamic info
