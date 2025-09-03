@@ -32,6 +32,9 @@ export function InterviewBanner({ onDismiss }: InterviewBannerProps) {
             variant="outline"
             size="sm"
             className="h-8 px-3 text-xs border-green-300 text-green-700 hover:bg-green-100"
+            data-gtm-click="interview_participate"
+            data-gtm-interview-source="banner"
+            data-gtm-button-text="참여하기"
           >
             참여하기
           </Button>
@@ -41,6 +44,9 @@ export function InterviewBanner({ onDismiss }: InterviewBannerProps) {
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
+              data-gtm-click="banner_dismiss"
+              data-gtm-banner-type="interview"
+              data-gtm-action="dismiss"
             >
               <X className="w-3 h-3" />
             </Button>

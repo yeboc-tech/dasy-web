@@ -32,6 +32,9 @@ export function AppDownloadBanner({ onDismiss }: AppDownloadBannerProps) {
             variant="outline"
             size="sm"
             className="h-8 px-3 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+            data-gtm-click="app_download"
+            data-gtm-download-source="banner"
+            data-gtm-button-text="다운로드"
           >
             다운로드
           </Button>
@@ -41,6 +44,9 @@ export function AppDownloadBanner({ onDismiss }: AppDownloadBannerProps) {
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
+              data-gtm-click="banner_dismiss"
+              data-gtm-banner-type="app_download"
+              data-gtm-action="dismiss"
             >
               <X className="w-3 h-3" />
             </Button>

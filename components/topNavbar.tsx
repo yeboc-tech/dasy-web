@@ -59,6 +59,9 @@ export function TopNavbar() {
             className={`text-sm font-medium transition-colors hover:text-gray-900 pb-1 ${
               pathname === item.href ? 'text-black' : 'text-gray-600'
             }`}
+            data-gtm-click="navigation"
+            data-gtm-navigation-target={item.href}
+            data-gtm-navigation-label={item.label}
           >
             {item.label}
           </Link>
@@ -67,6 +70,9 @@ export function TopNavbar() {
         <button
           onClick={handleFeedbackClick}
           className="text-sm font-medium transition-colors hover:text-gray-900 pb-1 text-gray-600 cursor-pointer"
+          data-gtm-click="feedback"
+          data-gtm-feedback-type="padlet"
+          data-gtm-button-text="피드백"
         >
           피드백
         </button>
