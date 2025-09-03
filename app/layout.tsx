@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { TopNavbar } from "@/components/topNavbar";
+import { BannerManager } from "@/components/banners/BannerManager";
+import { MobileUnsupportedCard } from "@/components/MobileUnsupportedCard";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -83,9 +85,19 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
           </>
         )}
         <div className="h-screen flex flex-col">
-          <TopNavbar />
+          <div className="hidden sm:block">
+            <BannerManager />
+          </div>
+          <div className="hidden sm:block">
+            <TopNavbar />
+          </div>
           <div className="flex-1 min-h-0">
-            {children}
+            <div className="hidden sm:block h-full">
+              {children}
+            </div>
+            <div className="block sm:hidden h-full">
+              <MobileUnsupportedCard />
+            </div>
           </div>
         </div>
       </body>
