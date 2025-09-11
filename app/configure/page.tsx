@@ -63,6 +63,7 @@ function PdfContent() {
     const selectedSubjects = urlParams.get('selectedSubjects')?.split(',').filter(Boolean) || [];
 
     const correctRateRange = urlParams.get('correctRateRange')?.split(',').map(Number) || [0, 100];
+    const selectedYears = urlParams.get('selectedYears')?.split(',').map(Number) || [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
 
     const filters = {
       selectedChapters,
@@ -71,7 +72,8 @@ function PdfContent() {
       selectedSubjects,
       problemCount,
       contentTree,
-      correctRateRange: [correctRateRange[0], correctRateRange[1]] as [number, number]
+      correctRateRange: [correctRateRange[0], correctRateRange[1]] as [number, number],
+      selectedYears
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
