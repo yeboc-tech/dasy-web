@@ -13,6 +13,7 @@ export interface DatabaseProblem {
   difficulty: string;
   problem_type: string;
   correct_rate?: number;
+  exam_year?: number;
   created_at: string;
   updated_at: string;
   problem_subjects?: {
@@ -47,6 +48,7 @@ export function useProblems() {
             difficulty,
             problem_type,
             correct_rate,
+            exam_year,
             created_at,
             updated_at,
             problem_subjects(
@@ -71,6 +73,7 @@ export function useProblems() {
             difficulty: typedProblem.difficulty,
             problem_type: typedProblem.problem_type,
             correct_rate: typedProblem.correct_rate,
+            exam_year: typedProblem.exam_year,
             tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
             created_at: typedProblem.created_at,
             updated_at: typedProblem.updated_at
@@ -107,6 +110,7 @@ export function useProblems() {
           difficulty,
           problem_type,
           correct_rate,
+          exam_year,
           created_at,
           updated_at,
           problem_subjects(
@@ -130,6 +134,7 @@ export function useProblems() {
           difficulty: typedProblem.difficulty,
           problem_type: typedProblem.problem_type,
           correct_rate: typedProblem.correct_rate,
+          exam_year: typedProblem.exam_year,
           tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
           created_at: typedProblem.created_at,
           updated_at: typedProblem.updated_at

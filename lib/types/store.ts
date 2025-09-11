@@ -6,10 +6,12 @@ export interface WorksheetState {
   selectedProblemTypes: string[]; // Multi-select for problem types
   selectedSubjects: string[]; // IDs of selected related subjects
   correctRateRange: [number, number]; // [min, max] correct rate percentage (0-100)
+  selectedYears: number[]; // Selected exam years for filtering problems
   setSelectedChapters: (chapters: string[]) => void;
   setProblemCount: (count: number) => void;
   setSelectedDifficulties: (difficulties: string[]) => void;
   setSelectedProblemTypes: (types: string[]) => void;
   setSelectedSubjects: (subjects: string[]) => void;
   setCorrectRateRange: (range: [number, number]) => void;
+  setSelectedYears: (years: number[]) => void;
 }

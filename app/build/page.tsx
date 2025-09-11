@@ -14,7 +14,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
 export default function Page() {
-  const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange} = useWorksheetStore();
+  const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears} = useWorksheetStore();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
@@ -67,13 +67,14 @@ export default function Page() {
       selectedSubjects,
       problemCount,
       contentTree,
-      correctRateRange
+      correctRateRange,
+      selectedYears
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     
     setFilteredProblems(filtered);
-  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange]);
+  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
 
   const handleMainSubjectToggle = (subject: string) => {
     const newSelectedMainSubjects = selectedMainSubjects.includes(subject)
@@ -104,7 +105,8 @@ export default function Page() {
         selectedProblemTypes,
         selectedSubjects,
         problemCount,
-        correctRateRange
+        correctRateRange,
+        selectedYears
       };
 
       const { id } = await createWorksheet(supabase, {

@@ -8,6 +8,7 @@ export const useWorksheetStore = create<WorksheetState>((set) => ({
   selectedProblemTypes: ['기출문제', 'N제'], // Default to all selected
   selectedSubjects: ['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'], // Default to all selected
   correctRateRange: [0, 100], // Default to all (0-100%)
+  selectedYears: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025], // Default to all years
   setSelectedChapters: (chapters) => set({ selectedChapters: chapters }),
   setProblemCount: (count) => set({ problemCount: count }),
   setSelectedDifficulties: (difficulties) => set(() => {
@@ -47,4 +48,5 @@ export const useWorksheetStore = create<WorksheetState>((set) => ({
     const newDifficulties = getDifficultiesFromCorrectRate(range);
     return { correctRateRange: range, selectedDifficulties: newDifficulties };
   }),
+  setSelectedYears: (years) => set({ selectedYears: years }),
 }));

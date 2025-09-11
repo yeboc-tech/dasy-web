@@ -9,6 +9,7 @@ export interface ProblemMetadata {
   problem_type: string;
   tags: string[];
   correct_rate?: number; // Correct rate percentage (0-100)
+  exam_year?: number; // Year the problem appeared in exam (extracted from source)
   created_at: string;
   updated_at: string;
 }

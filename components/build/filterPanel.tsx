@@ -37,7 +37,9 @@ export default function FilterPanel({
     selectedSubjects, 
     setSelectedSubjects,
     correctRateRange,
-    setCorrectRateRange
+    setCorrectRateRange,
+    selectedYears,
+    setSelectedYears
   } = useWorksheetStore();
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -175,6 +177,26 @@ export default function FilterPanel({
         setSelectedSubjects([subject]);
       } else {
         setSelectedSubjects(newSelectedSubjects);
+      }
+    }
+  };
+
+  const handleYearToggle = (year: number) => {
+    const allYears = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+    
+    // If all years are currently selected (모두 is active), start fresh with just this year
+    if (selectedYears.length === allYears.length) {
+      setSelectedYears([year]);
+    } else {
+      const newSelectedYears = selectedYears.includes(year)
+        ? selectedYears.filter(y => y !== year)
+        : [...selectedYears, year];
+      
+      // Ensure at least one year is always selected
+      if (newSelectedYears.length === 0) {
+        setSelectedYears([year]);
+      } else {
+        setSelectedYears(newSelectedYears);
       }
     }
   };
@@ -318,7 +340,7 @@ export default function FilterPanel({
       
       <div className="flex-1 p-4 pt-0 min-h-0">
         <div className="space-y-6">
-          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "difficulty", "correctRate", "problemType"]}>
+          <Accordion type="multiple" defaultValue={["chapters", "subjects", "problemCount", "difficulty", "correctRate", "problemType", "years"]}>
             {/* 단원·유형별 Section */}
             <AccordionItem value="chapters" className="border-none">
               <AccordionTrigger className="hover:no-underline">
@@ -591,6 +613,37 @@ export default function FilterPanel({
                         </Button>
                       );
                   })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 연도 Section */}
+            <AccordionItem value="years" className="border-none">
+              <AccordionTrigger className="hover:no-underline">
+                <span>연도</span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex gap-2 flex-wrap">
+                  <Button 
+                    onClick={() => {
+                      const allYears = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+                      setSelectedYears(allYears);
+                    }}
+                    variant="outline"
+                    className={selectedYears.length === 14 ? "border-black text-black bg-gray-100" : ""}
+                  >
+                    모두
+                  </Button>
+                  {[2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025].map((year) => (
+                    <Button 
+                      key={year} 
+                      onClick={() => handleYearToggle(year)} 
+                      variant="outline"
+                      className={selectedYears.includes(year) && selectedYears.length < 14 ? "border-black text-black bg-gray-100" : ""}
+                    >
+                      {year}
+                    </Button>
+                  ))}
                 </div>
               </AccordionContent>
             </AccordionItem>

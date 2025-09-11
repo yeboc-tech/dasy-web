@@ -9,6 +9,7 @@ interface FilterOptions {
   problemCount: number;
   contentTree: ChapterTreeItem[];
   correctRateRange: [number, number]; // [min, max] correct rate percentage (0-100)
+  selectedYears: number[]; // Selected exam years for filtering
 }
 
 export class ProblemFilter {
@@ -86,6 +87,13 @@ export class ProblemFilter {
         const rate = problem.correct_rate ?? 0;
         return rate >= minRate && rate <= maxRate;
       });
+    }
+
+    // Filter by selected exam years
+    if (filters.selectedYears.length > 0) {
+      filtered = filtered.filter(problem => 
+        problem.exam_year && filters.selectedYears.includes(problem.exam_year)
+      );
     }
 
     // Randomly select problems if count is specified and positive
