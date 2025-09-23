@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // Print styles (minimal, just for hiding toolbar if needed)
 const printStyles = `
@@ -29,9 +30,10 @@ interface PDFViewerProps {
   worksheetTitle?: string;
   worksheetAuthor?: string;
   isPublic?: boolean;
+  worksheetId?: string;
 }
 
-const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, worksheetTitle, worksheetAuthor, isPublic }: PDFViewerProps) {
+const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, worksheetTitle, worksheetAuthor, isPublic, worksheetId }: PDFViewerProps) {
   console.log('🟠 PDFViewer component render - pdfUrl:', !!pdfUrl);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -441,7 +443,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
               )}
               
               {onSave && !isPublic && (
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={onSave}
@@ -450,6 +452,19 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                 >
                   목록 추가
                 </Button>
+              )}
+
+              {worksheetId && (
+                <Link href={`/worksheets/${worksheetId}/solve`} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
+                    title="문제를 바로 풀어보세요"
+                  >
+                    바로 풀기
+                  </Button>
+                </Link>
               )}
             </div>
           </div>

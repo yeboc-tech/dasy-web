@@ -25,6 +25,7 @@ interface IsolatedPDFContainerProps {
   worksheetTitle?: string;
   worksheetAuthor?: string;
   isPublic?: boolean;
+  worksheetId?: string;
 }
 
 const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
@@ -38,7 +39,8 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
   selectedImagesLength,
   worksheetTitle,
   worksheetAuthor,
-  isPublic
+  isPublic,
+  worksheetId
 }: IsolatedPDFContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -110,7 +112,7 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
       )}
       
       {pdfUrl && !loading && !pdfError && (
-        <PDFViewer 
+        <PDFViewer
           key={pdfUrl}
           pdfUrl={pdfUrl}
           onError={onError}
@@ -119,6 +121,7 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
           worksheetTitle={worksheetTitle}
           worksheetAuthor={worksheetAuthor}
           isPublic={isPublic}
+          worksheetId={worksheetId}
         />
       )}
       

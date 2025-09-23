@@ -377,6 +377,7 @@ export default function ConfigurePage() {
             worksheetTitle={worksheetTitle}
             worksheetAuthor={worksheetAuthor}
             isPublic={worksheetData?.worksheet.is_public}
+            worksheetId={worksheetId}
           />
         </Card>
       </div>
