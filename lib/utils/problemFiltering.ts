@@ -90,11 +90,17 @@ export class ProblemFilter {
     }
 
     // Filter by selected exam years
-    if (filters.selectedYears.length > 0) {
-      filtered = filtered.filter(problem => 
+    // Only filter by years if not all years are selected
+    const allYears = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+    const allYearsSelected = filters.selectedYears.length === allYears.length &&
+                            allYears.every(year => filters.selectedYears.includes(year));
+
+    if (filters.selectedYears.length > 0 && !allYearsSelected) {
+      filtered = filtered.filter(problem =>
         problem.exam_year && filters.selectedYears.includes(problem.exam_year)
       );
     }
+    // When all years are selected, include problems with null exam_year (no filtering)
 
     // Randomly select problems if count is specified and positive
     if (filters.problemCount > 0 && filtered.length > filters.problemCount) {
