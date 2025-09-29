@@ -21,19 +21,58 @@ export class ProblemFilter {
    */
   private static getDifficultyFromCorrectRate(problem: ProblemMetadata): string {
     const correctRate = problem.correct_rate ?? 50;
-    
+
     if (correctRate <= 39) return '상';
     if (correctRate <= 59) return '중';
     return '하';
   }
-  
+
   private static getDifficultyWeight(difficulty: string): number {
     switch (difficulty) {
       case '하': return 1;
-      case '중': return 3; 
+      case '중': return 3;
       case '상': return 5;
       default: return 3; // Default to middle difficulty
     }
+  }
+
+  /**
+   * Build a map of chapter_id to its hierarchical path indices
+   * e.g., { 'chapter-id-1': [0, 2, 1] } means: root[0] -> children[2] -> children[1]
+   */
+  private static buildChapterPathMap(contentTree: ChapterTreeItem[]): Map<string, number[]> {
+    const pathMap = new Map<string, number[]>();
+
+    const traverse = (items: ChapterTreeItem[], path: number[]) => {
+      items.forEach((item, index) => {
+        const currentPath = [...path, index];
+        pathMap.set(item.id, currentPath);
+
+        if (item.children && item.children.length > 0) {
+          traverse(item.children, currentPath);
+        }
+      });
+    };
+
+    traverse(contentTree, []);
+    return pathMap;
+  }
+
+  /**
+   * Compare two chapter paths for sorting
+   * Returns: -1 if a < b, 1 if a > b, 0 if equal
+   */
+  private static compareChapterPaths(pathA: number[], pathB: number[]): number {
+    const minLength = Math.min(pathA.length, pathB.length);
+
+    for (let i = 0; i < minLength; i++) {
+      if (pathA[i] !== pathB[i]) {
+        return pathA[i] - pathB[i];
+      }
+    }
+
+    // If all common levels are equal, shorter path comes first
+    return pathA.length - pathB.length;
   }
 
   static filterProblems(problems: ProblemMetadata[], filters: FilterOptions): ProblemMetadata[] {
@@ -106,25 +145,42 @@ export class ProblemFilter {
     if (filters.problemCount > 0 && filtered.length > filters.problemCount) {
       // Shuffle array using Fisher-Yates algorithm with TRUE randomization
       const shuffled = [...filtered];
-      
+
       console.log(`🎲 ProblemFilter: Randomly shuffling ${shuffled.length} problems...`);
       console.log(`   Selected problems before shuffle: ${shuffled.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
-      
+
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       filtered = shuffled.slice(0, filters.problemCount);
-      
+
       console.log(`   Selected problems after shuffle: ${filtered.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
     }
 
-    // Sort by correct rate (highest first = easiest problems first)
+    // Build chapter path map for hierarchical sorting
+    const chapterPathMap = this.buildChapterPathMap(filters.contentTree);
+
+    // Sort hierarchically: root chapter -> sub-chapters -> correct rate
     filtered.sort((a, b) => {
+      // Get chapter paths
+      const pathA = a.chapter_id ? chapterPathMap.get(a.chapter_id) : undefined;
+      const pathB = b.chapter_id ? chapterPathMap.get(b.chapter_id) : undefined;
+
+      // If one problem has no chapter path, put it at the end
+      if (!pathA && !pathB) return 0;
+      if (!pathA) return 1;
+      if (!pathB) return -1;
+
+      // Compare chapter hierarchy first
+      const chapterComparison = this.compareChapterPaths(pathA, pathB);
+      if (chapterComparison !== 0) {
+        return chapterComparison;
+      }
+
+      // If in same chapter, sort by correct rate descending (highest first = easiest first)
       const aCorrectRate = a.correct_rate ?? 0;
       const bCorrectRate = b.correct_rate ?? 0;
-      
-      // Sort by correct rate descending (highest correct rate first)
       return bCorrectRate - aCorrectRate;
     });
 

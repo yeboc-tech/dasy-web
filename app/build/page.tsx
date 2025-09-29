@@ -80,12 +80,16 @@ export default function Page() {
     const newSelectedMainSubjects = selectedMainSubjects.includes(subject)
       ? selectedMainSubjects.filter(s => s !== subject)
       : [...selectedMainSubjects, subject];
-    
+
     if (newSelectedMainSubjects.length === 0) {
       setSelectedMainSubjects([subject]);
     } else {
       setSelectedMainSubjects(newSelectedMainSubjects);
     }
+  };
+
+  const handleDeleteProblem = (problemId: string) => {
+    setFilteredProblems(prev => prev.filter(p => p.id !== problemId));
   };
 
   const handleCreateWorksheet = () => {
@@ -136,11 +140,12 @@ export default function Page() {
         />
         <div className="relative flex-1 flex flex-col">
           <div className="flex-1 overflow-hidden">
-            <ProblemsPanel 
+            <ProblemsPanel
               filteredProblems={filteredProblems}
               problemsLoading={problemsLoading}
               problemsError={problemsError}
               contentTree={contentTree}
+              onDeleteProblem={handleDeleteProblem}
             />
           </div>
           
