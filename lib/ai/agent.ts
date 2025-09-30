@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { searchProblemsByEmbedding, searchProblemsToolDefinition, type SearchProblemsParams } from './tools';
+import type { ProblemMetadata } from '@/lib/types/problems';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -13,7 +14,7 @@ export interface ChatMessage {
 
 export interface AgentResponse {
   message: string;
-  problems?: any[];
+  problems?: ProblemMetadata[];
   error?: string;
 }
 
@@ -34,7 +35,7 @@ Always respond in Korean and be helpful and friendly. If you can't find problems
 export async function processUserMessage(
   message: string,
   chatHistory: ChatMessage[] = [],
-  onProblemsUpdate?: (problems: any[]) => void
+  onProblemsUpdate?: (problems: ProblemMetadata[]) => void
 ): Promise<AgentResponse> {
   try {
     // Convert chat history to OpenAI format and keep last 10 messages for context
