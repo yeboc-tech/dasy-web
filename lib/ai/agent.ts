@@ -8,7 +8,7 @@ const openai = new OpenAI({
 });
 
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'ai';
   content: string;
 }
 
