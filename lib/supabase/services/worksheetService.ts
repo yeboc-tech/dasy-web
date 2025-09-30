@@ -142,12 +142,14 @@ export async function getWorksheet(
     updated_at: problem.updated_at
   }));
 
-  // Sort problems by correct rate (highest first = easiest problems first)
-  transformedProblems.sort((a, b) => {
-    const aCorrectRate = a.correct_rate ?? 0;
-    const bCorrectRate = b.correct_rate ?? 0;
-    return bCorrectRate - aCorrectRate;
-  });
+  // Preserve the original order from selected_problem_ids
+  // Create a map for quick lookup
+  const problemMap = new Map(transformedProblems.map(p => [p.id, p]));
+
+  // Sort according to the order in selected_problem_ids
+  const sortedProblems = problemIds
+    .map(id => problemMap.get(id))
+    .filter((p): p is ProblemMetadata => p !== undefined);
 
   return {
     worksheet: {
@@ -159,7 +161,7 @@ export async function getWorksheet(
       selected_problem_ids: worksheet.selected_problem_ids,
       is_public: worksheet.is_public || false
     },
-    problems: transformedProblems
+    problems: sortedProblems
   };
 }
 

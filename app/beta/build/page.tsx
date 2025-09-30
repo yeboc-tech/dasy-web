@@ -1,52 +1,51 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProblemsPanel from '@/components/build/problemsPanel';
-import FilterPanel from '@/components/build/filterPanel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { CornerDownLeft, ArrowDownUp } from 'lucide-react';
+import ProblemsPanel from '@/components/build/problemsPanel';
+import FilterPanel from '@/components/build/filterPanel';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
+import { CorrectRateChart } from '@/components/analytics/DifficultyChart';
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
-export default function Page() {
+export default function BetaBuildPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears} = useWorksheetStore();
-  const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
+  const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [dialogProblems, setDialogProblems] = useState<ProblemMetadata[]>([]);
-  const [showMetadataDialog, setShowMetadataDialog] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
+  const [selectedProblemsForWorksheet, setSelectedProblemsForWorksheet] = useState<ProblemMetadata[]>([]);
+  const [showMetadataDialog, setShowMetadataDialog] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
+  const [sortedSelectedProblems, setSortedSelectedProblems] = useState<ProblemMetadata[]>([]);
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
-  const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
-  
+
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
-  
-  // Debug logging - removed for cleaner testing
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
     if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
       const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
       const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
-      
+
       if (tonghapsahoe2Item) {
-        // Use the same logic as handleCheckboxChange when checking a parent
         const getAllChildIds = (item: ChapterTreeItem): string[] => {
           const childIds: string[] = [];
           if (item.children && item.children.length > 0) {
@@ -58,38 +57,17 @@ export default function Page() {
           return childIds;
         };
 
-        // Simulate checking 통합사회 2 - add parent + all children (same as FilterPanel logic)
         const allChildIds = getAllChildIds(tonghapsahoe2Item);
         const itemsToAdd = [tonghapsahoe2Id, ...allChildIds];
         const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
-        
-        // Simulating 통합사회 2 checkbox click - selecting parent and all children
+
         setSelectedChapters(newSelectedChapters);
         setHasSetDefaultSelection(true);
       }
     }
   }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters]);
 
-  // Filter problems for main page when filters change
-  useEffect(() => {
-    if (!problems || problems.length === 0) return;
-
-    const filters = {
-      selectedChapters,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount,
-      contentTree,
-      correctRateRange,
-      selectedYears
-    };
-
-    const filtered = ProblemFilter.filterProblems(problems, filters);
-    setFilteredProblems(filtered);
-  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
-
-  // Filter problems for dialog when any filter changes (only in filter mode, not AI mode)
+  // Filter problems when any filter changes (only in filter mode, not AI mode)
   useEffect(() => {
     if (aiMode) return; // Skip filtering in AI mode - let AI control the results
     if (!problems || problems.length === 0) return;
@@ -106,21 +84,20 @@ export default function Page() {
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
-    setDialogProblems(filtered);
+    setFilteredProblems(filtered);
   }, [aiMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
 
-  // Sort main page problems based on worksheet mode
+  // Sort selected problems based on worksheet mode
   useEffect(() => {
-    if (!filteredProblems || filteredProblems.length === 0 || !contentTree) {
-      setSortedFilteredProblems([]);
+    if (!selectedProblemsForWorksheet || selectedProblemsForWorksheet.length === 0 || !contentTree) {
+      setSortedSelectedProblems([]);
       return;
     }
 
-    let sorted = [...filteredProblems];
+    let sorted = [...selectedProblemsForWorksheet];
 
     if (worksheetMode === '연습') {
       // Use the same hierarchical sorting as ProblemFilter
-      // Build chapter path map
       const pathMap = new Map<string, number[]>();
       const traverse = (items: ChapterTreeItem[], path: number[]) => {
         items.forEach((item, index) => {
@@ -133,29 +110,24 @@ export default function Page() {
       };
       traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> correct rate
       sorted.sort((a, b) => {
         const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
         const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-        // If one problem has no chapter path, put it at the end
         if (!pathA && !pathB) return 0;
         if (!pathA) return 1;
         if (!pathB) return -1;
 
-        // Compare chapter hierarchy first
         const minLength = Math.min(pathA.length, pathB.length);
         for (let i = 0; i < minLength; i++) {
           if (pathA[i] !== pathB[i]) {
             return pathA[i] - pathB[i];
           }
         }
-        // If all common levels are equal, shorter path comes first
         if (pathA.length !== pathB.length) {
           return pathA.length - pathB.length;
         }
 
-        // If in same chapter, sort by correct rate descending (highest first = easiest first)
         const aCorrectRate = a.correct_rate ?? 0;
         const bCorrectRate = b.correct_rate ?? 0;
         return bCorrectRate - aCorrectRate;
@@ -168,21 +140,19 @@ export default function Page() {
         .map(({ value }) => value);
     }
 
-    setSortedFilteredProblems(sorted);
-  }, [filteredProblems, worksheetMode, contentTree]);
+    setSortedSelectedProblems(sorted);
+  }, [selectedProblemsForWorksheet, worksheetMode, contentTree]);
 
   // Sort dialog problems based on worksheet mode
   useEffect(() => {
-    if (!dialogProblems || dialogProblems.length === 0 || !contentTree) {
+    if (!filteredProblems || filteredProblems.length === 0 || !contentTree) {
       setSortedDialogProblems([]);
       return;
     }
 
-    let sorted = [...dialogProblems];
+    let sorted = [...filteredProblems];
 
     if (worksheetMode === '연습') {
-      // Use the same hierarchical sorting as ProblemFilter
-      // Build chapter path map
       const pathMap = new Map<string, number[]>();
       const traverse = (items: ChapterTreeItem[], path: number[]) => {
         items.forEach((item, index) => {
@@ -195,35 +165,29 @@ export default function Page() {
       };
       traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> correct rate
       sorted.sort((a, b) => {
         const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
         const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-        // If one problem has no chapter path, put it at the end
         if (!pathA && !pathB) return 0;
         if (!pathA) return 1;
         if (!pathB) return -1;
 
-        // Compare chapter hierarchy first
         const minLength = Math.min(pathA.length, pathB.length);
         for (let i = 0; i < minLength; i++) {
           if (pathA[i] !== pathB[i]) {
             return pathA[i] - pathB[i];
           }
         }
-        // If all common levels are equal, shorter path comes first
         if (pathA.length !== pathB.length) {
           return pathA.length - pathB.length;
         }
 
-        // If in same chapter, sort by correct rate descending (highest first = easiest first)
         const aCorrectRate = a.correct_rate ?? 0;
         const bCorrectRate = b.correct_rate ?? 0;
         return bCorrectRate - aCorrectRate;
       });
     } else {
-      // 실전: totally random
       sorted = sorted
         .map(value => ({ value, sort: Math.random() }))
         .sort((a, b) => a.sort - b.sort)
@@ -231,7 +195,7 @@ export default function Page() {
     }
 
     setSortedDialogProblems(sorted);
-  }, [dialogProblems, worksheetMode, contentTree]);
+  }, [filteredProblems, worksheetMode, contentTree]);
 
   const handleMainSubjectToggle = (subject: string) => {
     const newSelectedMainSubjects = selectedMainSubjects.includes(subject)
@@ -245,12 +209,8 @@ export default function Page() {
     }
   };
 
-  const handleDeleteProblem = (problemId: string) => {
-    setFilteredProblems(prev => prev.filter(p => p.id !== problemId));
-  };
-
   const handleCreateWorksheet = () => {
-    if (sortedFilteredProblems.length === 0) return;
+    if (sortedSelectedProblems.length === 0) return;
     setShowMetadataDialog(true);
   };
 
@@ -274,7 +234,7 @@ export default function Page() {
         title: data.title,
         author: data.author,
         filters,
-        problems: sortedFilteredProblems, // Use the sorted problems
+        problems: sortedSelectedProblems, // Use sorted problems
         contentTree
       });
 
@@ -298,8 +258,8 @@ export default function Page() {
 
       // Process the message with the AI agent, passing current chat history
       const response = await processUserMessage(userMessage, chatMessages, (problems) => {
-        // Update the dialog problems when agent finds results
-        setDialogProblems(problems);
+        // Update the filtered problems when agent finds results
+        setFilteredProblems(problems);
       });
 
       setChatMessages(prev => [...prev, {
@@ -319,28 +279,46 @@ export default function Page() {
   return (
     <div className="mx-auto px-4 pt-0 pb-4 w-full max-w-4xl h-full relative">
       <Card className="overflow-hidden relative p-0 h-full flex flex-row gap-0 ">
-        <FilterPanel
-          contentTree={contentTree}
-          selectedMainSubjects={selectedMainSubjects}
-          onMainSubjectToggle={handleMainSubjectToggle}
-          loading={chaptersLoading}
-          error={chaptersError}
-        />
-        <div className="relative flex-1 flex flex-col">
+        {/* Left Panel */}
+        <div className="w-1/2 border-r border-gray-200 bg-gray-50 flex flex-col">
+          {/* Top Bar */}
+          <div className="h-9 bg-white border-b border-gray-200 pl-4 flex items-center justify-between overflow-hidden">
+            <div className="text-xs text-gray-600">
+              {/* Top bar content */}
+            </div>
+            <Button
+              className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
+              onClick={() => {
+                setIsDialogOpen(true);
+                setChatMessages([]); // Reset chat when opening dialog
+              }}
+            >
+              문제 추가
+            </Button>
+          </div>
+          <div className="flex-1 p-4">
+            <CorrectRateChart problems={selectedProblemsForWorksheet} />
+          </div>
+        </div>
+
+        {/* Right Panel */}
+        <div className="relative w-1/2 flex flex-col">
           <div className="flex-1 overflow-hidden">
             <ProblemsPanel
-              filteredProblems={sortedFilteredProblems}
-              problemsLoading={problemsLoading}
-              problemsError={problemsError}
+              filteredProblems={sortedSelectedProblems}
+              problemsLoading={false}
+              problemsError={null}
               contentTree={contentTree}
-              onDeleteProblem={handleDeleteProblem}
+              onDeleteProblem={(problemId) => {
+                setSelectedProblemsForWorksheet(prev => prev.filter(p => p.id !== problemId));
+              }}
             />
           </div>
 
           {/* Sticky Bottom Bar */}
           <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
             <div className="text-xs text-gray-600">
-              {sortedFilteredProblems.length}문제
+              {sortedSelectedProblems.length}문제
             </div>
             <div className="flex gap-0">
               <DropdownMenu>
@@ -368,30 +346,21 @@ export default function Page() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                onClick={() => {
-                  setIsDialogOpen(true);
-                  setChatMessages([]); // Reset chat when opening dialog
-                }}
-                className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
-              >
-                문제 추가
-              </Button>
-              <Button
                 onClick={handleCreateWorksheet}
-                disabled={sortedFilteredProblems.length === 0}
+                disabled={sortedSelectedProblems.length === 0}
                 className="h-9 px-4 text-white rounded-none"
                 style={{ backgroundColor: '#FF00A1' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6009A'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FF00A1'}
               >
-                생성
+                학습지 생성
               </Button>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Dialog with filtering and AI functionality */}
+      {/* Dialog with exact /build page functionality */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-full h-[90vh] p-0 gap-0 overflow-hidden flex flex-col" style={{ maxWidth: 'min(56rem, 90vw)' }}>
           <div className="border-b flex-shrink-0">
@@ -501,7 +470,7 @@ export default function Page() {
                   problemsError={problemsError}
                   contentTree={contentTree}
                   onDeleteProblem={(problemId) => {
-                    setDialogProblems(prev => prev.filter(p => p.id !== problemId));
+                    setFilteredProblems(prev => prev.filter(p => p.id !== problemId));
                   }}
                 />
               </div>
@@ -515,11 +484,11 @@ export default function Page() {
                   disabled={sortedDialogProblems.length === 0}
                   className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
                   onClick={() => {
-                    // Add dialog problems to the worksheet
+                    // Add filtered problems to the worksheet
                     const newProblems = sortedDialogProblems.filter(
-                      problem => !filteredProblems.some(existing => existing.id === problem.id)
+                      problem => !selectedProblemsForWorksheet.some(existing => existing.id === problem.id)
                     );
-                    setFilteredProblems(prev => [...prev, ...newProblems]);
+                    setSelectedProblemsForWorksheet(prev => [...prev, ...newProblems]);
                     setIsDialogOpen(false);
                   }}
                 >
