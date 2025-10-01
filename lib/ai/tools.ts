@@ -102,7 +102,7 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
     });
 
     // Transform to ProblemMetadata format
-    const problems: ProblemMetadata[] = searchResults.map(result => ({
+    const problems: ProblemMetadata[] = (searchResults || []).map(result => ({
       id: result.id,
       problem_filename: result.problem_filename,
       answer_filename: result.answer_filename,
