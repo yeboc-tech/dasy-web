@@ -67,7 +67,7 @@ export async function processUserMessage(
     if (assistantMessage.tool_calls) {
       const toolCall = assistantMessage.tool_calls[0];
 
-      if (toolCall.function.name === 'search_problems_by_embedding') {
+      if (toolCall.type === 'function' && toolCall.function.name === 'search_problems_by_embedding') {
         const params = JSON.parse(toolCall.function.arguments) as SearchProblemsParams;
         const searchResult = await searchProblemsByEmbedding(params);
 
