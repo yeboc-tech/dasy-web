@@ -148,7 +148,7 @@ export async function getWorksheet(
 
   // Sort according to the order in selected_problem_ids
   const sortedProblems = problemIds
-    .map(id => problemMap.get(id))
+    .map((id: string) => problemMap.get(id))
     .filter((p): p is ProblemMetadata => p !== undefined);
 
   return {
