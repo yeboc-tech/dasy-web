@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/client';
+import type { ProblemMetadata } from '@/lib/types/problems';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -9,6 +10,27 @@ const openai = new OpenAI({
 export interface SearchProblemsParams {
   query: string;
   limit?: number;
+}
+
+interface SearchResult {
+  id: string;
+  problem_filename: string;
+  answer_filename?: string;
+  answer?: number;
+  chapter_id: string | null;
+  difficulty: string;
+  problem_type: string;
+  correct_rate?: number;
+  exam_year?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProblemSubject {
+  problem_id: string;
+  subjects: {
+    name: string;
+  };
 }
 
 export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchProblemsParams) {
@@ -31,7 +53,7 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
     const { data: searchResults, error } = await supabase.rpc('search_problems_by_embedding', {
       query_embedding: queryEmbedding,
       match_count: limit
-    });
+    }) as { data: SearchResult[] | null; error: Error | null };
 
     if (error) {
       console.error('❌ Error searching problems:', error);
@@ -64,23 +86,23 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
         problem_id,
         subjects(name)
       `)
-      .in('problem_id', problemIds);
+      .in('problem_id', problemIds) as { data: ProblemSubject[] | null; error: Error | null };
 
     if (tagsError) {
       console.error('Error fetching tags:', tagsError);
     }
 
     // Create a map of problem_id to tags
-    const tagsMap = new Map();
+    const tagsMap = new Map<string, string[]>();
     problemSubjects?.forEach(ps => {
       if (!tagsMap.has(ps.problem_id)) {
         tagsMap.set(ps.problem_id, []);
       }
-      tagsMap.get(ps.problem_id).push(ps.subjects.name);
+      tagsMap.get(ps.problem_id)!.push(ps.subjects.name);
     });
 
     // Transform to ProblemMetadata format
-    const problems = searchResults.map(result => ({
+    const problems: ProblemMetadata[] = searchResults.map(result => ({
       id: result.id,
       problem_filename: result.problem_filename,
       answer_filename: result.answer_filename,
