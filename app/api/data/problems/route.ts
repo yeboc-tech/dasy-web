@@ -121,12 +121,12 @@ export async function GET(request: NextRequest) {
     const subjectNames = relatedSubject.split(',');
 
     // Filter problems that have at least one of the selected subjects
-    problems = problems.filter(p =>
-      p.problem_subjects &&
-      p.problem_subjects.some(ps =>
+    problems = problems.filter(p => {
+      if (!p.problem_subjects) return false;
+      return (p.problem_subjects as unknown as Array<{ subjects: { name: string } }>).some(ps =>
         ps.subjects?.name && subjectNames.includes(ps.subjects.name)
-      )
-    );
+      );
+    });
     count = problems.length;
   }
 
