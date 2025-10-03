@@ -81,7 +81,10 @@ export async function GET(request: NextRequest) {
   // Pagination
   query = query.range(start, end).order('created_at', { ascending: false });
 
-  let { data: problems, error, count } = await query;
+  const result = await query;
+  let problems = result.data;
+  const error = result.error;
+  let count = result.count;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
