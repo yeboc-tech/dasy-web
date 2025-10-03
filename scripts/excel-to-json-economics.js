@@ -89,45 +89,57 @@ function convertEconomicsExcelToJson(excelPath, outputPath) {
     
     console.log(`🎯 Found ${economicsRows.length} economics entries`);
     
-    // Check which problems have images
-    const dataDir = path.join(__dirname, '../public/data');
-    const problemsWithImages = [];
-    const problemsWithoutImages = [];
-    
-    economicsRows.forEach(row => {
-      const id = row[0];
-      if (!id) return; // Skip rows without ID
-      
-      const imageCheck = checkImageExists(id, dataDir);
-      
-      if (imageCheck.bothExist) {
-        problemsWithImages.push({
+    // Check if filenames are provided in Excel (columns 1 and 2)
+    const hasFilenamesInExcel = economicsRows.some(row => row[1] && row[2]);
+
+    let problemsToProcess = [];
+    let problemsWithoutImages = [];
+
+    if (hasFilenamesInExcel) {
+      console.log('📁 Using filenames from Excel columns');
+      // Use filenames from Excel
+      problemsToProcess = economicsRows.filter(row => {
+        const id = row[0];
+        const problemFilename = row[1];
+        const answerFilename = row[2];
+
+        if (!id) return false;
+        if (!problemFilename || !answerFilename) return false;
+
+        return true;
+      }).map(row => ({
+        ...row,
+        _imageFiles: {
+          problemFilename: row[1],
+          answerFilename: row[2]
+        }
+      }));
+    } else {
+      console.log('🔍 Filenames not provided - generating from IDs for all problems');
+      // Generate filenames for all problems based on ID
+      problemsToProcess = economicsRows.filter(row => {
+        const id = row[0];
+        return id && !isNaN(parseInt(id)); // Only include rows with numeric IDs
+      }).map(row => {
+        const id = row[0];
+        return {
           ...row,
           _imageFiles: {
-            problemFilename: imageCheck.problemFilename,
-            answerFilename: imageCheck.answerFilename
+            problemFilename: `경제${id}.png`,
+            answerFilename: `경제${id}-a.png`
           }
-        });
-      } else {
-        problemsWithoutImages.push({
-          id: id,
-          problemExists: imageCheck.problemExists,
-          answerExists: imageCheck.answerExists,
-          problemFilename: imageCheck.problemFilename,
-          answerFilename: imageCheck.answerFilename
-        });
-      }
-    });
-    
-    console.log(`✅ Problems with images: ${problemsWithImages.length}`);
-    console.log(`❌ Problems without images: ${problemsWithoutImages.length}`);
-    
+        };
+      });
+    }
+
+    console.log(`✅ Problems to process: ${problemsToProcess.length}`);
     if (problemsWithoutImages.length > 0) {
+      console.log(`❌ Problems without images: ${problemsWithoutImages.length}`);
       console.log('Missing images for IDs:', problemsWithoutImages.map(p => p.id).slice(0, 10).join(', '));
     }
-    
+
     // Convert to problem format
-    const problems = problemsWithImages.map((row, index) => {
+    const problems = problemsToProcess.map((row, index) => {
       const id = row[0];              // Column 0: ID
       const volume = row[3];          // Column 3: 통합사회2
       const chapter = row[4];         // Column 4: 시장 경제와 지속가능발전  
@@ -241,9 +253,9 @@ function convertEconomicsExcelToJson(excelPath, outputPath) {
 
 // Main execution
 if (require.main === module) {
-  const excelPath = path.join(__dirname, '../public/data/통합사회 문제 은행 프로젝트_경제.xlsx');
-  const outputPath = path.join(__dirname, '../public/data/경제-problems-metadata-new.json');
-  
+  const excelPath = path.join(__dirname, '../public/data/통합사회 문제 은행 프로젝트_경제_for_excel_to_json.xlsx');
+  const outputPath = path.join(__dirname, '../public/data/경제-problems-metadata-from-converted.json');
+
   convertEconomicsExcelToJson(excelPath, outputPath);
 }
 

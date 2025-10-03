@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-10-03T02:22:07.783Z",
+  "duration": 17710,
+  "summary": {
+    "total": 2,
+    "successful": 2,
+    "failed": 0,
+    "ocrPerformed": 2,
+    "embeddingsGenerated": 2
+  },
+  "results": [
+    {
+      "problemId": "65ba65bd-1336-4d03-8942-db43d45eccfb",
+      "success": true,
+      "ocrPerformed": true,
+      "embeddingGenerated": true,
+      "textLength": 312
+    },
+    {
+      "problemId": "d6d8145f-6ec0-40e4-8289-ccc7a932bd8a",
+      "success": true,
+      "ocrPerformed": true,
+      "embeddingGenerated": true,
+      "textLength": 74
+    }
+  ]
+}

@@ -60,7 +60,7 @@ export const useAuthActions = () => {
   const handleSignOut = async () => {
     await signOut()
     router.refresh()
-    router.push('/auth/login')
+    router.push('/auth/signin')
   }
 
   return {
