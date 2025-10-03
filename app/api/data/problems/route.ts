@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const id = searchParams.get('id') || '';
   const problemFile = searchParams.get('problemFile') || '';
   const answerFile = searchParams.get('answerFile') || '';
+  const relatedSubject = searchParams.get('relatedSubject') || '';
 
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
@@ -35,6 +36,12 @@ export async function GET(request: NextRequest) {
       chapters (
         id,
         name,
+        subjects (
+          id,
+          name
+        )
+      ),
+      problem_subjects (
         subjects (
           id,
           name
@@ -78,8 +85,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Pagination
-  query = query.range(start, end).order('created_at', { ascending: false });
+  // If we have client-side filters (id or relatedSubject), we need to fetch all data first
+  const needsClientSideFilter = !!(id || relatedSubject);
+
+  if (needsClientSideFilter) {
+    // Fetch all data without pagination for client-side filtering
+    query = query.order('created_at', { ascending: false });
+  } else {
+    // Apply pagination only when no client-side filters
+    query = query.range(start, end).order('created_at', { ascending: false });
+  }
 
   const result = await query;
   let problems = result.data;
@@ -99,6 +114,27 @@ export async function GET(request: NextRequest) {
       problems = problems.filter(p => p.id.toLowerCase().includes(id.toLowerCase()));
     }
     count = problems.length;
+  }
+
+  // Filter by related subject on the client side (after fetching)
+  if (relatedSubject && problems) {
+    const subjectNames = relatedSubject.split(',');
+
+    // Filter problems that have at least one of the selected subjects
+    problems = problems.filter(p =>
+      p.problem_subjects &&
+      p.problem_subjects.some(ps =>
+        ps.subjects?.name && subjectNames.includes(ps.subjects.name)
+      )
+    );
+    count = problems.length;
+  }
+
+  // Apply pagination after client-side filtering
+  if (needsClientSideFilter && problems) {
+    const totalFiltered = problems.length;
+    problems = problems.slice(start, end + 1);
+    count = totalFiltered;
   }
 
   return NextResponse.json({

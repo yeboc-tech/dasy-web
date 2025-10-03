@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Loader, Search, X, Copy } from 'lucide-react';
+import { Loader, Search, X, Copy, Filter } from 'lucide-react';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 
 interface Problem {
@@ -20,6 +20,11 @@ interface Problem {
       name: string;
     };
   } | null;
+  problem_subjects: {
+    subjects: {
+      name: string;
+    };
+  }[];
 }
 
 interface ProblemsResponse {
@@ -48,6 +53,9 @@ export default function ProblemsDataPage() {
   const [answerFileFilter, setAnswerFileFilter] = useState('');
   const [answerFileSearchInput, setAnswerFileSearchInput] = useState('');
   const [showAnswerFileDropdown, setShowAnswerFileDropdown] = useState(false);
+  const [relatedSubjectFilter, setRelatedSubjectFilter] = useState<string[]>([]);
+  const [showRelatedSubjectDropdown, setShowRelatedSubjectDropdown] = useState(false);
+  const [availableSubjects, setAvailableSubjects] = useState<{ id: string; name: string }[]>([]);
   const [previewImage, setPreviewImage] = useState<{ url: string; top: number; left: number } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -62,6 +70,7 @@ export default function ProblemsDataPage() {
     year: 80,
     subject: 100,
     chapter: 150,
+    relatedSubjects: 150,
     correctRate: 100,
     difficulty: 100,
     answer: 60,
@@ -73,10 +82,15 @@ export default function ProblemsDataPage() {
   const idDropdownRef = useRef<HTMLDivElement>(null);
   const problemFileDropdownRef = useRef<HTMLDivElement>(null);
   const answerFileDropdownRef = useRef<HTMLDivElement>(null);
+  const relatedSubjectDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchProblems();
-  }, [page, difficulty, pageSize, sourceFilter, idFilter, problemFileFilter, answerFileFilter]);
+  }, [page, difficulty, pageSize, sourceFilter, idFilter, problemFileFilter, answerFileFilter, relatedSubjectFilter]);
+
+  useEffect(() => {
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -91,6 +105,9 @@ export default function ProblemsDataPage() {
       }
       if (answerFileDropdownRef.current && !answerFileDropdownRef.current.contains(event.target as Node)) {
         setShowAnswerFileDropdown(false);
+      }
+      if (relatedSubjectDropdownRef.current && !relatedSubjectDropdownRef.current.contains(event.target as Node)) {
+        setShowRelatedSubjectDropdown(false);
       }
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
         setShowStatusDropdown(false);
@@ -112,6 +129,7 @@ export default function ProblemsDataPage() {
       ...(idFilter && { id: idFilter }),
       ...(problemFileFilter && { problemFile: problemFileFilter }),
       ...(answerFileFilter && { answerFile: answerFileFilter }),
+      ...(relatedSubjectFilter.length > 0 && { relatedSubject: relatedSubjectFilter.join(',') }),
     });
 
     const res = await fetch(`/api/data/problems?${params}`);
@@ -126,6 +144,14 @@ export default function ProblemsDataPage() {
     }
 
     setLoading(false);
+  };
+
+  const fetchSubjects = async () => {
+    const res = await fetch('/api/data/subjects');
+    const json = await res.json();
+    if (json.subjects) {
+      setAvailableSubjects(json.subjects);
+    }
   };
 
   const handleSourceSearch = () => {
@@ -177,6 +203,19 @@ export default function ProblemsDataPage() {
   const handleClearAnswerFileFilter = () => {
     setAnswerFileFilter('');
     setAnswerFileSearchInput('');
+    setPage(1);
+  };
+
+  const handleRelatedSubjectToggle = (subjectName: string) => {
+    setRelatedSubjectFilter(prev => {
+      if (prev.includes(subjectName)) {
+        // Remove if already selected
+        return prev.filter(s => s !== subjectName);
+      } else {
+        // Add if not selected
+        return [...prev, subjectName];
+      }
+    });
     setPage(1);
   };
 
@@ -481,6 +520,38 @@ export default function ProblemsDataPage() {
                       onMouseDown={(e) => handleMouseDown(e, 'chapter')}
                     />
                   </th>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.relatedSubjects, minWidth: columnWidths.relatedSubjects }}>
+                    <div className="flex items-center justify-between">
+                      <span>관련 과목</span>
+                      <div className="relative" ref={relatedSubjectDropdownRef}>
+                        <button
+                          onClick={() => setShowRelatedSubjectDropdown(!showRelatedSubjectDropdown)}
+                          className="p-1 hover:bg-gray-200 cursor-pointer"
+                        >
+                          <Filter className={`w-3 h-3 ${relatedSubjectFilter.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
+                        </button>
+                        {showRelatedSubjectDropdown && (
+                          <div className="absolute top-full left-0 mt-1 bg-white border shadow-lg max-h-60 overflow-y-auto" style={{ minWidth: '200px', zIndex: 9999 }}>
+                            {availableSubjects.map((subject) => (
+                              <div
+                                key={subject.id}
+                                onClick={() => handleRelatedSubjectToggle(subject.name)}
+                                className={`px-3 py-2 text-xs hover:bg-gray-100 cursor-pointer ${
+                                  relatedSubjectFilter.includes(subject.name) ? 'bg-blue-50 text-blue-600' : ''
+                                }`}
+                              >
+                                {subject.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'relatedSubjects')}
+                    />
+                  </th>
                   <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.correctRate, minWidth: columnWidths.correctRate }}>
                     정답률
                     <div
@@ -553,6 +624,13 @@ export default function ProblemsDataPage() {
                     </td>
                     <td className="px-3 py-2 text-xs overflow-hidden border-r" title={problem.chapters?.name || ''} style={{ width: columnWidths.chapter, minWidth: columnWidths.chapter }}>
                       <div className="truncate">{problem.chapters?.name || '-'}</div>
+                    </td>
+                    <td className="px-3 py-2 text-xs overflow-hidden border-r" style={{ width: columnWidths.relatedSubjects, minWidth: columnWidths.relatedSubjects }}>
+                      <div className="truncate" title={problem.problem_subjects && problem.problem_subjects.length > 0 ? problem.problem_subjects.map(ps => ps.subjects?.name || 'N/A').join(', ') : ''}>
+                        {problem.problem_subjects && problem.problem_subjects.length > 0
+                          ? problem.problem_subjects.map(ps => ps.subjects?.name || 'N/A').join(', ')
+                          : '-'}
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-xs border-r" style={{ width: columnWidths.correctRate, minWidth: columnWidths.correctRate }}>{problem.correct_rate || '-'}%</td>
                     <td className="px-3 py-2 text-xs border-r" style={{ width: columnWidths.difficulty, minWidth: columnWidths.difficulty }}>{problem.difficulty}</td>
