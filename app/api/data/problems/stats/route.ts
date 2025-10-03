@@ -45,8 +45,21 @@ export async function GET() {
       )
     `);
 
-  const missingSubject = allProblems?.filter(p => !p.chapters?.subjects?.name).length || 0;
-  const missingChapter = allProblems?.filter(p => !p.chapters?.name).length || 0;
+  type ChapterWithSubjects = {
+    id: unknown;
+    name: unknown;
+    subjects: { id: unknown; name: unknown }[];
+  }[];
+
+  const missingSubject = allProblems?.filter(p => {
+    const chapters = p.chapters as unknown as ChapterWithSubjects;
+    return !chapters || !Array.isArray(chapters) || chapters.length === 0 || !chapters[0]?.subjects || !Array.isArray(chapters[0].subjects) || chapters[0].subjects.length === 0;
+  }).length || 0;
+
+  const missingChapter = allProblems?.filter(p => {
+    const chapters = p.chapters as unknown as ChapterWithSubjects;
+    return !chapters || !Array.isArray(chapters) || chapters.length === 0;
+  }).length || 0;
 
   return NextResponse.json({
     total: total || 0,
