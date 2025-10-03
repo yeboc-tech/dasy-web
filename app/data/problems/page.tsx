@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Loader, Search, X, Copy, Filter } from 'lucide-react';
+import { Loader, Search, X, Copy, Filter, Download } from 'lucide-react';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 
 interface Problem {
@@ -63,6 +63,7 @@ export default function ProblemsDataPage() {
   const [statsLoading, setStatsLoading] = useState(false);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const [columnWidths, setColumnWidths] = useState({
+    index: 50,
     id: 100,
     problemFile: 150,
     answerFile: 150,
@@ -301,6 +302,68 @@ export default function ProblemsDataPage() {
     document.removeEventListener('mouseup', handleMouseUp);
   };
 
+  const handleExportCSV = async () => {
+    if (!data) return;
+
+    // Fetch all data with current filters
+    const params = new URLSearchParams({
+      page: '1',
+      pageSize: data.total.toString(), // Fetch all records
+      ...(search && { search }),
+      ...(difficulty && { difficulty }),
+      ...(sourceFilter && { source: sourceFilter }),
+      ...(idFilter && { id: idFilter }),
+      ...(problemFileFilter && { problemFile: problemFileFilter }),
+      ...(answerFileFilter && { answerFile: answerFileFilter }),
+      ...(relatedSubjectFilter.length > 0 && { relatedSubject: relatedSubjectFilter.join(',') }),
+    });
+
+    const res = await fetch(`/api/data/problems?${params}`);
+    const json = await res.json();
+
+    if (json.error || !json.problems) return;
+
+    const allProblems = json.problems;
+
+    // CSV headers
+    const headers = ['번호', 'ID', '문제 파일명', '정답 파일명', '출처', '연도', '과목', '단원', '관련 과목', '정답률', '난이도', '답'];
+
+    // CSV rows
+    const rows = allProblems.map((problem: Problem, index: number) => [
+      index + 1,
+      problem.id,
+      problem.problem_filename,
+      problem.answer_filename || '',
+      problem.source || '',
+      problem.exam_year || '',
+      problem.chapters?.subjects?.name || '',
+      problem.chapters?.name || '',
+      problem.problem_subjects && problem.problem_subjects.length > 0
+        ? problem.problem_subjects.map(ps => ps.subjects?.name || 'N/A').join(', ')
+        : '',
+      problem.correct_rate || '',
+      problem.difficulty,
+      problem.answer || ''
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `문제데이터_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading && !data) {
     return (
       <div className="h-full flex-1 bg-white">
@@ -317,8 +380,16 @@ export default function ProblemsDataPage() {
   return (
     <div className="bg-white h-full flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 60px)' }}>
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-4 w-full flex-1 flex flex-col overflow-hidden">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h1 className="text-base font-normal">문제 데이터</h1>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs border hover:bg-gray-50 cursor-pointer"
+            disabled={!data?.problems || data.problems.length === 0}
+          >
+            <Download className="w-3 h-3" />
+            CSV 내보내기
+          </button>
         </div>
 
         {/* Table */}
@@ -327,6 +398,12 @@ export default function ProblemsDataPage() {
             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
               <thead className="bg-gray-100 border-b sticky top-0" style={{ zIndex: 50 }}>
                 <tr>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.index, minWidth: columnWidths.index }}>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'index')}
+                    />
+                  </th>
                   <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.id, minWidth: columnWidths.id }}>
                     <div className="flex items-center justify-between">
                       <span>ID</span>
@@ -578,6 +655,9 @@ export default function ProblemsDataPage() {
                       className="hover:bg-gray-50 border-b"
                       onMouseLeave={handleImageLeave}
                     >
+                    <td className="px-3 py-2 text-xs text-gray-500 border-r text-center" style={{ width: columnWidths.index, minWidth: columnWidths.index }}>
+                      {(page - 1) * pageSize + index + 1}
+                    </td>
                     <td className="px-3 py-2 text-xs font-mono text-gray-500 overflow-hidden border-r" title={problem.id} style={{ width: columnWidths.id, minWidth: columnWidths.id }}>
                       <div className="flex items-center justify-between gap-1">
                         <div className="truncate">{problem.id}</div>
