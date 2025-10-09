@@ -36,15 +36,13 @@ export default function Page() {
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
-  
-  // Debug logging - removed for cleaner testing
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
     if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
       const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
       const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
-      
+
       if (tonghapsahoe2Item) {
         // Use the same logic as handleCheckboxChange when checking a parent
         const getAllChildIds = (item: ChapterTreeItem): string[] => {
@@ -62,7 +60,7 @@ export default function Page() {
         const allChildIds = getAllChildIds(tonghapsahoe2Item);
         const itemsToAdd = [tonghapsahoe2Id, ...allChildIds];
         const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
-        
+
         // Simulating 통합사회 2 checkbox click - selecting parent and all children
         setSelectedChapters(newSelectedChapters);
         setHasSetDefaultSelection(true);
@@ -72,7 +70,9 @@ export default function Page() {
 
   // Filter problems for main page when filters change
   useEffect(() => {
-    if (!problems || problems.length === 0) return;
+    if (!problems || problems.length === 0) {
+      return;
+    }
 
     const filters = {
       selectedChapters,
@@ -111,7 +111,12 @@ export default function Page() {
 
   // Sort main page problems based on worksheet mode
   useEffect(() => {
-    if (!filteredProblems || filteredProblems.length === 0 || !contentTree) {
+    if (!contentTree) {
+      setSortedFilteredProblems([]);
+      return;
+    }
+
+    if (!filteredProblems || filteredProblems.length === 0) {
       setSortedFilteredProblems([]);
       return;
     }
@@ -133,7 +138,7 @@ export default function Page() {
       };
       traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> correct rate
+      // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
       sorted.sort((a, b) => {
         const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
         const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
@@ -155,7 +160,14 @@ export default function Page() {
           return pathA.length - pathB.length;
         }
 
-        // If in same chapter, sort by correct rate descending (highest first = easiest first)
+        // If in same chapter, group by tags
+        const tagsA = (a.tags || []).sort().join(',');
+        const tagsB = (b.tags || []).sort().join(',');
+        if (tagsA !== tagsB) {
+          return tagsA.localeCompare(tagsB);
+        }
+
+        // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
         const aCorrectRate = a.correct_rate ?? 0;
         const bCorrectRate = b.correct_rate ?? 0;
         return bCorrectRate - aCorrectRate;
@@ -195,7 +207,7 @@ export default function Page() {
       };
       traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> correct rate
+      // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
       sorted.sort((a, b) => {
         const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
         const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
@@ -217,7 +229,14 @@ export default function Page() {
           return pathA.length - pathB.length;
         }
 
-        // If in same chapter, sort by correct rate descending (highest first = easiest first)
+        // If in same chapter, group by tags
+        const tagsA = (a.tags || []).sort().join(',');
+        const tagsB = (b.tags || []).sort().join(',');
+        if (tagsA !== tagsB) {
+          return tagsA.localeCompare(tagsB);
+        }
+
+        // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
         const aCorrectRate = a.correct_rate ?? 0;
         const bCorrectRate = b.correct_rate ?? 0;
         return bCorrectRate - aCorrectRate;
@@ -330,7 +349,7 @@ export default function Page() {
           <div className="flex-1 overflow-hidden">
             <ProblemsPanel
               filteredProblems={sortedFilteredProblems}
-              problemsLoading={problemsLoading}
+              problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
               problemsError={problemsError}
               contentTree={contentTree}
               onDeleteProblem={handleDeleteProblem}
@@ -356,7 +375,7 @@ export default function Page() {
                     className={`flex flex-col items-start cursor-pointer ${worksheetMode === '연습' ? 'bg-gray-100' : ''}`}
                   >
                     <div className="font-medium">연습</div>
-                    <div className="text-xs text-gray-500">단원별 난이도순</div>
+                    <div className="text-xs text-gray-500">단원별 태그별 난이도순</div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setWorksheetMode('실전')}
@@ -497,7 +516,7 @@ export default function Page() {
               <div className="flex-1 overflow-hidden">
                 <ProblemsPanel
                   filteredProblems={sortedDialogProblems}
-                  problemsLoading={problemsLoading}
+                  problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                   problemsError={problemsError}
                   contentTree={contentTree}
                   onDeleteProblem={(problemId) => {

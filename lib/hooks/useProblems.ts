@@ -12,6 +12,7 @@ export interface DatabaseProblem {
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
+  tags: string[];
   correct_rate?: number;
   exam_year?: number;
   created_at: string;
@@ -36,7 +37,7 @@ export function useProblems() {
         
         const supabase = createClient();
         
-        // Fetch problems with their related subjects
+        // Fetch problems with their tags
         const { data, error: fetchError } = await supabase
           .from('problems')
           .select(`
@@ -47,6 +48,7 @@ export function useProblems() {
             chapter_id,
             difficulty,
             problem_type,
+            tags,
             correct_rate,
             exam_year,
             created_at,
@@ -61,7 +63,7 @@ export function useProblems() {
           throw new Error(`Failed to fetch problems: ${fetchError.message}`);
         }
 
-        // Transform the data to match ProblemMetadata interface  
+        // Transform the data to match ProblemMetadata interface
         const transformedProblems: ProblemMetadata[] = (data || []).map((problem: unknown) => {
           const typedProblem = problem as DatabaseProblem;
           return {
@@ -74,7 +76,8 @@ export function useProblems() {
             problem_type: typedProblem.problem_type,
             correct_rate: typedProblem.correct_rate,
             exam_year: typedProblem.exam_year,
-            tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
+            tags: typedProblem.tags || [],
+            related_subjects: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
             created_at: typedProblem.created_at,
             updated_at: typedProblem.updated_at
           };
@@ -109,6 +112,7 @@ export function useProblems() {
           chapter_id,
           difficulty,
           problem_type,
+          tags,
           correct_rate,
           exam_year,
           created_at,
@@ -135,7 +139,8 @@ export function useProblems() {
           problem_type: typedProblem.problem_type,
           correct_rate: typedProblem.correct_rate,
           exam_year: typedProblem.exam_year,
-          tags: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
+          tags: typedProblem.tags || [],
+          related_subjects: typedProblem.problem_subjects?.map(ps => ps.subjects.name) || [],
           created_at: typedProblem.created_at,
           updated_at: typedProblem.updated_at
         };

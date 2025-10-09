@@ -7,7 +7,8 @@ export interface ProblemMetadata {
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
-  tags: string[];
+  tags: string[]; // Topic-level descriptors like "법치주의", "민주주의의 의미"
+  related_subjects: string[]; // Course names like "생활과 윤리", "정치와 법"
   correct_rate?: number; // Correct rate percentage (0-100)
   exam_year?: number; // Year the problem appeared in exam (extracted from source)
   created_at: string;

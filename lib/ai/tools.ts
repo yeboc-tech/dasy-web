@@ -20,6 +20,7 @@ interface SearchResult {
   chapter_id: string | null;
   difficulty: string;
   problem_type: string;
+  tags: string[];
   correct_rate?: number;
   exam_year?: number;
   created_at: string;
@@ -79,8 +80,8 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
       };
     }
 
-    // Fetch tags for the problems
-    const { data: problemSubjects, error: tagsError } = await supabase
+    // Fetch related subjects for the problems
+    const { data: problemSubjects, error: subjectsError } = await supabase
       .from('problem_subjects')
       .select(`
         problem_id,
@@ -88,17 +89,17 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
       `)
       .in('problem_id', problemIds) as { data: ProblemSubject[] | null; error: Error | null };
 
-    if (tagsError) {
-      console.error('Error fetching tags:', tagsError);
+    if (subjectsError) {
+      console.error('Error fetching subjects:', subjectsError);
     }
 
-    // Create a map of problem_id to tags
-    const tagsMap = new Map<string, string[]>();
+    // Create a map of problem_id to related_subjects
+    const subjectsMap = new Map<string, string[]>();
     problemSubjects?.forEach(ps => {
-      if (!tagsMap.has(ps.problem_id)) {
-        tagsMap.set(ps.problem_id, []);
+      if (!subjectsMap.has(ps.problem_id)) {
+        subjectsMap.set(ps.problem_id, []);
       }
-      tagsMap.get(ps.problem_id)!.push(ps.subjects.name);
+      subjectsMap.get(ps.problem_id)!.push(ps.subjects.name);
     });
 
     // Transform to ProblemMetadata format
@@ -114,7 +115,8 @@ export async function searchProblemsByEmbedding({ query, limit = 20 }: SearchPro
       exam_year: result.exam_year,
       created_at: result.created_at,
       updated_at: result.updated_at,
-      tags: tagsMap.get(result.id) || []
+      tags: result.tags || [],
+      related_subjects: subjectsMap.get(result.id) || []
     }));
 
     console.log('🎉 Final result: returning', problems.length, 'problems');

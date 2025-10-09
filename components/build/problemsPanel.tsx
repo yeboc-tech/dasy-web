@@ -53,22 +53,6 @@ export default function ProblemsPanel({
     return createChapterLookupMap(contentTree);
   }, [contentTree]);
 
-  // Log all UUIDs and filenames when filteredProblems changes
-  useMemo(() => {
-    if (filteredProblems.length > 0) {
-      console.log('=== Currently Previewing Images ===');
-      filteredProblems.forEach((problem, index) => {
-        console.log(`${index + 1}. UUID: ${problem.id}`);
-        console.log(`   Filename: ${problem.problem_filename}`);
-        console.log(`   Correct Rate: ${problem.correct_rate ?? 'N/A'}%`);
-        console.log(`   Chapter: ${getChapterName(problem.chapter_id, chapterLookupMap)}`);
-        console.log(`   Difficulty: ${problem.difficulty}`);
-        console.log('---');
-      });
-      console.log(`Total: ${filteredProblems.length} problems`);
-      console.log('================================');
-    }
-  }, [filteredProblems, chapterLookupMap]);
   return (
     <div className="flex-1 flex flex-col h-full relative">
       {/* Loading overlay for problems */}
@@ -122,6 +106,18 @@ export default function ProblemsPanel({
                   <div className="text-xs mb-1 relative z-[2]">
                     <span className="font-medium">{getChapterName(problem.chapter_id, chapterLookupMap)}</span> • {problem.difficulty} • {problem.problem_type}
                   </div>
+                  {problem.tags && problem.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2 relative z-[2]">
+                      {problem.tags.map((tag, tagIndex) => (
+                        <span
+                          key={tagIndex}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="relative">
                     <Image
                       src={getProblemImageUrl(problem.id)}

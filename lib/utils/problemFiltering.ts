@@ -81,9 +81,9 @@ export class ProblemFilter {
     // Filter by selected chapters - ONLY show problems for selected chapters
     if (filters.selectedChapters.length > 0) {
       const selectedChapterIds = this.getSelectedChapterIds(filters.contentTree, filters.selectedChapters);
-      
+
       if (selectedChapterIds.length > 0) {
-        filtered = filtered.filter(problem => 
+        filtered = filtered.filter(problem =>
           problem.chapter_id && selectedChapterIds.includes(problem.chapter_id)
         );
       } else {
@@ -105,16 +105,16 @@ export class ProblemFilter {
 
     // Filter by selected problem types
     if (filters.selectedProblemTypes.length > 0) {
-      filtered = filtered.filter(problem => 
+      filtered = filtered.filter(problem =>
         filters.selectedProblemTypes.includes(problem.problem_type)
       );
     }
 
-    // Filter by selected subjects (using tags)
+    // Filter by selected subjects (using related_subjects)
     if (filters.selectedSubjects.length > 0) {
-      filtered = filtered.filter(problem => 
-        problem.tags.some(tag => 
-          filters.selectedSubjects.includes(tag)
+      filtered = filtered.filter(problem =>
+        problem.related_subjects.some(subject =>
+          filters.selectedSubjects.includes(subject)
         )
       );
     }
@@ -146,16 +146,11 @@ export class ProblemFilter {
       // Shuffle array using Fisher-Yates algorithm with TRUE randomization
       const shuffled = [...filtered];
 
-      console.log(`🎲 ProblemFilter: Randomly shuffling ${shuffled.length} problems...`);
-      console.log(`   Selected problems before shuffle: ${shuffled.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
-
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       filtered = shuffled.slice(0, filters.problemCount);
-
-      console.log(`   Selected problems after shuffle: ${filtered.slice(0, 3).map(p => p.id.substring(0, 8)).join(', ')}`);
     }
 
     // Build chapter path map for hierarchical sorting
