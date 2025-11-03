@@ -103,6 +103,9 @@ export default function ProblemsPanel({
                       <Trash2 size={16} />
                     </button>
                   )}
+                  <div className="text-sm font-bold mb-2 relative z-[2]">
+                    {index + 1}.
+                  </div>
                   <div className="text-xs mb-1 relative z-[2]">
                     <span className="font-medium">{getChapterName(problem.chapter_id, chapterLookupMap)}</span> • {problem.difficulty} • {problem.problem_type}
                   </div>
