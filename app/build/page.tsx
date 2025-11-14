@@ -49,7 +49,7 @@ export default function Page() {
   const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
+  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | undefined>(undefined);
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
@@ -65,8 +65,8 @@ export default function Page() {
         return;
       }
 
-      // Set to null to indicate "loading"
-      setEditedContentsMap(null);
+      // Set to undefined to indicate "loading"
+      setEditedContentsMap(undefined);
 
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
