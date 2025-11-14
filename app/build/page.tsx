@@ -49,7 +49,7 @@ export default function Page() {
   const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string>>(new Map());
+  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
@@ -61,26 +61,17 @@ export default function Page() {
   useEffect(() => {
     const fetchEditedContent = async () => {
       if (filteredProblems.length === 0) {
-        setEditedContentsMap(new Map());
+        setEditedContentsMap(new Map()); // Empty map = no problems to fetch for
         return;
       }
 
+      // Set to null to indicate "loading"
+      setEditedContentsMap(null);
+
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
-      // Collect all resource IDs (problems + answers)
-      const problemIds = filteredProblems.map(p => p.id);
-      const answerIds = filteredProblems
-        .filter(p => p.answer_filename)
-        .map(p => {
-          // For economy problems, replace _문제 with _해설
-          if (p.id.startsWith('경제_')) {
-            return p.id.replace('_문제', '_해설');
-          }
-          // For regular problems, use the same ID
-          return p.id;
-        });
-
-      const allResourceIds = [...problemIds, ...answerIds];
+      // Collect only problem IDs (build page doesn't show answers)
+      const allResourceIds = filteredProblems.map(p => p.id);
 
       console.log(`[Build Page Preview] Fetching edited content for ${allResourceIds.length} resources`);
       console.log('[Build Page Preview] First 5 resource IDs:', allResourceIds.slice(0, 5));

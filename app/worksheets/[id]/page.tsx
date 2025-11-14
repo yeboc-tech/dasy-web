@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useChapters } from '@/lib/hooks/useChapters';
-import { imageToBase64Client, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient } from '@/lib/pdf/clientUtils';
+import { imageToBase64Client, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient, cropBase64ImageClient } from '@/lib/pdf/clientUtils';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { PublishConfirmDialog } from '@/components/worksheets/PublishConfirmDialog';
 import IsolatedPDFContainer from '@/components/pdf/IsolatedPDFContainer';
@@ -48,6 +48,22 @@ interface WorksheetData {
   problems: ProblemMetadata[];
 }
 
+// Helper to get chapter path labels from chapter tree
+function getChapterPathLabels(chapterId: string, chapters: { id: string; name: string; parent_id: string | null }[]): string[] {
+  const path: string[] = [];
+  let currentId: string | null = chapterId;
+
+  while (currentId) {
+    const chapter = chapters.find(c => c.id === currentId);
+    if (!chapter) break;
+
+    path.unshift(chapter.name); // Add to beginning to maintain order
+    currentId = chapter.parent_id;
+  }
+
+  return path;
+}
+
 export default function ConfigurePage() {
   const params = useParams();
   const worksheetId = params.id as string;
@@ -65,7 +81,7 @@ export default function ConfigurePage() {
   const [showAnswersInPreview, setShowAnswersInPreview] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [worksheetReady, setWorksheetReady] = useState(false); // New flag to control PDF generation
-  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string>>(new Map());
+  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
@@ -193,27 +209,48 @@ export default function ConfigurePage() {
         // Keep showLoader true - no need to delay since we want consistent loading
         setPdfError(null);
 
+        // Set to null to indicate "loading" - prevents race condition in preview
+        setEditedContentsMap(null);
+
         // Fetch edited contents from database
         const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
         // Collect all resource IDs (problems + answers)
         const problemIds = worksheetData?.problems.map(p => p.id) || [];
+
+        // For answers: construct proper resource IDs
         const answerIds = worksheetData?.problems
           .filter(p => p.answer_filename)
           .map(p => {
-            // For economy problems, replace _문제 with _해설
+            // Economy: replace _문제 with _해설
             if (p.id.startsWith('경제_')) {
               return p.id.replace('_문제', '_해설');
             }
-            // For regular problems, use the same ID (answer stored with same ID)
+            // Regular problems: use same ID
             return p.id;
           }) || [];
 
         const allResourceIds = [...problemIds, ...answerIds];
+
+        console.log('[PDF Generation] Problem IDs:', problemIds);
+        console.log('[PDF Generation] Answer IDs:', answerIds);
+        console.log('[PDF Generation] Total resource IDs:', allResourceIds.length);
+
         const fetchedEditedContents = await getEditedContents(allResourceIds);
 
+        console.log('[PDF Generation] Received edited content for:', Array.from(fetchedEditedContents.keys()));
+        console.log('[PDF Generation] Expected problems:', problemIds.length, 'Received:', fetchedEditedContents.size);
+
+        // Check for missing problems
+        const missingProblems = problemIds.filter(id => !fetchedEditedContents.has(id));
+        if (missingProblems.length > 0) {
+          console.warn('[PDF Generation] ⚠️ Missing edited content for these problems:', missingProblems);
+        }
+
         // Store in state for preview dialog to use
+        console.log('[PDF Generation] Setting editedContentsMap with', fetchedEditedContents.size, 'items');
         setEditedContentsMap(fetchedEditedContents);
+        console.log('[PDF Generation] editedContentsMap state updated');
 
         if (fetchedEditedContents.size > 0) {
           console.log(`[Edited Content] Found ${fetchedEditedContents.size} edited images in database`);
@@ -224,18 +261,24 @@ export default function ConfigurePage() {
         const problemImagePromises = selectedImages.map(async (imagePath, index) => {
           const problemId = worksheetData?.problems[index]?.id;
 
+          console.log(`[PDF Image ${index + 1}] Problem ID: ${problemId}, Has edited: ${problemId && fetchedEditedContents.has(problemId)}`);
+
           // Check if edited content exists first
           if (problemId && fetchedEditedContents.has(problemId)) {
-            console.log(`[Edited Content] Using edited version for problem: ${problemId}`);
+            console.log(`[PDF Image ${index + 1}] ✅ Using edited version from database`);
             const base64 = fetchedEditedContents.get(problemId)!;
             // Ensure it has the data URL prefix
             return base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
           }
 
           // Otherwise fetch from CDN/S3
+          console.log(`[PDF Image ${index + 1}] ⚠️ No edited content, trying CDN: ${imagePath}`);
           try {
-            return await imageToBase64Client(imagePath);
-          } catch {
+            const cdnImage = await imageToBase64Client(imagePath);
+            console.log(`[PDF Image ${index + 1}] ✅ Fetched from CDN successfully`);
+            return cdnImage;
+          } catch (error) {
+            console.error(`[PDF Image ${index + 1}] ❌ CDN fetch failed, using placeholder`);
             // Silently fall back to placeholder image
             return getNoImageBase64();
           }
@@ -252,6 +295,9 @@ export default function ConfigurePage() {
         });
 
         // Convert answer images to base64 on client side with error handling
+        // Max height for answer images to prevent layout overflow
+        const ANSWER_MAX_HEIGHT = 2000;
+
         const answerImagePromises = selectedAnswerImages.map(async (imagePath, index) => {
           const problem = worksheetData?.problems.filter(p => p.answer_filename)[index];
           if (!problem) {
@@ -263,20 +309,30 @@ export default function ConfigurePage() {
             ? problem.id.replace('_문제', '_해설')
             : problem.id;
 
+          let answerBase64: string;
+
           // Check if edited content exists first
           if (fetchedEditedContents.has(answerId)) {
             console.log(`[Edited Content] Using edited version for answer: ${answerId}`);
             const base64 = fetchedEditedContents.get(answerId)!;
             // Ensure it has the data URL prefix
-            return base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+            answerBase64 = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+          } else {
+            // Otherwise fetch from CDN/S3
+            try {
+              answerBase64 = await imageToBase64Client(imagePath);
+            } catch {
+              // Silently fall back to placeholder image
+              return getNoImageBase64();
+            }
           }
 
-          // Otherwise fetch from CDN/S3
+          // Crop the answer image if it exceeds max height
           try {
-            return await imageToBase64Client(imagePath);
+            return await cropBase64ImageClient(answerBase64, ANSWER_MAX_HEIGHT);
           } catch {
-            // Silently fall back to placeholder image
-            return getNoImageBase64();
+            // If cropping fails, return the original
+            return answerBase64;
           }
         });
 
@@ -295,6 +351,34 @@ export default function ConfigurePage() {
           worksheetData?.problems?.[0]?.id.startsWith('경제_');
         const subject = isEconomyWorksheet ? '경제' : '통합사회';
 
+        // Flatten contentTree to flat array for chapter path lookup
+        const flattenChapters = (tree: typeof contentTree, parentId: string | null = null): Array<{ id: string; name: string; parent_id: string | null }> => {
+          const result: Array<{ id: string; name: string; parent_id: string | null }> = [];
+          tree.forEach(item => {
+            result.push({ id: item.id, name: item.label, parent_id: parentId });
+            if (item.children) {
+              result.push(...flattenChapters(item.children, item.id));
+            }
+          });
+          return result;
+        };
+        const flatChapters = contentTree ? flattenChapters(contentTree) : [];
+
+        // Enrich problem metadata with chapter paths for 통합사회 problems
+        const enrichedProblems = worksheetData?.problems.map(problem => {
+          // For 통합사회 problems, add chapter_path from chapter tree
+          if (!isEconomyWorksheet && problem.chapter_id && flatChapters.length > 0) {
+            const chapterPath = getChapterPathLabels(problem.chapter_id, flatChapters);
+            console.log('[Enrich] Problem:', problem.id, 'chapter_id:', problem.chapter_id, 'chapter_path:', chapterPath);
+            return {
+              ...problem,
+              chapter_path: chapterPath // Add chapter path for PDF badges
+            };
+          }
+          console.log('[Enrich] Problem:', problem.id, 'isEconomy:', isEconomyWorksheet, 'has chapter_id:', !!problem.chapter_id, 'flatChapters count:', flatChapters.length);
+          return problem;
+        });
+
         // Create document definition with answers
         const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
           selectedImages,
@@ -304,7 +388,8 @@ export default function ConfigurePage() {
           worksheetTitle,
           worksheetAuthor,
           worksheetData?.worksheet.created_at,
-          subject
+          subject,
+          enrichedProblems as Array<Record<string, unknown>> // Pass enriched problem metadata for badges
         );
         
         // Generate PDF blob
@@ -516,6 +601,33 @@ export default function ConfigurePage() {
           <div className="flex-1 overflow-hidden">
             {worksheetData && (
               (() => {
+                // Wait for edited content to be loaded before showing preview
+                if (editedContentsMap === null) {
+                  console.log('[Preview Dialog] Waiting for editedContentsMap to load...');
+                  return (
+                    <div className="flex items-center justify-center h-full">
+                      <Loader className="animate-spin w-4 h-4 text-gray-400" />
+                    </div>
+                  );
+                }
+
+                // Verify all expected problems are in the map
+                const expectedProblemIds = worksheetData.problems.map(p => p.id);
+                const missingIds = expectedProblemIds.filter(id => !editedContentsMap.has(id));
+
+                console.log('[Preview Dialog] Rendering with editedContentsMap size:', editedContentsMap.size);
+                console.log('[Preview Dialog] Expected problems:', expectedProblemIds.length);
+                console.log('[Preview Dialog] First 5 expected:', expectedProblemIds.slice(0, 5));
+                console.log('[Preview Dialog] First 5 in map:', Array.from(editedContentsMap.keys()).slice(0, 5));
+
+                if (missingIds.length > 0) {
+                  console.warn('[Preview Dialog] ⚠️ Missing edited content for', missingIds.length, 'problems');
+                  console.warn('[Preview Dialog] Missing IDs:', missingIds);
+                  console.log('[Preview Dialog] Total available in map:', editedContentsMap.size);
+                } else {
+                  console.log('[Preview Dialog] ✅ All expected problems found in editedContentsMap');
+                }
+
                 // Detect if it's an economy worksheet
                 const isEconomy = worksheetData.problems.length > 0 &&
                   worksheetData.problems[0].id.startsWith('경제_');

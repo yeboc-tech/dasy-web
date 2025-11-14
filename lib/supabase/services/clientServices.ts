@@ -7,6 +7,7 @@ import type { Chapter, Subject, ChapterTreeItem, EconomyProblem } from '@/lib/ty
 
 /**
  * Fetch edited content for multiple resource IDs
+ * Uses RPC function to send IDs in POST body, avoiding URL length limits
  */
 export async function getEditedContents(resourceIds: string[]): Promise<Map<string, string>> {
   if (resourceIds.length === 0) return new Map();
@@ -16,18 +17,23 @@ export async function getEditedContents(resourceIds: string[]): Promise<Map<stri
   try {
     console.log(`[Edited Content] Fetching edited content for ${resourceIds.length} resources...`);
 
+    // Use RPC function to send resource IDs in POST body (no URL length limits)
     const { data, error } = await supabase
-      .from('edited_contents')
-      .select('resource_id, base64')
-      .in('resource_id', resourceIds);
+      .rpc('fetch_edited_contents_by_ids', {
+        p_resource_ids: resourceIds
+      });
 
     if (error) {
-      console.warn('[Edited Content] Query error:', error.message, error.code);
+      console.error('[Edited Content] RPC query error:', error);
       return new Map();
     }
 
+    console.log(`[Edited Content] Received ${data?.length || 0} edited contents from database`);
+
+    // Convert to Map
     const editedMap = new Map<string, string>();
-    (data || []).forEach(item => {
+
+    (data || []).forEach((item: { resource_id: string; base64: string }) => {
       if (item.base64) {
         editedMap.set(item.resource_id, item.base64);
       }

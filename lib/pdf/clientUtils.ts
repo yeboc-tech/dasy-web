@@ -93,33 +93,59 @@ async function loadPdfMake() {
   }
 }
 
-export async function imageToBase64Client(imagePath: string): Promise<string> {
+export async function imageToBase64Client(
+  imagePath: string,
+  cropOptions?: { maxHeight?: number }
+): Promise<string> {
   return new Promise((resolve) => {
     // Use the server-side proxy to load images with proper CORS headers
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
-    
+
     const img = new Image();
     img.crossOrigin = 'anonymous'; // Safe to set since we're using our own proxy
-    
+
     img.onload = function() {
       try {
         // Create canvas to convert image to base64
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx) {
           console.error('Cannot get canvas context');
           resolve(getNoImageBase64());
           return;
         }
-        
-        // Set canvas size to match image
+
+        // Calculate crop dimensions if maxHeight is specified
+        let sourceHeight = img.naturalHeight;
+        let shouldCrop = false;
+
+        if (cropOptions?.maxHeight && img.naturalHeight > cropOptions.maxHeight) {
+          // Image exceeds max height, crop from bottom
+          const aspectRatio = img.naturalWidth / img.naturalHeight;
+          sourceHeight = cropOptions.maxHeight;
+          shouldCrop = true;
+
+          console.log(`[Image Crop] Image exceeds max height. Original: ${img.naturalHeight}px, Cropped to: ${sourceHeight}px`);
+        }
+
+        // Set canvas size
         canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        
-        // Draw image on canvas
-        ctx.drawImage(img, 0, 0);
-        
+        canvas.height = sourceHeight;
+
+        // Draw image (cropped if necessary)
+        if (shouldCrop) {
+          // Draw only the top portion of the image
+          ctx.drawImage(
+            img,
+            0, 0, img.naturalWidth, sourceHeight,  // source: full width, cropped height from top
+            0, 0, img.naturalWidth, sourceHeight   // dest: match canvas
+          );
+        } else {
+          // Draw full image
+          ctx.drawImage(img, 0, 0);
+        }
+
         // Convert to base64
         const base64 = canvas.toDataURL('image/png');
         resolve(base64);
@@ -128,17 +154,76 @@ export async function imageToBase64Client(imagePath: string): Promise<string> {
         resolve(getNoImageBase64());
       }
     };
-    
+
     img.onerror = function() {
       // Silently fall back to placeholder image to avoid console noise during loading
       resolve(getNoImageBase64());
     };
-    
+
     // Load the image through our proxy
     img.src = proxyUrl;
   });
 }
 
+
+// Helper function to crop a base64 image from the bottom
+export async function cropBase64ImageClient(
+  base64Image: string,
+  maxHeight: number
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          console.error('Cannot get canvas context for cropping');
+          resolve(base64Image); // Return original if crop fails
+          return;
+        }
+
+        // Check if image exceeds max height
+        if (img.naturalHeight <= maxHeight) {
+          // No cropping needed
+          resolve(base64Image);
+          return;
+        }
+
+        // Image exceeds max height, crop from bottom
+        const sourceHeight = maxHeight;
+        console.log(`[Base64 Crop] Image exceeds max height. Original: ${img.naturalHeight}px, Cropped to: ${sourceHeight}px`);
+
+        // Set canvas size to cropped dimensions
+        canvas.width = img.naturalWidth;
+        canvas.height = sourceHeight;
+
+        // Draw only the top portion of the image
+        ctx.drawImage(
+          img,
+          0, 0, img.naturalWidth, sourceHeight,  // source: full width, cropped height from top
+          0, 0, img.naturalWidth, sourceHeight   // dest: match canvas
+        );
+
+        // Convert to base64
+        const croppedBase64 = canvas.toDataURL('image/png');
+        resolve(croppedBase64);
+      } catch (error) {
+        console.error('Error cropping base64 image:', error);
+        resolve(base64Image); // Return original if crop fails
+      }
+    };
+
+    img.onerror = function() {
+      console.error('Failed to load base64 image for cropping');
+      resolve(base64Image); // Return original if load fails
+    };
+
+    img.src = base64Image;
+  });
+}
 
 // Helper function to generate a proper PNG base64 image that pdfMake can understand
 function getNoImageBase64(): string {
@@ -237,40 +322,151 @@ function getFirstPageAvailableHeight(): number {
   return baseHeight - headerHeight; // ~576 points
 }
 
+// Calculate the height of metadata badges for a problem (assuming 3 lines max)
+function calculateBadgeHeight(problem: { metadata?: Record<string, unknown> }): number {
+  if (!problem.metadata) return 0;
+
+  const metadata = problem.metadata;
+
+  // Check if there are any badges
+  const chapterLabels = metadata.tag_labels || metadata.tags || metadata.chapter_path;
+  const hasChapterLabels = Array.isArray(chapterLabels) && chapterLabels.length > 0;
+  const hasProblemType = typeof metadata.problem_type === 'string';
+  const hasDifficulty = typeof metadata.difficulty === 'string';
+  const correctRate = metadata.correct_rate ?? metadata.accuracy_rate;
+  const hasCorrectRate = typeof correctRate === 'number';
+
+  const isEconomyProblem = !!(metadata.tag_labels || metadata.tags);
+  const hasRelatedSubjects = !isEconomyProblem && Array.isArray(metadata.related_subjects) && metadata.related_subjects.length > 0;
+
+  const hasBadges = hasChapterLabels || hasProblemType || hasDifficulty || hasCorrectRate || hasRelatedSubjects;
+
+  if (!hasBadges) return 0;
+
+  // Assume 3 lines max (conservative to prevent overflow):
+  // line1 (7pt) + gap (2pt) + line2 (7pt) + gap (2pt) + line3 (7pt) + bottom margin (8pt)
+  return 7 + 2 + 7 + 2 + 7 + 8; // = 33pt
+}
+
 // Fill a column with problems until height limit is reached
 function fillColumn(
-  problems: Array<{ image: string; height: number; index: number }>, 
+  problems: Array<{ image: string; height: number; index: number; metadata?: Record<string, unknown> }>,
   maxHeight: number
-): { columnProblems: Array<{ image: string; height: number; index: number }>; remaining: Array<{ image: string; height: number; index: number }> } {
+): { columnProblems: Array<{ image: string; height: number; index: number; metadata?: Record<string, unknown> }>; remaining: Array<{ image: string; height: number; index: number; metadata?: Record<string, unknown> }> } {
   const columnProblems = [];
   let currentHeight = 0;
   let i = 0;
-  
+
   while (i < problems.length) {
     const problem = problems[i];
-    const numberingHeight = 15; // Reduced from 20 - Height for numbering text and margin
-    const problemHeightWithMargin = problem.height + numberingHeight + 15; // Reduced margin from 20 to 15
-    
+    const numberingHeight = 17; // Height for numbering text (fontSize 12 + margin 5)
+    const badgeHeight = calculateBadgeHeight(problem); // Badge height (includes 8pt bottom margin)
+    const minGap = 15; // Minimum gap between problems
+    const problemHeightWithMargin = problem.height + numberingHeight + badgeHeight + minGap;
+
     // Check if adding this problem would exceed height limit
     if (currentHeight + problemHeightWithMargin > maxHeight && columnProblems.length > 0) {
       break;
     }
-    
+
     columnProblems.push(problem);
     currentHeight += problemHeightWithMargin;
     i++;
   }
-  
+
   return {
     columnProblems,
     remaining: problems.slice(i)
   };
 }
 
+// Helper function to create metadata badges for pdfMake (auto-wrap all badges)
+function createMetadataBadges(problem: { metadata?: Record<string, unknown> }) {
+  if (!problem.metadata) return [];
+
+  const metadata = problem.metadata;
+  const allBadges: Array<{ text: string; fontSize: number; font?: string; color?: string; background?: string }> = [];
+
+  // Helper to create a badge with gray background
+  const createBadge = (text: string) => ({
+    text: text,
+    fontSize: 7,
+    font: 'GmarketSans',
+    color: '#374151',
+    background: '#f3f4f6'
+  });
+
+  // Helper to add badge with center dot separator
+  const addBadge = (text: string) => {
+    if (allBadges.length > 0) {
+      allBadges.push({
+        text: '  ·  ',
+        fontSize: 7,
+        background: '#f3f4f6' // Same gray background for continuous appearance
+      });
+    }
+    allBadges.push(createBadge(text));
+  };
+
+  // Detect economy vs 통합사회 by checking if chapter_path exists
+  // 통합사회 problems have chapter_path enriched, economy problems don't
+  const isEconomyProblem = !metadata.chapter_path;
+
+  // For economy: use tag_labels/tags, for 통합사회: use chapter_path
+  const chapterLabels = isEconomyProblem
+    ? (metadata.tag_labels || metadata.tags)
+    : metadata.chapter_path;
+
+  console.log('[PDF Badges] Chapter labels:', { chapterLabels, isEconomyProblem });
+
+  // 1. Add chapter hierarchy badges
+  if (Array.isArray(chapterLabels) && chapterLabels.length > 0) {
+    chapterLabels.forEach((label: unknown) => {
+      if (typeof label === 'string') {
+        addBadge(label);
+      }
+    });
+  }
+
+  // 2. Problem type
+  if (typeof metadata.problem_type === 'string') {
+    addBadge(metadata.problem_type);
+  }
+
+  // 3. Difficulty
+  if (typeof metadata.difficulty === 'string') {
+    addBadge(metadata.difficulty);
+  }
+
+  // 4. Correct rate
+  const correctRate = metadata.correct_rate ?? metadata.accuracy_rate;
+  if (typeof correctRate === 'number') {
+    addBadge(`정답률 ${correctRate}%`);
+  }
+
+  // 5. Related subjects (only for 통합사회)
+  if (!isEconomyProblem && Array.isArray(metadata.related_subjects) && metadata.related_subjects.length > 0) {
+    metadata.related_subjects.forEach((subject: unknown) => {
+      if (typeof subject === 'string') {
+        addBadge(subject);
+      }
+    });
+  }
+
+  if (allBadges.length === 0) return [];
+
+  // Return as single wrapping block
+  return [{
+    text: allBadges,
+    margin: [0, 0, 0, 8] // Bottom margin before image
+  }];
+}
+
 // Create column content with space-between distribution
-function createColumnContent(columnProblems: Array<{ image: string; height: number; index: number }>, maxHeight: number) {
+function createColumnContent(columnProblems: Array<{ image: string; height: number; index: number; metadata?: Record<string, unknown> }>, maxHeight: number) {
   if (columnProblems.length === 0) return [];
   if (columnProblems.length === 1) {
+    const badges = createMetadataBadges(columnProblems[0]);
     return [{
       stack: [
         {
@@ -280,6 +476,7 @@ function createColumnContent(columnProblems: Array<{ image: string; height: numb
           alignment: 'left',
           margin: [0, 0, 0, 5]
         },
+        ...badges,
         {
           image: columnProblems[0].image,
           width: 240,
@@ -292,31 +489,38 @@ function createColumnContent(columnProblems: Array<{ image: string; height: numb
   }
   
   // Calculate space between problems for justify distribution
-  const totalProblemHeight = columnProblems.reduce((sum, p) => sum + p.height + 15, 0); // Include numbering height
+  const totalProblemHeight = columnProblems.reduce((sum, p) => {
+    const badgeHeight = calculateBadgeHeight(p);
+    return sum + p.height + 17 + badgeHeight; // 17pt = number (fontSize 12 + margin 5)
+  }, 0);
   const availableSpaceForMargins = maxHeight - totalProblemHeight;
   const spaceBetweenProblems = Math.max(15, availableSpaceForMargins / (columnProblems.length - 1));
   
-  
-  return columnProblems.map((problem, index) => ({
-    stack: [
-      {
-        text: `${problem.index + 1}.`,
-        fontSize: 12,
-        bold: true,
-        alignment: 'left',
-        font: 'CrimsonTextSemiBold',
-        margin: [0, 0, 0, 5]
-      },
-      {
-        image: problem.image,
-        width: 240,
-        alignment: 'center',
-        margin: [0, 0, 0, 0]
-      }
-    ],
-    unbreakable: true,
-    margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, spaceBetweenProblems]
-  }));
+
+  return columnProblems.map((problem, index) => {
+    const badges = createMetadataBadges(problem);
+    return {
+      stack: [
+        {
+          text: `${problem.index + 1}.`,
+          fontSize: 12,
+          bold: true,
+          alignment: 'left',
+          font: 'CrimsonTextSemiBold',
+          margin: [0, 0, 0, 5]
+        },
+        ...badges,
+        {
+          image: problem.image,
+          width: 240,
+          alignment: 'center',
+          margin: [0, 0, 0, 0]
+        }
+      ],
+      unbreakable: true,
+      margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, spaceBetweenProblems]
+    };
+  });
 }
 
 // Create answer column content with smaller width (1/3 of total problem area)
@@ -348,19 +552,24 @@ function createAnswerColumnContent(columnProblems: Array<{ image: string; height
 }
 
 // New column-based layout system
-export async function createColumnBasedLayoutClient(problems: string[], base64Images: string[]) {
+export async function createColumnBasedLayoutClient(
+  problems: string[],
+  base64Images: string[],
+  problemMetadata?: Array<Record<string, unknown>>
+) {
   // Step 1: Calculate all image heights
   const imageHeights = await getAllImageHeights(base64Images);
-  
+
   // Step 2: Get available page height
   const maxPageHeight = getAvailablePageHeight();
   const firstPageHeight = getFirstPageAvailableHeight();
-  
-  // Step 3: Create problem objects with heights
-  let remainingProblems = base64Images.map((image, index) => ({
+
+  // Step 3: Create problem objects with heights and metadata
+  let remainingProblems: Array<{ image: string; height: number; index: number; metadata?: Record<string, unknown> }> = base64Images.map((image, index) => ({
     image,
     height: imageHeights[index],
-    index
+    index,
+    metadata: problemMetadata?.[index]
   }));
   
   const pages = [];
@@ -643,10 +852,11 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   title?: string,
   creator?: string,
   createdAt?: string,
-  subject?: string // Optional subject, defaults to "통합사회"
+  subject?: string, // Optional subject, defaults to "통합사회"
+  problemMetadata?: Array<Record<string, unknown>> // Optional problem metadata for badges
 ) {
   // Create problem pages
-  const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
+  const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages, problemMetadata);
   
   // Create answer pages
   const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages);

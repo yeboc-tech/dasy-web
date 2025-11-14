@@ -137,7 +137,7 @@ export async function getWorksheet(
     problem_type: problem.problem_type,
     correct_rate: problem.correct_rate,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tags: problem.problem_subjects?.map((ps: any) => ps.subjects.name) || [],
+    related_subjects: problem.problem_subjects?.map((ps: any) => ps.subjects.name) || [],
     created_at: problem.created_at,
     updated_at: problem.updated_at
   }));

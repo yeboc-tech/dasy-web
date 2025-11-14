@@ -12,7 +12,7 @@ interface EconomyProblemsPanelProps {
   problemsError: string | null;
   onDeleteProblem?: (problemId: string) => void;
   showAnswers?: boolean;
-  editedContentsMap?: Map<string, string>;
+  editedContentsMap?: Map<string, string> | null;
 }
 
 export default function EconomyProblemsPanel({
@@ -27,6 +27,9 @@ export default function EconomyProblemsPanel({
   const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
   // Track which blob URLs have failed (so we show error instead of retrying)
   const [failedBlobUrls, setFailedBlobUrls] = useState<Set<string>>(new Set());
+
+  // Derive isProcessingBlobs: if map is null (loading) OR has content but no blob URLs yet
+  const isProcessingBlobs = editedContentsMap === null || (editedContentsMap && editedContentsMap.size > 0 && blobUrls.size === 0);
 
   // Create blob URLs from edited content when editedContentsMap changes
   useEffect(() => {
@@ -62,6 +65,9 @@ export default function EconomyProblemsPanel({
         console.log(`[Preview Edited Content] ✅ Created blob URL for ${resourceId}: ${blobUrl}, blob size: ${blob.size} bytes`);
       } catch (error) {
         console.error(`[Preview Edited Content] ❌ Failed to create blob URL for ${resourceId}:`, error);
+        console.error(`[Preview Edited Content] ❌ Error details:`, error instanceof Error ? error.message : String(error));
+        // Mark as failed so we know not to wait for it
+        setFailedBlobUrls(prev => new Set(prev).add(resourceId));
       }
     });
 
@@ -70,6 +76,7 @@ export default function EconomyProblemsPanel({
 
     // Cleanup function to revoke blob URLs
     return () => {
+      console.log('[EconomyProblemsPanel] Cleanup: Revoking blob URLs');
       newBlobUrls.forEach((url) => {
         URL.revokeObjectURL(url);
       });
@@ -162,13 +169,21 @@ export default function EconomyProblemsPanel({
                   {/* Problem image */}
                   <div className="relative" id={`problem-img-${problem.id}`}>
                     {(() => {
+                      // Wait for editedContentsMap to be loaded (not null)
+                      if (editedContentsMap === null) {
+                        return (
+                          <div className="flex items-center justify-center p-8">
+                            <Loader className="animate-spin w-4 h-4 text-gray-400" />
+                          </div>
+                        );
+                      }
+
+                      const hasEditedContent = editedContentsMap?.has(problem.id) || false;
                       const blobUrl = blobUrls.get(problem.id);
                       const hasFailed = failedBlobUrls.has(problem.id);
-                      const usingBlob = !!blobUrl;
-                      console.log(`[Image Render] ${problem.id}: using ${usingBlob ? 'BLOB' : 'CDN'}, failed=${hasFailed}`);
 
                       // If blob URL failed, show error card instead of image
-                      if (hasFailed && usingBlob) {
+                      if (hasFailed) {
                         return (
                           <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
                             <div className="text-center text-red-600">
@@ -180,155 +195,164 @@ export default function EconomyProblemsPanel({
                         );
                       }
 
-                      return null;
-                    })()}
-                    {!failedBlobUrls.has(problem.id) && (
-                      <Image
-                        key={blobUrls.get(problem.id) || getProblemImageUrl(problem.id)}
-                        src={blobUrls.get(problem.id) || getProblemImageUrl(problem.id)}
-                        alt={problem.problem_filename}
-                        width={800}
-                        height={600}
-                        className="w-full h-auto object-contain"
-                        unoptimized={!!blobUrls.get(problem.id)}
-                        onLoad={() => {
-                          // Clear any old error messages when image loads successfully
-                          const container = document.getElementById(`problem-img-${problem.id}`);
-                          if (container) {
-                            const errorDivs = container.querySelectorAll('.image-error-message');
-                            errorDivs.forEach(div => div.remove());
-                          }
-                        }}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          const imgSrc = target.src;
-                          const isBlob = imgSrc.startsWith('blob:');
-
-                          console.error(`[Image Load Error] Failed to load image for ${problem.id}`);
-                          console.error(`[Image Load Error] Source: ${isBlob ? 'DATABASE (blob)' : 'CDN'}`);
-                          console.error(`[Image Load Error] URL: ${imgSrc.substring(0, 100)}`);
-
-                          // If this was a blob URL, mark it as failed (don't retry with CDN)
-                          if (isBlob) {
-                            // Hide the image immediately
-                            target.style.display = 'none';
-                            // Clear any old CDN error messages
-                            const container = document.getElementById(`problem-img-${problem.id}`);
-                            if (container) {
-                              const errorDivs = container.querySelectorAll('.image-error-message');
-                              errorDivs.forEach(div => div.remove());
-                            }
-                            // Mark as failed and let React render the error card
-                            setFailedBlobUrls(prev => new Set(prev).add(problem.id));
-                            return;
-                          }
-
-                          // For CDN failures, show error message
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            // Remove any existing error messages first
-                            const existingErrors = parent.querySelectorAll('.image-error-message');
-                            existingErrors.forEach(div => div.remove());
-
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'image-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
-                            errorDiv.innerHTML = `
-                              <div class="text-center text-gray-500">
-                                <div class="text-sm font-medium mb-1">CDN 이미지를 불러올 수 없습니다</div>
-                                <div class="text-xs">네트워크 또는 CDN 설정을 확인하세요</div>
-                                <div class="text-xs text-gray-400 mt-1">ID: ${problem.id}</div>
-                              </div>
-                            `;
-                            parent.appendChild(errorDiv);
-                          }
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Answer image (conditional) */}
-                  {showAnswers && problem.answer_filename && (() => {
-                    // For economy problems, answer ID replaces _문제 with _해설
-                    const answerId = problem.id.replace('_문제', '_해설');
-                    const answerBlobUrl = blobUrls.get(answerId);
-                    const answerHasFailed = failedBlobUrls.has(answerId);
-                    const usingAnswerBlob = !!answerBlobUrl;
-
-                    return (
-                      <div className="relative mt-4" id={`answer-img-${answerId}`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="text-xs font-semibold text-gray-600">해설</div>
-                        </div>
-                        {answerHasFailed && usingAnswerBlob ? (
-                          <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
-                            <div className="text-center text-red-600">
-                              <div className="text-sm font-medium mb-1">데이터베이스 해설 이미지 로드 실패</div>
-                              <div className="text-xs">편집된 콘텐츠에 문제가 있습니다</div>
-                              <div className="text-xs text-red-400 mt-1">ID: {answerId}</div>
-                            </div>
+                      // If we have edited content, ALWAYS wait for blob URL (don't try CDN)
+                      // Also wait if we're still processing blobs
+                      if ((hasEditedContent && !blobUrl) || isProcessingBlobs) {
+                        return (
+                          <div className="flex items-center justify-center p-8">
+                            <Loader className="animate-spin w-4 h-4 text-gray-400" />
                           </div>
-                        ) : (
+                        );
+                      }
+
+                      // Use different rendering for blob vs CDN to avoid Next.js caching issues
+                      if (blobUrl) {
+                        // Use regular img tag for blobs - no Next.js optimization/caching
+                        return (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={blobUrl}
+                            alt={problem.problem_filename}
+                            className="w-full h-auto object-contain"
+                            onError={() => {
+                              console.error(`[Image Load Error] Failed to load DATABASE image for ${problem.id}`);
+                              setFailedBlobUrls(prev => new Set(prev).add(problem.id));
+                            }}
+                          />
+                        );
+                      } else {
+                        // Use Next.js Image for CDN
+                        return (
                           <Image
-                            key={answerBlobUrl || getAnswerImageUrl(problem.id)}
-                            src={answerBlobUrl || getAnswerImageUrl(problem.id)}
-                            alt={problem.answer_filename}
+                            key={problem.id}
+                            src={getProblemImageUrl(problem.id)}
+                            alt={problem.problem_filename}
                             width={800}
                             height={600}
                             className="w-full h-auto object-contain"
-                            unoptimized={!!answerBlobUrl}
-                            onLoad={() => {
-                              // Clear any old error messages when image loads successfully
-                              const container = document.getElementById(`answer-img-${answerId}`);
-                              if (container) {
-                                const errorDivs = container.querySelectorAll('.answer-error-message');
-                                errorDivs.forEach(div => div.remove());
-                              }
-                            }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               const imgSrc = target.src;
-                              const isBlob = imgSrc.startsWith('blob:');
+                              console.error(`[Image Load Error] Failed to load CDN image for ${problem.id}`);
+                              console.error(`[Image Load Error] CDN URL: ${imgSrc}`);
 
-                              console.error(`[Answer Image Load Error] Failed to load answer for ${answerId}`);
-                              console.error(`[Answer Image Load Error] Source: ${isBlob ? 'DATABASE (blob)' : 'CDN'}`);
-
-                              // If this was a blob URL, mark it as failed
-                              if (isBlob) {
-                                // Hide the image immediately
-                                target.style.display = 'none';
-                                // Clear any old CDN error messages
-                                const container = document.getElementById(`answer-img-${answerId}`);
-                                if (container) {
-                                  const errorDivs = container.querySelectorAll('.answer-error-message');
-                                  errorDivs.forEach(div => div.remove());
-                                }
-                                // Mark as failed and let React render the error card
-                                setFailedBlobUrls(prev => new Set(prev).add(answerId));
-                                return;
-                              }
-
-                              // For CDN failures, show error message
                               target.style.display = 'none';
                               const parent = target.parentElement;
                               if (parent) {
-                                // Remove any existing error messages first
-                                const existingErrors = parent.querySelectorAll('.answer-error-message');
-                                existingErrors.forEach(div => div.remove());
-
                                 const errorDiv = document.createElement('div');
-                                errorDiv.className = 'answer-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
+                                errorDiv.className = 'image-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
                                 errorDiv.innerHTML = `
                                   <div class="text-center text-gray-500">
-                                    <div class="text-sm font-medium mb-1">CDN 해설 이미지를 불러올 수 없습니다</div>
+                                    <div class="text-sm font-medium mb-1">CDN 이미지를 불러올 수 없습니다</div>
                                     <div class="text-xs">네트워크 또는 CDN 설정을 확인하세요</div>
+                                    <div class="text-xs text-gray-400 mt-1">ID: ${problem.id}</div>
                                   </div>
                                 `;
                                 parent.appendChild(errorDiv);
                               }
                             }}
                           />
-                        )}
+                        );
+                      }
+                    })()}
+                  </div>
+
+                  {/* Answer image (conditional) */}
+                  {showAnswers && problem.answer_filename && (() => {
+                    // For economy problems, answer ID replaces _문제 with _해설
+                    const answerId = problem.id.replace('_문제', '_해설');
+
+                    return (
+                      <div className="relative mt-4" id={`answer-img-${answerId}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="text-xs font-semibold text-gray-600">해설</div>
+                        </div>
+                        {(() => {
+                          // Wait for editedContentsMap to be loaded (not null)
+                          if (editedContentsMap === null) {
+                            return (
+                              <div className="flex items-center justify-center p-8">
+                                <Loader className="animate-spin w-4 h-4 text-gray-400" />
+                              </div>
+                            );
+                          }
+
+                          const hasEditedContent = editedContentsMap?.has(answerId) || false;
+                          const answerBlobUrl = blobUrls.get(answerId);
+                          const answerHasFailed = failedBlobUrls.has(answerId);
+
+                          // If blob URL failed, show error card
+                          if (answerHasFailed) {
+                            return (
+                              <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
+                                <div className="text-center text-red-600">
+                                  <div className="text-sm font-medium mb-1">데이터베이스 해설 이미지 로드 실패</div>
+                                  <div className="text-xs">편집된 콘텐츠에 문제가 있습니다</div>
+                                  <div className="text-xs text-red-400 mt-1">ID: {answerId}</div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // If we have edited content, ALWAYS wait for blob URL (don't try CDN)
+                          // Also wait if we're still processing blobs
+                          if ((hasEditedContent && !answerBlobUrl) || isProcessingBlobs) {
+                            return (
+                              <div className="flex items-center justify-center p-8">
+                                <Loader className="animate-spin w-4 h-4 text-gray-400" />
+                              </div>
+                            );
+                          }
+
+                          // Use different rendering for blob vs CDN to avoid Next.js caching issues
+                          if (answerBlobUrl) {
+                            // Use regular img tag for blobs - no Next.js optimization/caching
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={answerBlobUrl}
+                                alt={problem.answer_filename}
+                                className="w-full h-auto object-contain"
+                                onError={() => {
+                                  console.error(`[Answer Image Load Error] Failed to load DATABASE answer for ${answerId}`);
+                                  setFailedBlobUrls(prev => new Set(prev).add(answerId));
+                                }}
+                              />
+                            );
+                          } else {
+                            // Use Next.js Image for CDN
+                            return (
+                              <Image
+                                key={answerId}
+                                src={getAnswerImageUrl(problem.id)}
+                                alt={problem.answer_filename}
+                                width={800}
+                                height={600}
+                                className="w-full h-auto object-contain"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  const imgSrc = target.src;
+                                  console.error(`[Answer Image Load Error] Failed to load CDN answer for ${answerId}`);
+                                  console.error(`[Answer Image Load Error] CDN URL: ${imgSrc}`);
+
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const errorDiv = document.createElement('div');
+                                    errorDiv.className = 'answer-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
+                                    errorDiv.innerHTML = `
+                                      <div class="text-center text-gray-500">
+                                        <div class="text-sm font-medium mb-1">CDN 해설 이미지를 불러올 수 없습니다</div>
+                                        <div class="text-xs">네트워크 또는 CDN 설정을 확인하세요</div>
+                                      </div>
+                                    `;
+                                    parent.appendChild(errorDiv);
+                                  }
+                                }}
+                              />
+                            );
+                          }
+                        })()}
                       </div>
                     );
                   })()}
