@@ -7,6 +7,10 @@ export interface WorksheetState {
   selectedSubjects: string[]; // IDs of selected related subjects
   correctRateRange: [number, number]; // [min, max] correct rate percentage (0-100)
   selectedYears: number[]; // Selected exam years for filtering problems
+  // Economy-specific filters
+  selectedGrades: string[]; // ["고1", "고2", "고3"]
+  selectedMonths: string[]; // ["03", "04", "06", etc.]
+  selectedExamTypes: string[]; // ["학평", "모평", "수능"]
   setSelectedChapters: (chapters: string[]) => void;
   setProblemCount: (count: number) => void;
   setSelectedDifficulties: (difficulties: string[]) => void;
@@ -14,4 +18,7 @@ export interface WorksheetState {
   setSelectedSubjects: (subjects: string[]) => void;
   setCorrectRateRange: (range: [number, number]) => void;
   setSelectedYears: (years: number[]) => void;
+  setSelectedGrades: (grades: string[]) => void;
+  setSelectedMonths: (months: string[]) => void;
+  setSelectedExamTypes: (types: string[]) => void;
 }

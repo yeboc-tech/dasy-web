@@ -70,7 +70,10 @@ export function TopNavbar() {
 
   return (
     <div className="w-full h-[60px] max-w-4xl mx-auto p-4 flex justify-between items-center shrink-0">
-      <Link href="/" className="w-fit block text-lg font-semibold">통합사회 학습지 제작 도구</Link>
+      <Link href="/" className="w-fit flex items-baseline gap-2">
+        <span className="text-lg font-semibold">KIDARI</span>
+        <span className="text-xs text-gray-600">학습지 제작 도구</span>
+      </Link>
       
       <nav ref={navRef} className="relative flex items-center gap-6 pt-1">
         {/* Animated bottom border indicator */}
@@ -83,7 +86,8 @@ export function TopNavbar() {
           }}
         />
 
-        {isOnBuildPage && (
+        {/* Beta mode toggle hidden for now */}
+        {/* {isOnBuildPage && (
           <div className="flex items-center space-x-2 pb-1">
             <Label htmlFor="beta-mode" className="text-sm font-medium text-gray-600 cursor-pointer">베타 모드</Label>
             <Switch
@@ -93,7 +97,7 @@ export function TopNavbar() {
               className="data-[state=checked]:bg-[#FF00A1] data-[state=unchecked]:bg-gray-200 data-[state=checked]:!border-[#FF00A1] data-[state=unchecked]:!border-gray-200 h-[1.15rem] w-8 border shadow-sm focus-visible:ring-[#FF00A1]/50 [&>span]:bg-white [&>span]:data-[state=checked]:translate-x-[calc(100%-2px)]"
             />
           </div>
-        )}
+        )} */}
 
         {navItems.map((item) => {
           const isActive = isBetaMode

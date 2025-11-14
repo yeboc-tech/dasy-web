@@ -15,6 +15,24 @@ export interface ProblemMetadata {
   updated_at: string;
 }
 
+// Economy problem type (uses problem_tags + accuracy_rate tables)
+export interface EconomyProblem {
+  problem_id: string; // e.g., "경제_고3_2024_03_학평_1_문제"
+  tag_ids: string[]; // e.g., ["경제", "경제-1", "경제-1-1"]
+  tag_labels: string[]; // e.g., ["경제", "1. 경제생활", "01. 경제생활 및 경제주체와 객체"]
+  difficulty?: string; // "상", "중", "하"
+  accuracy_rate?: number; // 0-100
+  correct_answer?: number; // 1-5
+  score?: number;
+  // Parsed metadata from problem_id
+  subject: string; // "경제"
+  grade: string; // "고1", "고2", "고3"
+  year: string; // "2024"
+  month: string; // "03", "04", etc.
+  exam_type: string; // "학평", "모평", "수능"
+  question_number: number; // 1, 2, 3, etc.
+}
+
 export interface MetadataFile {
   problems: ProblemMetadata[];
   metadata?: {

@@ -27,13 +27,14 @@ interface PDFViewerProps {
   onError?: (error: string) => void;
   onEdit?: () => void;
   onSave?: () => void;
+  onPreview?: () => void;
   worksheetTitle?: string;
   worksheetAuthor?: string;
   isPublic?: boolean;
   worksheetId?: string;
 }
 
-const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, worksheetTitle, worksheetAuthor, isPublic, worksheetId }: PDFViewerProps) {
+const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, onPreview, worksheetTitle, worksheetAuthor, isPublic, worksheetId }: PDFViewerProps) {
   console.log('🟠 PDFViewer component render - pdfUrl:', !!pdfUrl);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -430,8 +431,20 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
             </div>
             
             <div className="flex items-center space-x-2">
+              {onPreview && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onPreview}
+                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
+                  title="문제 목록 미리보기"
+                >
+                  프리뷰 보기
+                </Button>
+              )}
+
               {onEdit && !isPublic && (
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={onEdit}

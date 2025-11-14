@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ProblemsPanel from '@/components/build/problemsPanel';
+import EconomyProblemsPanel from '@/components/build/EconomyProblemsPanel';
 import FilterPanel from '@/components/build/filterPanel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,15 +17,30 @@ import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
-import type { ProblemMetadata } from '@/lib/types/problems';
+import { getEconomyProblems } from '@/lib/supabase/services/clientServices';
+import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
 export default function Page() {
-  const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears} = useWorksheetStore();
+  const {
+    selectedChapters,
+    setSelectedChapters,
+    problemCount,
+    selectedDifficulties,
+    selectedProblemTypes,
+    selectedSubjects,
+    correctRateRange,
+    selectedYears,
+    selectedGrades,
+    selectedMonths,
+    selectedExamTypes
+  } = useWorksheetStore();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
+  const [economyProblems, setEconomyProblems] = useState<EconomyProblem[]>([]);
   const [dialogProblems, setDialogProblems] = useState<ProblemMetadata[]>([]);
+  const [economyLoading, setEconomyLoading] = useState(false);
   const [showMetadataDialog, setShowMetadataDialog] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
@@ -33,12 +49,61 @@ export default function Page() {
   const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
+  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string>>(new Map());
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
 
+  // Check if in economy mode
+  const isEconomyMode = selectedMainSubjects.includes('economy');
+
+  // Fetch edited content when problems change
+  useEffect(() => {
+    const fetchEditedContent = async () => {
+      if (filteredProblems.length === 0) {
+        setEditedContentsMap(new Map());
+        return;
+      }
+
+      const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+
+      // Collect all resource IDs (problems + answers)
+      const problemIds = filteredProblems.map(p => p.id);
+      const answerIds = filteredProblems
+        .filter(p => p.answer_filename)
+        .map(p => {
+          // For economy problems, replace _문제 with _해설
+          if (p.id.startsWith('경제_')) {
+            return p.id.replace('_문제', '_해설');
+          }
+          // For regular problems, use the same ID
+          return p.id;
+        });
+
+      const allResourceIds = [...problemIds, ...answerIds];
+
+      console.log(`[Build Page Preview] Fetching edited content for ${allResourceIds.length} resources`);
+      console.log('[Build Page Preview] First 5 resource IDs:', allResourceIds.slice(0, 5));
+
+      const fetchedEditedContents = await getEditedContents(allResourceIds);
+
+      if (fetchedEditedContents.size > 0) {
+        console.log(`[Build Page Preview] ✅ Found ${fetchedEditedContents.size} edited images in database`);
+        console.log('[Build Page Preview] Resource IDs with edited content:', Array.from(fetchedEditedContents.keys()));
+      } else {
+        console.log('[Build Page Preview] ⚠️ No edited content found in database for these problems');
+      }
+
+      setEditedContentsMap(fetchedEditedContents);
+    };
+
+    fetchEditedContent();
+  }, [filteredProblems]);
+
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
+    // Skip if in economy mode
+    if (isEconomyMode) return;
     if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
       const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
       const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
@@ -66,10 +131,16 @@ export default function Page() {
         setHasSetDefaultSelection(true);
       }
     }
-  }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters]);
+  }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters, isEconomyMode]);
 
   // Filter problems for main page when filters change
   useEffect(() => {
+    // Skip if in economy mode - show empty
+    if (isEconomyMode) {
+      setFilteredProblems([]);
+      return;
+    }
+
     if (!problems || problems.length === 0) {
       return;
     }
@@ -87,11 +158,97 @@ export default function Page() {
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     setFilteredProblems(filtered);
-  }, [problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
+  }, [isEconomyMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
+
+  // Fetch economy problems when in economy mode
+  useEffect(() => {
+    if (!isEconomyMode) {
+      setEconomyProblems([]);
+      setEconomyLoading(false);
+      // Don't clear filteredProblems here - let the other useEffect handle it
+      return;
+    }
+
+    async function fetchEconomyData() {
+      try {
+        setEconomyLoading(true);
+
+        const filters = {
+          selectedChapterIds: selectedChapters,
+          selectedGrades,
+          selectedYears,
+          selectedMonths,
+          selectedExamTypes,
+          selectedDifficulties,
+          correctRateRange
+        };
+
+        const economyData = await getEconomyProblems(filters);
+        setEconomyProblems(economyData);
+
+        // Convert economy problems to ProblemMetadata format for display
+        const convertedProblems: ProblemMetadata[] = economyData.map((problem) => ({
+          id: problem.problem_id,
+          problem_filename: `${problem.problem_id}.png`,
+          answer_filename: problem.problem_id.replace('_문제', '_해설') + '.png',
+          answer: problem.correct_answer,
+          chapter_id: problem.tag_ids[problem.tag_ids.length - 1] || null, // Use most specific chapter
+          difficulty: problem.difficulty || '중',
+          problem_type: `${problem.exam_type} ${problem.year}년 ${parseInt(problem.month)}월`,
+          tags: problem.tag_labels,
+          related_subjects: ['경제'],
+          correct_rate: problem.accuracy_rate,
+          exam_year: parseInt(problem.year),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+
+        // Remove duplicates based on problem ID
+        const uniqueProblems = convertedProblems.filter((problem, index, self) =>
+          index === self.findIndex(p => p.id === problem.id)
+        );
+
+        if (uniqueProblems.length !== convertedProblems.length) {
+          console.warn(`[Economy Debug] Removed ${convertedProblems.length - uniqueProblems.length} duplicate problems`);
+        }
+
+        // Apply problem count limit with random selection
+        let limitedProblems: ProblemMetadata[];
+        if (problemCount === -1) {
+          // Show all problems
+          limitedProblems = uniqueProblems;
+        } else {
+          // Randomly select problems first, then they will be sorted later
+          const shuffled = [...uniqueProblems].sort(() => Math.random() - 0.5);
+          limitedProblems = shuffled.slice(0, Math.min(problemCount, shuffled.length));
+        }
+
+        console.log(`[Economy Debug] Total problems: ${uniqueProblems.length}, showing: ${limitedProblems.length}`);
+        console.log(`[Economy Debug] First 5 problem IDs:`, limitedProblems.slice(0, 5).map(p => p.id));
+
+        setFilteredProblems(limitedProblems);
+      } catch (error) {
+        console.error('Error fetching economy problems:', error);
+        setEconomyProblems([]);
+        setFilteredProblems([]);
+      } finally {
+        setEconomyLoading(false);
+      }
+    }
+
+    fetchEconomyData();
+  }, [isEconomyMode, selectedChapters, selectedGrades, selectedYears, selectedMonths, selectedExamTypes, selectedDifficulties, correctRateRange, problemCount]);
 
   // Filter problems for dialog when any filter changes (only in filter mode, not AI mode)
   useEffect(() => {
     if (aiMode) return; // Skip filtering in AI mode - let AI control the results
+
+    // Skip if in economy mode - show empty
+    if (isEconomyMode) {
+      setDialogProblems([]);
+      return;
+    }
+
     if (!problems || problems.length === 0) return;
 
     const filters = {
@@ -107,71 +264,113 @@ export default function Page() {
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     setDialogProblems(filtered);
-  }, [aiMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
+  }, [aiMode, isEconomyMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
 
   // Sort main page problems based on worksheet mode
   useEffect(() => {
-    if (!contentTree) {
+    if (!filteredProblems || filteredProblems.length === 0) {
       setSortedFilteredProblems([]);
       return;
     }
 
-    if (!filteredProblems || filteredProblems.length === 0) {
+    // For non-economy mode, we need contentTree
+    if (!isEconomyMode && !contentTree) {
       setSortedFilteredProblems([]);
       return;
     }
 
     let sorted = [...filteredProblems];
 
+    console.log(`[Sort Debug] Mode: ${worksheetMode}, Problems to sort: ${sorted.length}, IsEconomyMode: ${isEconomyMode}`);
+
     if (worksheetMode === '연습') {
-      // Use the same hierarchical sorting as ProblemFilter
-      // Build chapter path map
-      const pathMap = new Map<string, number[]>();
-      const traverse = (items: ChapterTreeItem[], path: number[]) => {
-        items.forEach((item, index) => {
-          const currentPath = [...path, index];
-          pathMap.set(item.id, currentPath);
-          if (item.children && item.children.length > 0) {
-            traverse(item.children, currentPath);
+      if (isEconomyMode) {
+        // Economy mode: Sort by tag hierarchy -> group by complete tag path -> sort by correct rate
+        sorted.sort((a, b) => {
+          const tagsA = a.tags || [];
+          const tagsB = b.tags || [];
+
+          // Compare tag hierarchy level by level (chapter hierarchy)
+          const minLength = Math.min(tagsA.length, tagsB.length);
+          for (let i = 0; i < minLength; i++) {
+            // Extract leading numbers for numeric comparison
+            const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
+            const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
+
+            // If both have numbers, compare numerically
+            if (numA !== numB) {
+              return numA - numB;
+            }
+
+            // If numbers are equal or don't exist, fall back to string comparison
+            const comparison = tagsA[i].localeCompare(tagsB[i]);
+            if (comparison !== 0) {
+              return comparison;
+            }
           }
+
+          // If one path is shorter (e.g., ['경제', '시장'] vs ['경제', '시장', '수요'])
+          // Put the shorter one first
+          if (tagsA.length !== tagsB.length) {
+            return tagsA.length - tagsB.length;
+          }
+
+          // Same tag path (same chapter at deepest level)
+          // Sort by correct rate descending (highest first = easiest first)
+          const aCorrectRate = a.correct_rate ?? 0;
+          const bCorrectRate = b.correct_rate ?? 0;
+          return bCorrectRate - aCorrectRate;
         });
-      };
-      traverse(contentTree, []);
+      } else {
+        // Regular mode: Use the same hierarchical sorting as ProblemFilter
+        // Build chapter path map
+        const pathMap = new Map<string, number[]>();
+        const traverse = (items: ChapterTreeItem[], path: number[]) => {
+          items.forEach((item, index) => {
+            const currentPath = [...path, index];
+            pathMap.set(item.id, currentPath);
+            if (item.children && item.children.length > 0) {
+              traverse(item.children, currentPath);
+            }
+          });
+        };
+        traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
-      sorted.sort((a, b) => {
-        const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
-        const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
+        // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
+        sorted.sort((a, b) => {
+          const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
+          const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-        // If one problem has no chapter path, put it at the end
-        if (!pathA && !pathB) return 0;
-        if (!pathA) return 1;
-        if (!pathB) return -1;
+          // If one problem has no chapter path, put it at the end
+          if (!pathA && !pathB) return 0;
+          if (!pathA) return 1;
+          if (!pathB) return -1;
 
-        // Compare chapter hierarchy first
-        const minLength = Math.min(pathA.length, pathB.length);
-        for (let i = 0; i < minLength; i++) {
-          if (pathA[i] !== pathB[i]) {
-            return pathA[i] - pathB[i];
+          // Compare chapter hierarchy first
+          const minLength = Math.min(pathA.length, pathB.length);
+          for (let i = 0; i < minLength; i++) {
+            if (pathA[i] !== pathB[i]) {
+              return pathA[i] - pathB[i];
+            }
           }
-        }
-        // If all common levels are equal, shorter path comes first
-        if (pathA.length !== pathB.length) {
-          return pathA.length - pathB.length;
-        }
+          // If all common levels are equal, shorter path comes first
+          if (pathA.length !== pathB.length) {
+            return pathA.length - pathB.length;
+          }
 
-        // If in same chapter, group by tags
-        const tagsA = (a.tags || []).sort().join(',');
-        const tagsB = (b.tags || []).sort().join(',');
-        if (tagsA !== tagsB) {
-          return tagsA.localeCompare(tagsB);
-        }
+          // If in same chapter, group by tags
+          const tagsA = (a.tags || []).sort().join(',');
+          const tagsB = (b.tags || []).sort().join(',');
+          if (tagsA !== tagsB) {
+            return tagsA.localeCompare(tagsB);
+          }
 
-        // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
-        const aCorrectRate = a.correct_rate ?? 0;
-        const bCorrectRate = b.correct_rate ?? 0;
-        return bCorrectRate - aCorrectRate;
-      });
+          // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
+          const aCorrectRate = a.correct_rate ?? 0;
+          const bCorrectRate = b.correct_rate ?? 0;
+          return bCorrectRate - aCorrectRate;
+        });
+      }
     } else {
       // 실전: totally random
       sorted = sorted
@@ -180,12 +379,35 @@ export default function Page() {
         .map(({ value }) => value);
     }
 
+    console.log(`[Sort Debug] After sorting, first 3 problems:`, sorted.slice(0, 3).map(p => ({
+      id: p.id,
+      chapter: p.chapter_id,
+      tags: p.tags,
+      difficulty: p.difficulty,
+      correctRate: p.correct_rate
+    })));
+
+    // Check for duplicates
+    const ids = sorted.map(p => p.id);
+    const uniqueIds = new Set(ids);
+    if (ids.length !== uniqueIds.size) {
+      console.warn(`[Economy Debug] Found ${ids.length - uniqueIds.size} duplicate problems in sorted list`);
+      console.warn('[Economy Debug] Sample duplicates:', ids.filter((id, index) => ids.indexOf(id) !== index).slice(0, 3));
+    }
+
+    console.log(`[Economy Debug] Setting sortedFilteredProblems: ${sorted.length} problems`);
     setSortedFilteredProblems(sorted);
-  }, [filteredProblems, worksheetMode, contentTree]);
+  }, [filteredProblems, worksheetMode, contentTree, isEconomyMode]);
 
   // Sort dialog problems based on worksheet mode
   useEffect(() => {
-    if (!dialogProblems || dialogProblems.length === 0 || !contentTree) {
+    if (!dialogProblems || dialogProblems.length === 0) {
+      setSortedDialogProblems([]);
+      return;
+    }
+
+    // For non-economy mode, we need contentTree
+    if (!isEconomyMode && !contentTree) {
       setSortedDialogProblems([]);
       return;
     }
@@ -193,54 +415,93 @@ export default function Page() {
     let sorted = [...dialogProblems];
 
     if (worksheetMode === '연습') {
-      // Use the same hierarchical sorting as ProblemFilter
-      // Build chapter path map
-      const pathMap = new Map<string, number[]>();
-      const traverse = (items: ChapterTreeItem[], path: number[]) => {
-        items.forEach((item, index) => {
-          const currentPath = [...path, index];
-          pathMap.set(item.id, currentPath);
-          if (item.children && item.children.length > 0) {
-            traverse(item.children, currentPath);
+      if (isEconomyMode) {
+        // Economy mode: Sort by tag hierarchy -> group by complete tag path -> sort by correct rate
+        sorted.sort((a, b) => {
+          const tagsA = a.tags || [];
+          const tagsB = b.tags || [];
+
+          // Compare tag hierarchy level by level (chapter hierarchy)
+          const minLength = Math.min(tagsA.length, tagsB.length);
+          for (let i = 0; i < minLength; i++) {
+            // Extract leading numbers for numeric comparison
+            const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
+            const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
+
+            // If both have numbers, compare numerically
+            if (numA !== numB) {
+              return numA - numB;
+            }
+
+            // If numbers are equal or don't exist, fall back to string comparison
+            const comparison = tagsA[i].localeCompare(tagsB[i]);
+            if (comparison !== 0) {
+              return comparison;
+            }
           }
+
+          // If one path is shorter (e.g., ['경제', '시장'] vs ['경제', '시장', '수요'])
+          // Put the shorter one first
+          if (tagsA.length !== tagsB.length) {
+            return tagsA.length - tagsB.length;
+          }
+
+          // Same tag path (same chapter at deepest level)
+          // Sort by correct rate descending (highest first = easiest first)
+          const aCorrectRate = a.correct_rate ?? 0;
+          const bCorrectRate = b.correct_rate ?? 0;
+          return bCorrectRate - aCorrectRate;
         });
-      };
-      traverse(contentTree, []);
+      } else {
+        // Regular mode: Use the same hierarchical sorting as ProblemFilter
+        // Build chapter path map
+        const pathMap = new Map<string, number[]>();
+        const traverse = (items: ChapterTreeItem[], path: number[]) => {
+          items.forEach((item, index) => {
+            const currentPath = [...path, index];
+            pathMap.set(item.id, currentPath);
+            if (item.children && item.children.length > 0) {
+              traverse(item.children, currentPath);
+            }
+          });
+        };
+        traverse(contentTree, []);
 
-      // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
-      sorted.sort((a, b) => {
-        const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
-        const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
+        // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
+        sorted.sort((a, b) => {
+          const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
+          const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-        // If one problem has no chapter path, put it at the end
-        if (!pathA && !pathB) return 0;
-        if (!pathA) return 1;
-        if (!pathB) return -1;
+          // If one problem has no chapter path, put it at the end
+          if (!pathA && !pathB) return 0;
+          if (!pathA) return 1;
+          if (!pathB) return -1;
 
-        // Compare chapter hierarchy first
-        const minLength = Math.min(pathA.length, pathB.length);
-        for (let i = 0; i < minLength; i++) {
-          if (pathA[i] !== pathB[i]) {
-            return pathA[i] - pathB[i];
+          // Compare chapter hierarchy first
+          const minLength = Math.min(pathA.length, pathB.length);
+          for (let i = 0; i < minLength; i++) {
+            if (pathA[i] !== pathB[i]) {
+              return pathA[i] - pathB[i];
+            }
           }
-        }
-        // If all common levels are equal, shorter path comes first
-        if (pathA.length !== pathB.length) {
-          return pathA.length - pathB.length;
-        }
+          // If all common levels are equal, shorter path comes first
+          if (pathA.length !== pathB.length) {
+            return pathA.length - pathB.length;
+          }
 
-        // If in same chapter, group by tags
-        const tagsA = (a.tags || []).sort().join(',');
-        const tagsB = (b.tags || []).sort().join(',');
-        if (tagsA !== tagsB) {
-          return tagsA.localeCompare(tagsB);
-        }
+          // If in same chapter, group by tags
+          const tagsA = (a.tags || []).sort().join(',');
+          const tagsB = (b.tags || []).sort().join(',');
+          if (tagsA !== tagsB) {
+            return tagsA.localeCompare(tagsB);
+          }
 
-        // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
-        const aCorrectRate = a.correct_rate ?? 0;
-        const bCorrectRate = b.correct_rate ?? 0;
-        return bCorrectRate - aCorrectRate;
-      });
+          // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
+          const aCorrectRate = a.correct_rate ?? 0;
+          const bCorrectRate = b.correct_rate ?? 0;
+          return bCorrectRate - aCorrectRate;
+        });
+      }
     } else {
       // 실전: totally random
       sorted = sorted
@@ -250,18 +511,11 @@ export default function Page() {
     }
 
     setSortedDialogProblems(sorted);
-  }, [dialogProblems, worksheetMode, contentTree]);
+  }, [dialogProblems, worksheetMode, contentTree, isEconomyMode]);
 
   const handleMainSubjectToggle = (subject: string) => {
-    const newSelectedMainSubjects = selectedMainSubjects.includes(subject)
-      ? selectedMainSubjects.filter(s => s !== subject)
-      : [...selectedMainSubjects, subject];
-
-    if (newSelectedMainSubjects.length === 0) {
-      setSelectedMainSubjects([subject]);
-    } else {
-      setSelectedMainSubjects(newSelectedMainSubjects);
-    }
+    // Only one subject can be selected at a time (exclusive selection)
+    setSelectedMainSubjects([subject]);
   };
 
   const handleDeleteProblem = (problemId: string) => {
@@ -276,28 +530,59 @@ export default function Page() {
   const handleMetadataSubmit = async (data: { title: string; author: string }) => {
     try {
       const { createClient } = await import('@/lib/supabase/client');
-      const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
-
       const supabase = createClient();
-      const filters = {
-        selectedChapters,
-        selectedDifficulties,
-        selectedProblemTypes,
-        selectedSubjects,
-        problemCount,
-        correctRateRange,
-        selectedYears
-      };
 
-      const { id } = await createWorksheet(supabase, {
-        title: data.title,
-        author: data.author,
-        filters,
-        problems: sortedFilteredProblems, // Use the sorted problems
-        contentTree
-      });
+      let worksheetId: string;
 
-      window.location.href = `/worksheets/${id}`;
+      if (isEconomyMode) {
+        // Use economy worksheet service
+        const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+
+        const economyFilters = {
+          selectedChapters,
+          selectedDifficulties,
+          selectedGrades,
+          selectedYears,
+          selectedMonths,
+          selectedExamTypes,
+          correctRateRange,
+          problemCount
+        };
+
+        const { id } = await createEconomyWorksheet(supabase, {
+          title: data.title,
+          author: data.author,
+          filters: economyFilters,
+          problems: sortedFilteredProblems
+        });
+
+        worksheetId = id;
+      } else {
+        // Use regular worksheet service for 통합사회
+        const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+
+        const filters = {
+          selectedChapters,
+          selectedDifficulties,
+          selectedProblemTypes,
+          selectedSubjects,
+          problemCount,
+          correctRateRange,
+          selectedYears
+        };
+
+        const { id } = await createWorksheet(supabase, {
+          title: data.title,
+          author: data.author,
+          filters,
+          problems: sortedFilteredProblems,
+          contentTree
+        });
+
+        worksheetId = id;
+      }
+
+      window.location.href = `/worksheets/${worksheetId}`;
     } catch (error) {
       console.error('Error creating worksheet:', error);
       alert('워크시트 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
@@ -347,13 +632,24 @@ export default function Page() {
         />
         <div className="relative flex-1 flex flex-col">
           <div className="flex-1 overflow-hidden">
-            <ProblemsPanel
-              filteredProblems={sortedFilteredProblems}
-              problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
-              problemsError={problemsError}
-              contentTree={contentTree}
-              onDeleteProblem={handleDeleteProblem}
-            />
+            {isEconomyMode ? (
+              <EconomyProblemsPanel
+                filteredProblems={sortedFilteredProblems}
+                problemsLoading={economyLoading || chaptersLoading}
+                problemsError={problemsError}
+                onDeleteProblem={handleDeleteProblem}
+                editedContentsMap={editedContentsMap}
+              />
+            ) : (
+              <ProblemsPanel
+                filteredProblems={sortedFilteredProblems}
+                problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
+                problemsError={problemsError}
+                contentTree={contentTree}
+                onDeleteProblem={handleDeleteProblem}
+                editedContentsMap={editedContentsMap}
+              />
+            )}
           </div>
 
           {/* Sticky Bottom Bar */}
@@ -386,15 +682,18 @@ export default function Page() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
-                onClick={() => {
-                  setIsDialogOpen(true);
-                  setChatMessages([]); // Reset chat when opening dialog
-                }}
-                className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
-              >
-                문제 추가
-              </Button>
+              {/* Hide 문제 추가 button in economy mode */}
+              {!isEconomyMode && (
+                <Button
+                  onClick={() => {
+                    setIsDialogOpen(true);
+                    setChatMessages([]); // Reset chat when opening dialog
+                  }}
+                  className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
+                >
+                  문제 추가
+                </Button>
+              )}
               <Button
                 onClick={handleCreateWorksheet}
                 disabled={sortedFilteredProblems.length === 0}
@@ -503,26 +802,40 @@ export default function Page() {
                 </div>
               </div>
             ) : (
-              /* Original Filter Panel */
+              /* Original Filter Panel - with isDialog=true to hide 경제 */
               <FilterPanel
                 contentTree={contentTree}
                 selectedMainSubjects={selectedMainSubjects}
                 onMainSubjectToggle={handleMainSubjectToggle}
                 loading={chaptersLoading}
                 error={chaptersError}
+                isDialog={true}
               />
             )}
             <div className="relative flex-1 flex flex-col">
               <div className="flex-1 overflow-hidden">
-                <ProblemsPanel
-                  filteredProblems={sortedDialogProblems}
-                  problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
-                  problemsError={problemsError}
-                  contentTree={contentTree}
-                  onDeleteProblem={(problemId) => {
-                    setDialogProblems(prev => prev.filter(p => p.id !== problemId));
-                  }}
-                />
+                {isEconomyMode ? (
+                  <EconomyProblemsPanel
+                    filteredProblems={sortedDialogProblems}
+                    problemsLoading={economyLoading || chaptersLoading}
+                    problemsError={problemsError}
+                    onDeleteProblem={(problemId) => {
+                      setDialogProblems(prev => prev.filter(p => p.id !== problemId));
+                    }}
+                    editedContentsMap={editedContentsMap}
+                  />
+                ) : (
+                  <ProblemsPanel
+                    filteredProblems={sortedDialogProblems}
+                    problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
+                    problemsError={problemsError}
+                    contentTree={contentTree}
+                    onDeleteProblem={(problemId) => {
+                      setDialogProblems(prev => prev.filter(p => p.id !== problemId));
+                    }}
+                    editedContentsMap={editedContentsMap}
+                  />
+                )}
               </div>
 
               {/* Sticky Bottom Bar */}

@@ -636,13 +636,14 @@ export async function createWorksheetDocDefinitionClient(
 
 // New function to create worksheet with answers
 export async function createWorksheetWithAnswersDocDefinitionClient(
-  problemImages: string[], 
+  problemImages: string[],
   base64ProblemImages: string[],
   answerImages: string[],
   base64AnswerImages: string[],
   title?: string,
   creator?: string,
-  createdAt?: string
+  createdAt?: string,
+  subject?: string // Optional subject, defaults to "통합사회"
 ) {
   // Create problem pages
   const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages);
@@ -735,11 +736,14 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   // Create subtitle with dynamic info
   const problemCount = base64ProblemImages.length;
 
+  // Determine subject title (default to "통합사회" if not provided)
+  const subjectTitle = subject || "통합사회";
+
   // Row 1: Header with title and logo
   allContent.push({
     columns: [
       {
-        text: "통합사회",
+        text: subjectTitle,
         fontSize: 20,
         font: 'ONEMobileTitle',
         color: '#FF00A1',
@@ -861,7 +865,7 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
     allContent.push({
       columns: [
         {
-          text: "통합사회",
+          text: subjectTitle,
           fontSize: 20,
           font: 'ONEMobileTitle',
           color: '#FF00A1',

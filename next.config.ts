@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.y3c.kr',
+        port: '',
+        pathname: '/tongkidari/contents/**',
+      },
     ],
   },
 };

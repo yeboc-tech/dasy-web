@@ -21,6 +21,7 @@ interface IsolatedPDFContainerProps {
   onError: (error: string) => void;
   onEdit: () => void;
   onSave: () => void;
+  onPreview?: () => void;
   selectedImagesLength: number;
   worksheetTitle?: string;
   worksheetAuthor?: string;
@@ -36,6 +37,7 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
   onError,
   onEdit,
   onSave,
+  onPreview,
   selectedImagesLength,
   worksheetTitle,
   worksheetAuthor,
@@ -118,6 +120,7 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
           onError={onError}
           onEdit={onEdit}
           onSave={onSave}
+          onPreview={onPreview}
           worksheetTitle={worksheetTitle}
           worksheetAuthor={worksheetAuthor}
           isPublic={isPublic}

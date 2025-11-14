@@ -35,3 +35,4 @@ next-env.d.ts
 
 # Google Cloud credentials
 public/dasy-472223-a4d004db3ad5.json
+.env.local

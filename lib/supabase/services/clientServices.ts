@@ -2,7 +2,44 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { fetchChapters, fetchSubjects, fetchChapterTree } from './services';
-import type { Chapter, Subject, ChapterTreeItem } from '@/lib/types';
+import { fetchMTChapterTree, fetchEconomyProblems } from './economyServices';
+import type { Chapter, Subject, ChapterTreeItem, EconomyProblem } from '@/lib/types';
+
+/**
+ * Fetch edited content for multiple resource IDs
+ */
+export async function getEditedContents(resourceIds: string[]): Promise<Map<string, string>> {
+  if (resourceIds.length === 0) return new Map();
+
+  const supabase = createClient();
+
+  try {
+    console.log(`[Edited Content] Fetching edited content for ${resourceIds.length} resources...`);
+
+    const { data, error } = await supabase
+      .from('edited_contents')
+      .select('resource_id, base64')
+      .in('resource_id', resourceIds);
+
+    if (error) {
+      console.warn('[Edited Content] Query error:', error.message, error.code);
+      return new Map();
+    }
+
+    const editedMap = new Map<string, string>();
+    (data || []).forEach(item => {
+      if (item.base64) {
+        editedMap.set(item.resource_id, item.base64);
+      }
+    });
+
+    console.log(`[Edited Content] Successfully fetched ${editedMap.size} edited images`);
+    return editedMap;
+  } catch (error) {
+    console.warn('[Edited Content] Exception while fetching:', error instanceof Error ? error.message : String(error));
+    return new Map();
+  }
+}
 
 /**
  * Client-side function to fetch all chapters
@@ -33,7 +70,7 @@ export async function getChapterTree(): Promise<ChapterTreeItem[]> {
  */
 export async function getChaptersBySubject(subjectName: string): Promise<Chapter[]> {
   const supabase = createClient();
-  
+
   // First get the subject ID
   const { data: subject, error: subjectError } = await supabase
     .from('subjects')
@@ -57,4 +94,28 @@ export async function getChaptersBySubject(subjectName: string): Promise<Chapter
   }
 
   return chapters || [];
+}
+
+/**
+ * Client-side function to fetch MT chapter tree (for 경제 mode)
+ */
+export async function getMTChapterTree(): Promise<ChapterTreeItem[]> {
+  const supabase = createClient();
+  return fetchMTChapterTree(supabase);
+}
+
+/**
+ * Client-side function to fetch economy problems with filters
+ */
+export async function getEconomyProblems(filters: {
+  selectedChapterIds: string[];
+  selectedGrades: string[];
+  selectedYears: number[];
+  selectedMonths: string[];
+  selectedExamTypes: string[];
+  selectedDifficulties: string[];
+  correctRateRange: [number, number];
+}): Promise<EconomyProblem[]> {
+  const supabase = createClient();
+  return fetchEconomyProblems(supabase, filters);
 }
