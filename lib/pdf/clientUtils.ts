@@ -438,17 +438,32 @@ function createMetadataBadges(problem: { metadata?: Record<string, unknown> }) {
     addBadge(metadata.difficulty);
   }
 
-  // 4. Correct rate
+  // 4. Related subjects (only for 통합사회)
+  if (!isEconomyProblem && Array.isArray(metadata.related_subjects) && metadata.related_subjects.length > 0) {
+    metadata.related_subjects.forEach((subject: unknown) => {
+      if (typeof subject === 'string') {
+        addBadge(subject);
+      }
+    });
+  }
+
+  // 5. Correct rate
   const correctRate = metadata.correct_rate ?? metadata.accuracy_rate;
   if (typeof correctRate === 'number') {
     addBadge(`정답률 ${correctRate}%`);
   }
 
-  // 5. Related subjects (only for 통합사회)
-  if (!isEconomyProblem && Array.isArray(metadata.related_subjects) && metadata.related_subjects.length > 0) {
-    metadata.related_subjects.forEach((subject: unknown) => {
-      if (typeof subject === 'string') {
-        addBadge(subject);
+  // 6. Exam year (if available)
+  if (typeof metadata.exam_year === 'number') {
+    addBadge(`${metadata.exam_year}년`);
+  }
+
+  // 7. Add tags (topic-level descriptors) - ONLY for 통합사회 problems, at the end
+  // Economy problems already have their hierarchy in tag_labels, so skip tags for them
+  if (!isEconomyProblem && Array.isArray(metadata.tags) && metadata.tags.length > 0) {
+    metadata.tags.forEach((tag: unknown) => {
+      if (typeof tag === 'string') {
+        addBadge(tag);
       }
     });
   }

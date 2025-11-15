@@ -106,7 +106,9 @@ export async function getWorksheet(
         chapter_id,
         difficulty,
         problem_type,
+        tags,
         correct_rate,
+        exam_year,
         created_at,
         updated_at,
         problem_subjects(
@@ -135,7 +137,9 @@ export async function getWorksheet(
     chapter_id: problem.chapter_id,
     difficulty: problem.difficulty,
     problem_type: problem.problem_type,
+    tags: problem.tags || [],
     correct_rate: problem.correct_rate,
+    exam_year: problem.exam_year,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     related_subjects: problem.problem_subjects?.map((ps: any) => ps.subjects.name) || [],
     created_at: problem.created_at,

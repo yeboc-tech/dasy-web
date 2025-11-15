@@ -14,7 +14,7 @@ interface ProblemsPanelProps {
   contentTree: ChapterTreeItem[];
   onDeleteProblem?: (problemId: string) => void;
   showAnswers?: boolean;
-  editedContentsMap?: Map<string, string>;
+  editedContentsMap?: Map<string, string> | null;
 }
 
 // Create a lookup map for chapter data (label and parent)
@@ -81,7 +81,11 @@ export default function ProblemsPanel({
 
   // Create blob URLs from edited content when editedContentsMap changes
   useEffect(() => {
+    console.log(`[ProblemsPanel] editedContentsMap changed, size: ${editedContentsMap?.size || 0}`);
+
     if (!editedContentsMap || editedContentsMap.size === 0) {
+      console.log('[ProblemsPanel] No edited content available');
+      setBlobUrls(new Map());
       return;
     }
 
@@ -94,6 +98,8 @@ export default function ProblemsPanel({
           ? base64Data.split(',')[1]
           : base64Data;
 
+        console.log(`[Preview Edited Content] Processing ${resourceId}, base64 length: ${base64String.length}`);
+
         const byteCharacters = atob(base64String);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -104,12 +110,14 @@ export default function ProblemsPanel({
         const blobUrl = URL.createObjectURL(blob);
 
         newBlobUrls.set(resourceId, blobUrl);
-        console.log(`[Preview Edited Content] Created blob URL for: ${resourceId}`);
+        console.log(`[Preview Edited Content] ✅ Created blob URL for ${resourceId}: ${blobUrl}, blob size: ${blob.size} bytes`);
       } catch (error) {
-        console.error(`[Preview Edited Content] Failed to create blob URL for ${resourceId}:`, error);
+        console.error(`[Preview Edited Content] ❌ Failed to create blob URL for ${resourceId}:`, error);
+        console.error(`[Preview Edited Content] ❌ Error details:`, error instanceof Error ? error.message : String(error));
       }
     });
 
+    console.log(`[ProblemsPanel] Created ${newBlobUrls.size} blob URLs`);
     setBlobUrls(newBlobUrls);
 
     // Cleanup function to revoke blob URLs
@@ -225,6 +233,16 @@ export default function ProblemsPanel({
                       </span>
                     )}
 
+                    {/* Tags badges (topic-level descriptors) */}
+                    {problem.tags && problem.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+
                     {/* Dev-only: Show if image is from edited_contents DB */}
                     {process.env.NODE_ENV === 'development' && blobUrls.get(problem.id) && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 border border-green-300">
@@ -273,19 +291,38 @@ export default function ProblemsPanel({
                       <div className="flex items-center gap-2 mb-2">
                         <div className="text-xs font-semibold text-gray-600">해설</div>
                         {/* Dev-only: Show if answer image is from edited_contents DB */}
-                        {process.env.NODE_ENV === 'development' && blobUrls.get(problem.id) && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 border border-green-300">
-                            📝 DB
-                          </span>
-                        )}
+                        {(() => {
+                          // Get answer resource ID (for economy: replace _문제 with _해설)
+                          const answerId = problem.id.startsWith('경제_')
+                            ? problem.id.replace('_문제', '_해설')
+                            : problem.id;
+                          const hasEditedAnswer = blobUrls.get(answerId);
+
+                          return process.env.NODE_ENV === 'development' && hasEditedAnswer && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 border border-green-300">
+                              📝 DB
+                            </span>
+                          );
+                        })()}
                       </div>
                       <Image
-                        src={blobUrls.get(problem.id) || getAnswerImageUrl(problem.id)}
+                        src={(() => {
+                          // Get answer resource ID (for economy: replace _문제 with _해설)
+                          const answerId = problem.id.startsWith('경제_')
+                            ? problem.id.replace('_문제', '_해설')
+                            : problem.id;
+                          return blobUrls.get(answerId) || getAnswerImageUrl(problem.id);
+                        })()}
                         alt={problem.answer_filename}
                         width={800}
                         height={600}
                         className="w-full h-auto object-contain"
-                        unoptimized={!!blobUrls.get(problem.id)}
+                        unoptimized={(() => {
+                          const answerId = problem.id.startsWith('경제_')
+                            ? problem.id.replace('_문제', '_해설')
+                            : problem.id;
+                          return !!blobUrls.get(answerId);
+                        })()}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
