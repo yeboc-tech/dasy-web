@@ -432,7 +432,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
             </div>
             
             <div className="flex items-center space-x-2">
-              {subject === '경제' && worksheetId && (
+              {worksheetId && (
                 <Button
                   variant="outline"
                   size="sm"
