@@ -490,6 +490,14 @@ export default function ConfigurePage() {
     setShowPreviewDialog(true);
   }, []);
 
+  // Detect if this is an economy worksheet
+  const isEconomyWorksheet = useMemo(() => {
+    return (worksheetData?.problems?.length ?? 0) > 0 &&
+      worksheetData?.problems?.[0]?.id.startsWith('경제_');
+  }, [worksheetData?.problems]);
+
+  const subject = isEconomyWorksheet ? '경제' : '통합사회';
+
   // Show loading state while fetching worksheet OR generating PDF
   if ((!worksheetData && loading) || (worksheetReady && showLoader)) {
     return (
@@ -557,6 +565,7 @@ export default function ConfigurePage() {
             onEdit={handleEdit}
             onSave={handleSave}
             onPreview={handlePreview}
+            subject={subject}
             selectedImagesLength={selectedImages.length}
             worksheetTitle={worksheetTitle}
             worksheetAuthor={worksheetAuthor}

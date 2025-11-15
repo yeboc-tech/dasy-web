@@ -15,9 +15,10 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const isSolvePage = pathname?.includes('/solve')
   const isDataPage = pathname?.startsWith('/data')
   const isAdminPage = pathname?.startsWith('/admin')
+  const isQuickAnswersPage = pathname?.includes('/quick-answers')
 
-  if (isAuthPage || isSolvePage || isDataPage || isAdminPage) {
-    // Auth pages, solve pages, data pages, and admin pages: full screen layout without navbar/banner
+  if (isAuthPage || isSolvePage || isDataPage || isAdminPage || isQuickAnswersPage) {
+    // Auth pages, solve pages, data pages, admin pages, and quick-answers pages: full screen layout without navbar/banner
     return (
       <div className="min-h-screen">
         <div className="hidden sm:block h-full">
