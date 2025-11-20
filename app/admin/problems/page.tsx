@@ -6,6 +6,7 @@ import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 
 interface Problem {
   id: string;
+  problem_code: string | null;
   problem_filename: string;
   answer_filename: string | null;
   source: string | null;
@@ -65,6 +66,7 @@ export default function ProblemsDataPage() {
   const [columnWidths, setColumnWidths] = useState({
     index: 50,
     id: 100,
+    problemCode: 150,
     problemFile: 150,
     answerFile: 150,
     source: 200,
@@ -302,6 +304,13 @@ export default function ProblemsDataPage() {
     document.removeEventListener('mouseup', handleMouseUp);
   };
 
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   const handleExportCSV = async () => {
     if (!data) return;
 
@@ -368,7 +377,7 @@ export default function ProblemsDataPage() {
     return (
       <div className="h-full flex-1 bg-white">
         <div className="max-w-4xl mx-auto p-4">
-          <h1 className="text-base font-normal mb-4">문제</h1>
+          <h1 className="text-base font-medium mb-4">문제</h1>
           <div className="flex items-center justify-center py-20">
             <Loader className="animate-spin w-4 h-4" />
           </div>
@@ -381,7 +390,7 @@ export default function ProblemsDataPage() {
     <div className="bg-white h-full flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 60px)' }}>
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-4 w-full flex-1 flex flex-col overflow-hidden">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-base font-normal">문제</h1>
+          <h1 className="text-base font-medium">문제</h1>
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-3 py-1.5 text-xs border hover:bg-gray-50 cursor-pointer"
@@ -393,12 +402,13 @@ export default function ProblemsDataPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white shadow flex-1 flex flex-col overflow-hidden mb-4">
+        <div className="bg-white border flex-1 flex flex-col overflow-hidden">
           <div className="overflow-auto flex-1">
             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
               <thead className="bg-gray-100 border-b sticky top-0" style={{ zIndex: 50 }}>
                 <tr>
                   <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.index, minWidth: columnWidths.index }}>
+                    <span></span>
                     <div
                       className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
                       onMouseDown={(e) => handleMouseDown(e, 'index')}
@@ -406,7 +416,7 @@ export default function ProblemsDataPage() {
                   </th>
                   <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.id, minWidth: columnWidths.id }}>
                     <div className="flex items-center justify-between">
-                      <span>ID</span>
+                      <span>아이디</span>
                       <div className="relative" ref={idDropdownRef}>
                         <button
                           onClick={() => setShowIdDropdown(!showIdDropdown)}
@@ -445,6 +455,13 @@ export default function ProblemsDataPage() {
                     <div
                       className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
                       onMouseDown={(e) => handleMouseDown(e, 'id')}
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.problemCode, minWidth: columnWidths.problemCode }}>
+                    <span>문제 코드</span>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'problemCode')}
                     />
                   </th>
                   <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.problemFile, minWidth: columnWidths.problemFile }}>
@@ -668,6 +685,9 @@ export default function ProblemsDataPage() {
                           <Copy className="w-3 h-3 text-gray-400" />
                         </button>
                       </div>
+                    </td>
+                    <td className="px-3 py-2 text-xs text-gray-600 overflow-hidden border-r" title={problem.problem_code || ''} style={{ width: columnWidths.problemCode, minWidth: columnWidths.problemCode }}>
+                      <div className="truncate">{problem.problem_code || '-'}</div>
                     </td>
                     <td className="px-3 py-2 text-xs overflow-hidden border-r" style={{ width: columnWidths.problemFile, minWidth: columnWidths.problemFile }}>
                       <a

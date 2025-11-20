@@ -6,6 +6,7 @@ import { Loader, Trash2 } from "lucide-react";
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
+import { getDifficultyFromCorrectRate } from '@/lib/utils/difficultyCorrectRateSync';
 
 interface ProblemsPanelProps {
   filteredProblems: ProblemMetadata[];
@@ -195,10 +196,10 @@ export default function ProblemsPanel({
                       </span>
                     ))}
 
-                    {/* Difficulty badge */}
-                    {problem.difficulty && (
+                    {/* Difficulty badge - calculated from correct_rate */}
+                    {problem.correct_rate !== null && problem.correct_rate !== undefined && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                        {problem.difficulty}
+                        {getDifficultyFromCorrectRate(problem.correct_rate)}
                       </span>
                     )}
 

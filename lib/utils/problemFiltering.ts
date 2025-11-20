@@ -1,5 +1,6 @@
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
+import { getDifficultyFromCorrectRate } from './difficultyCorrectRateSync';
 
 interface FilterOptions {
   selectedChapters: string[];
@@ -16,15 +17,12 @@ export class ProblemFilter {
   // Removed seeded random function - using truly random selection
 
   /**
-   * Get difficulty level based on correct rate
-   * 상: 0-39%, 중: 40-59%, 하: 60-100%
+   * Get difficulty level based on correct rate using unified utility
+   * 상: 0-40%, 중: 40-70%, 하: 70-100%
    */
-  private static getDifficultyFromCorrectRate(problem: ProblemMetadata): string {
+  private static getProblemDifficulty(problem: ProblemMetadata): string {
     const correctRate = problem.correct_rate ?? 50;
-
-    if (correctRate <= 39) return '상';
-    if (correctRate <= 59) return '중';
-    return '하';
+    return getDifficultyFromCorrectRate(correctRate);
   }
 
   private static getDifficultyWeight(difficulty: string): number {
@@ -98,7 +96,7 @@ export class ProblemFilter {
     // Filter by selected difficulties (using correct rate based difficulty)
     if (filters.selectedDifficulties.length > 0) {
       filtered = filtered.filter(problem => {
-        const calculatedDifficulty = this.getDifficultyFromCorrectRate(problem);
+        const calculatedDifficulty = this.getProblemDifficulty(problem);
         return filters.selectedDifficulties.includes(calculatedDifficulty);
       });
     }

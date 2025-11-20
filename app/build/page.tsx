@@ -49,7 +49,7 @@ export default function Page() {
   const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | undefined>(undefined);
+  const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
   
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
@@ -59,14 +59,16 @@ export default function Page() {
 
   // Fetch edited content when problems change
   useEffect(() => {
+    let cancelled = false;
+
     const fetchEditedContent = async () => {
       if (filteredProblems.length === 0) {
-        setEditedContentsMap(new Map()); // Empty map = no problems to fetch for
+        setEditedContentsMap(null); // Set null when no problems (consistent loading state)
         return;
       }
 
-      // Set to undefined to indicate "loading"
-      setEditedContentsMap(undefined);
+      // Set to null to indicate "loading"
+      setEditedContentsMap(null);
 
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
@@ -77,6 +79,12 @@ export default function Page() {
       console.log('[Build Page Preview] First 5 resource IDs:', allResourceIds.slice(0, 5));
 
       const fetchedEditedContents = await getEditedContents(allResourceIds);
+
+      // Only update state if this fetch hasn't been cancelled
+      if (cancelled) {
+        console.log('[Build Page Preview] ⚠️ Fetch cancelled - problem list changed');
+        return;
+      }
 
       if (fetchedEditedContents.size > 0) {
         console.log(`[Build Page Preview] ✅ Found ${fetchedEditedContents.size} edited images in database`);
@@ -89,6 +97,11 @@ export default function Page() {
     };
 
     fetchEditedContent();
+
+    // Cleanup: cancel fetch if component unmounts or filteredProblems changes
+    return () => {
+      cancelled = true;
+    };
   }, [filteredProblems]);
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)

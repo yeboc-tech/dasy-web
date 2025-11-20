@@ -83,27 +83,11 @@ CREATE INDEX idx_problem_labels_label ON problem_labels(label_id);
 CREATE INDEX idx_problem_labels_assigned_by ON problem_labels(assigned_by);
 
 -- ============================================================================
--- Seed Initial Label Types
--- ============================================================================
-INSERT INTO label_types (name, description) VALUES
-  ('curriculum', 'Curriculum categories (e.g., 2015, 2022, custom)'),
-  ('subject', 'Subjects (e.g., Economics, Ethics, Politics)'),
-  ('publisher', 'Publishers (e.g., Kyohak, Visang, Chunjae)'),
-  ('unit', 'Units/Chapters (hierarchical structure under subjects)'),
-  ('tag', 'Concept tags (curriculum-scoped concepts and keywords)'),
-  ('difficulty', 'Difficulty levels (e.g., high, medium, low)'),
-  ('problem_type', 'Problem types (e.g., multiple choice, essay, short answer)'),
-  ('skill', 'Skills/Competencies (e.g., critical thinking, data analysis)');
-
--- ============================================================================
 -- Comments for Documentation
 -- ============================================================================
 COMMENT ON TABLE label_types IS 'Meta table defining label categories (curriculum, subject, tag, etc.)';
 COMMENT ON TABLE labels IS 'Actual label values with optional parent-child hierarchy';
-COMMENT ON TABLE label_relationships IS 'Flexible typed relationships between labels (scoped_to, provides, requires, etc.)';
 COMMENT ON TABLE problem_labels IS 'Junction table assigning labels to problems';
 
-COMMENT ON COLUMN labels.parent_label_id IS 'For simple hierarchies (e.g., unit under subject). Use label_relationships for complex relationships.';
+COMMENT ON COLUMN labels.parent_label_id IS 'For simple hierarchies (e.g., unit under subject)';
 COMMENT ON COLUMN labels.metadata IS 'Extensible JSON field for future attributes without schema changes';
-COMMENT ON COLUMN label_relationships.relationship_type IS 'Examples: child_of, scoped_to, provides, requires, related_to, filters, equivalent_to';
-COMMENT ON COLUMN label_relationships.metadata IS 'Additional context for relationships (e.g., {"curriculum": "2015"} for conditional provides)';

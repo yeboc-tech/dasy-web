@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,12 @@ import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { useEconomyChapters } from '@/lib/hooks/useEconomyChapters';
 import type { ChapterTreeItem } from '@/lib/types';
 import { Loader } from 'lucide-react';
+import {
+  getCorrectRateRangeFromEconomyDifficulties,
+  getEconomyDifficultiesFromCorrectRateRange,
+  doesCorrectRateMatchEconomyDifficulties,
+  doEconomyDifficultiesMatchCorrectRate
+} from '@/lib/utils/economyDifficultySync';
 
 export default function EconomyFilters() {
   const {
@@ -38,10 +44,64 @@ export default function EconomyFilters() {
 
   const checkedItems = new Set(selectedChapters);
 
+  // Track the source of changes to avoid infinite sync loops
+  const updateSourceRef = useRef<'difficulty' | 'correctRate' | null>(null);
+
   // Sync input display with store value when store changes externally
   useEffect(() => {
     setProblemCountInput(problemCount.toString());
   }, [problemCount]);
+
+  // On mount, ensure all 6 economy difficulty levels are selected
+  useEffect(() => {
+    const economyLevels = ['최상', '상', '중상', '중', '중하', '하'];
+
+    // Check if all 6 levels are present
+    const hasAll6Levels = economyLevels.every(level => selectedDifficulties.includes(level));
+
+    if (!hasAll6Levels) {
+      setSelectedDifficulties(economyLevels);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
+
+  // Sync difficulty → correct rate (when user changes difficulty, update correct rate)
+  useEffect(() => {
+    // Skip if the change came from correct rate slider
+    if (updateSourceRef.current === 'correctRate') {
+      updateSourceRef.current = null;
+      return;
+    }
+
+    // Check if correct rate already matches selected difficulties
+    if (doesCorrectRateMatchEconomyDifficulties(correctRateRange as [number, number], selectedDifficulties)) {
+      return;
+    }
+
+    // Update correct rate range to match selected difficulties
+    const newRange = getCorrectRateRangeFromEconomyDifficulties(selectedDifficulties);
+    updateSourceRef.current = 'difficulty';
+    setCorrectRateRange(newRange);
+  }, [selectedDifficulties]); // Only depend on selectedDifficulties
+
+  // Sync correct rate → difficulty (when user changes correct rate, update difficulty)
+  useEffect(() => {
+    // Skip if the change came from difficulty checkboxes
+    if (updateSourceRef.current === 'difficulty') {
+      updateSourceRef.current = null;
+      return;
+    }
+
+    // Check if difficulties already match correct rate range
+    if (doEconomyDifficultiesMatchCorrectRate(selectedDifficulties, correctRateRange as [number, number])) {
+      return;
+    }
+
+    // Update difficulties to match correct rate range
+    const newDifficulties = getEconomyDifficultiesFromCorrectRateRange(correctRateRange as [number, number]);
+    updateSourceRef.current = 'correctRate';
+    setSelectedDifficulties(newDifficulties);
+  }, [correctRateRange]); // Only depend on correctRateRange
 
   // Auto-select 경제 root chapter and all children when first loaded
   React.useEffect(() => {
@@ -465,27 +525,27 @@ export default function EconomyFilters() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* 난이도 Section */}
+          {/* 난이도 Section - 6 levels for economy */}
           <AccordionItem value="difficulty" className="border-none">
             <AccordionTrigger className="hover:no-underline">
               <span>난이도</span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => {
-                    setSelectedDifficulties(['상', '중', '하']);
+                    setSelectedDifficulties(['최상', '상', '중상', '중', '중하', '하']);
                   }}
                   variant="outline"
-                  className={selectedDifficulties.length === 3 ? "border-black text-black bg-gray-100" : ""}
+                  className={selectedDifficulties.length === 6 ? "border-black text-black bg-gray-100" : ""}
                 >
                   모두
                 </Button>
-                {['상', '중', '하'].map((level) => (
+                {['최상', '상', '중상', '중', '중하', '하'].map((level) => (
                   <Button
                     key={level}
                     onClick={() => {
-                      if (selectedDifficulties.length === 3) {
+                      if (selectedDifficulties.length === 6) {
                         setSelectedDifficulties([level]);
                       } else {
                         const newDifficulties = selectedDifficulties.includes(level)
@@ -500,7 +560,7 @@ export default function EconomyFilters() {
                       }
                     }}
                     variant="outline"
-                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < 3 ? "border-black text-black bg-gray-100" : ""}
+                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < 6 ? "border-black text-black bg-gray-100" : ""}
                   >
                     {level}
                   </Button>

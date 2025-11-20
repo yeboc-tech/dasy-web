@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     .from('problems')
     .select(`
       id,
+      problem_code,
       problem_filename,
       answer_filename,
       source,

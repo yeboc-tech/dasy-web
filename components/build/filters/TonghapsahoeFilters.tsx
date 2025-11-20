@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,12 @@ import { Slider } from '@/components/ui/slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import type { ChapterTreeItem } from '@/lib/types';
+import {
+  getCorrectRateRangeFromDifficulties,
+  getDifficultiesFromCorrectRateRange,
+  doesCorrectRateMatchDifficulties,
+  doDifficultiesMatchCorrectRate
+} from '@/lib/utils/difficultyCorrectRateSync';
 
 interface TonghapsahoeFiltersProps {
   contentTree: ChapterTreeItem[];
@@ -39,10 +45,68 @@ export default function TonghapsahoeFilters({
   const [problemCountInput, setProblemCountInput] = useState<string>(problemCount.toString());
   const checkedItems = new Set(selectedChapters);
 
+  // Track the source of changes to avoid infinite sync loops
+  const updateSourceRef = useRef<'difficulty' | 'correctRate' | null>(null);
+
   // Sync input display with store value when store changes externally
   useEffect(() => {
     setProblemCountInput(problemCount.toString());
   }, [problemCount]);
+
+  // On mount, ensure only 통합사회 difficulty levels are selected
+  useEffect(() => {
+    const tonghapsahoeLevels = ['상', '중', '하'];
+    const validDifficulties = selectedDifficulties.filter(d => tonghapsahoeLevels.includes(d));
+
+    // If there are non-통합사회 difficulties selected, reset to valid ones only
+    if (validDifficulties.length !== selectedDifficulties.length) {
+      // If all 3 통합사회 levels are present, keep them; otherwise default to all 3
+      if (validDifficulties.length === 3) {
+        setSelectedDifficulties(validDifficulties);
+      } else {
+        setSelectedDifficulties(tonghapsahoeLevels);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only on mount
+
+  // Sync difficulty → correct rate (when user changes difficulty, update correct rate)
+  useEffect(() => {
+    // Skip if the change came from correct rate slider
+    if (updateSourceRef.current === 'correctRate') {
+      updateSourceRef.current = null;
+      return;
+    }
+
+    // Check if correct rate already matches selected difficulties
+    if (doesCorrectRateMatchDifficulties(correctRateRange as [number, number], selectedDifficulties)) {
+      return;
+    }
+
+    // Update correct rate range to match selected difficulties
+    const newRange = getCorrectRateRangeFromDifficulties(selectedDifficulties);
+    updateSourceRef.current = 'difficulty';
+    setCorrectRateRange(newRange);
+  }, [selectedDifficulties]); // Only depend on selectedDifficulties
+
+  // Sync correct rate → difficulty (when user changes correct rate, update difficulty)
+  useEffect(() => {
+    // Skip if the change came from difficulty checkboxes
+    if (updateSourceRef.current === 'difficulty') {
+      updateSourceRef.current = null;
+      return;
+    }
+
+    // Check if difficulties already match correct rate range
+    if (doDifficultiesMatchCorrectRate(selectedDifficulties, correctRateRange as [number, number])) {
+      return;
+    }
+
+    // Update difficulties to match correct rate range
+    const newDifficulties = getDifficultiesFromCorrectRateRange(correctRateRange as [number, number]);
+    updateSourceRef.current = 'correctRate';
+    setSelectedDifficulties(newDifficulties);
+  }, [correctRateRange]); // Only depend on correctRateRange
 
   const toggleExpanded = (itemId: string) => setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
 
@@ -376,37 +440,54 @@ export default function TonghapsahoeFilters({
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
+                    // For 통합사회, only use 3 levels
                     setSelectedDifficulties(['상', '중', '하']);
                   }}
                   variant="outline"
-                  className={selectedDifficulties.length === 3 ? "border-black text-black bg-gray-100" : ""}
+                  className={
+                    selectedDifficulties.filter(d => ['상', '중', '하'].includes(d)).length === 3
+                      ? "border-black text-black bg-gray-100"
+                      : ""
+                  }
                 >
                   모두
                 </Button>
-                {['상', '중', '하'].map((level) => (
-                  <Button
-                    key={level}
-                    onClick={() => {
-                      if (selectedDifficulties.length === 3) {
-                        setSelectedDifficulties([level]);
-                      } else {
-                        const newDifficulties = selectedDifficulties.includes(level)
-                          ? selectedDifficulties.filter(d => d !== level)
-                          : [...selectedDifficulties, level];
+                {['상', '중', '하'].map((level) => {
+                  // For 통합사회, only consider the 3 relevant levels
+                  const tonghapsahoeLevels = ['상', '중', '하'];
+                  const relevantDifficulties = selectedDifficulties.filter(d => tonghapsahoeLevels.includes(d));
 
-                        if (newDifficulties.length === 0) {
+                  return (
+                    <Button
+                      key={level}
+                      onClick={() => {
+                        if (relevantDifficulties.length === 3) {
+                          // If all 3 are selected, select only this one
                           setSelectedDifficulties([level]);
                         } else {
-                          setSelectedDifficulties(newDifficulties);
+                          // Toggle this level
+                          const newDifficulties = selectedDifficulties.includes(level)
+                            ? selectedDifficulties.filter(d => d !== level)
+                            : [...selectedDifficulties, level];
+
+                          if (newDifficulties.length === 0) {
+                            setSelectedDifficulties([level]);
+                          } else {
+                            setSelectedDifficulties(newDifficulties);
+                          }
                         }
+                      }}
+                      variant="outline"
+                      className={
+                        selectedDifficulties.includes(level) && relevantDifficulties.length < 3
+                          ? "border-black text-black bg-gray-100"
+                          : ""
                       }
-                    }}
-                    variant="outline"
-                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < 3 ? "border-black text-black bg-gray-100" : ""}
-                  >
-                    {level}
-                  </Button>
-                ))}
+                    >
+                      {level}
+                    </Button>
+                  );
+                })}
               </div>
             </AccordionContent>
           </AccordionItem>

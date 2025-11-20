@@ -4,7 +4,7 @@ import type { WorksheetState } from '@/lib/types';
 export const useWorksheetStore = create<WorksheetState>((set) => ({
   selectedChapters: [], // Will be set by simulating checkbox click
   problemCount: 50,
-  selectedDifficulties: ['상', '중', '하'], // Default to all selected
+  selectedDifficulties: ['최상', '상', '중상', '중', '중하', '하'], // Default to all 6 levels (for economy compatibility)
   selectedProblemTypes: ['기출문제', 'N제'], // Default to all selected
   selectedSubjects: ['생활과 윤리', '윤리와 사상', '한국지리', '세계지리', '동아시아사', '세계사', '경제', '정치와 법', '사회·문화'], // Default to all selected
   correctRateRange: [0, 100], // Default to all (0-100%)

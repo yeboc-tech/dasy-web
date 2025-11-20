@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader, Copy } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { DataTableAdvanced, ColumnConfig } from '../components/data-table-advanced';
+import { DataTable, Column } from '../components/data-table';
 import { SearchableHeader } from '../components/searchable-header';
 
 interface LabelType {
@@ -18,10 +17,7 @@ interface LabelType {
 
 export default function LabelTypesPage() {
   const [labelTypes, setLabelTypes] = useState<LabelType[]>([]);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100);
   const [searchFilter, setSearchFilter] = useState('');
   const [editingType, setEditingType] = useState<LabelType | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -32,35 +28,20 @@ export default function LabelTypesPage() {
     value_constraints: {} as Record<string, unknown>
   });
   const [saving, setSaving] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
     fetchLabelTypes();
-  }, [searchFilter, page, pageSize]);
+  }, [searchFilter]);
 
   const fetchLabelTypes = async () => {
     try {
       setLoading(true);
 
-      // Get total count
-      let countQuery = supabase
-        .from('label_types')
-        .select('*', { count: 'exact', head: true });
-
-      if (searchFilter) {
-        countQuery = countQuery.or(`name.ilike.%${searchFilter}%,description.ilike.%${searchFilter}%`);
-      }
-
-      const { count } = await countQuery;
-      setTotal(count || 0);
-
-      // Get paginated data
       let query = supabase
         .from('label_types')
         .select('*, labels(count)')
-        .order('name')
-        .range((page - 1) * pageSize, page * pageSize - 1);
+        .order('name');
 
       if (searchFilter) {
         query = query.or(`name.ilike.%${searchFilter}%,description.ilike.%${searchFilter}%`);
@@ -170,67 +151,15 @@ export default function LabelTypesPage() {
     setFormData({ name: '', description: '', value_type: 'categorical', value_constraints: {} });
   };
 
-  const handleCopyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  if (loading && labelTypes.length === 0) {
-    return (
-      <div className="h-full flex-1 bg-white">
-        <div className="max-w-4xl mx-auto p-4">
-          <h1 className="text-base font-medium mb-4">라벨 타입</h1>
-          <div className="flex items-center justify-center py-20">
-            <Loader className="animate-spin w-4 h-4" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const columns: ColumnConfig<LabelType>[] = [
-    {
-      key: 'index',
-      header: '',
-      width: 50,
-      resizable: false,
-      render: (type, index) => (
-        <div className="text-center text-xs text-gray-500">
-          {(page - 1) * pageSize + index + 1}
-        </div>
-      ),
-    },
-    {
-      key: 'id',
-      header: '아이디',
-      width: 100,
-      render: (type) => (
-        <div className="flex items-center justify-between gap-1">
-          <div className="truncate text-xs font-mono text-gray-500">{type.id}</div>
-          <button
-            onClick={() => handleCopyId(type.id)}
-            className="flex-shrink-0 p-1 hover:bg-gray-200 cursor-pointer"
-          >
-            <Copy className="w-3 h-3 text-gray-400" />
-          </button>
-        </div>
-      ),
-    },
+  const columns: Column<LabelType>[] = [
     {
       key: 'name',
       header: (
         <SearchableHeader
           title="이름"
           value={searchFilter}
-          onSearch={(value) => {
-            setSearchFilter(value);
-            setPage(1);
-          }}
-          onClear={() => {
-            setSearchFilter('');
-            setPage(1);
-          }}
+          onSearch={setSearchFilter}
+          onClear={() => setSearchFilter('')}
         />
       ),
       width: 200,
@@ -255,18 +184,18 @@ export default function LabelTypesPage() {
     {
       key: 'actions',
       header: '작업',
-      width: 150,
+      width: 100,
       render: (type) => (
         <div className="flex items-center justify-center gap-1">
           <button
             onClick={() => openEditModal(type)}
-            className="px-2 py-1 text-xs border hover:bg-gray-50 cursor-pointer whitespace-nowrap"
+            className="px-2 py-1 text-xs border hover:bg-gray-50 cursor-pointer"
           >
             수정
           </button>
           <button
             onClick={() => handleDelete(type.id)}
-            className="px-2 py-1 text-xs border hover:bg-red-50 cursor-pointer text-red-600 whitespace-nowrap"
+            className="px-2 py-1 text-xs border hover:bg-red-50 cursor-pointer text-red-600"
           >
             삭제
           </button>
@@ -288,21 +217,11 @@ export default function LabelTypesPage() {
           </button>
         </div>
 
-        <DataTableAdvanced
+        <DataTable
           data={labelTypes}
           columns={columns}
           loading={loading}
           emptyMessage={searchFilter ? '검색 결과가 없습니다.' : '라벨 타입이 없습니다.'}
-          pagination={{
-            page,
-            pageSize,
-            total,
-            onPageChange: setPage,
-            onPageSizeChange: (newSize) => {
-              setPageSize(newSize);
-              setPage(1);
-            },
-          }}
         />
       </div>
 
@@ -364,7 +283,7 @@ export default function LabelTypesPage() {
                       <label className="block text-xs text-gray-500 mb-1">최소값</label>
                       <input
                         type="number"
-                        value={(formData.value_constraints?.min as number) ?? ''}
+                        value={(formData.value_constraints?.min as number) || ''}
                         onChange={(e) => setFormData({
                           ...formData,
                           value_constraints: { ...formData.value_constraints, min: Number(e.target.value) }
@@ -377,7 +296,7 @@ export default function LabelTypesPage() {
                       <label className="block text-xs text-gray-500 mb-1">최대값</label>
                       <input
                         type="number"
-                        value={(formData.value_constraints?.max as number) ?? ''}
+                        value={(formData.value_constraints?.max as number) || ''}
                         onChange={(e) => setFormData({
                           ...formData,
                           value_constraints: { ...formData.value_constraints, max: Number(e.target.value) }

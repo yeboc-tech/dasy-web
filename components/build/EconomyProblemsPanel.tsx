@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Loader, Trash2 } from "lucide-react";
 import type { ProblemMetadata } from '@/lib/types/problems';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
+import { getEconomyDifficultyFromCorrectRate } from '@/lib/utils/economyDifficultySync';
 
 interface EconomyProblemsPanelProps {
   filteredProblems: ProblemMetadata[];
@@ -151,10 +152,10 @@ export default function EconomyProblemsPanel({
                       </span>
                     ))}
 
-                    {/* Difficulty badge */}
-                    {problem.difficulty && (
+                    {/* Difficulty badge - calculated from correct_rate */}
+                    {problem.correct_rate !== null && problem.correct_rate !== undefined && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                        {problem.difficulty}
+                        {getEconomyDifficultyFromCorrectRate(problem.correct_rate)}
                       </span>
                     )}
 

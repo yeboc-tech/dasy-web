@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Loader, Search, X, ChevronRight, ChevronDown } from 'lucide-react';
+import { Loader, Search, X, ChevronRight, ChevronDown, Copy } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 interface LabelType {
   id: string;
   name: string;
   description: string | null;
+  value_type: string;
+  value_constraints: Record<string, unknown>;
 }
 
 interface Label {
@@ -43,6 +45,21 @@ export default function LabelsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [parentLabels, setParentLabels] = useState<Label[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
+  const [total, setTotal] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [columnWidths, setColumnWidths] = useState({
+    index: 50,
+    id: 100,
+    label: 300,
+    type: 200,
+    order: 100,
+    actions: 150,
+  });
+  const resizingColumn = React.useRef<string | null>(null);
+  const startX = React.useRef(0);
+  const startWidth = React.useRef(0);
   const supabase = createClient();
 
   useEffect(() => {
@@ -51,7 +68,7 @@ export default function LabelsPage() {
 
   useEffect(() => {
     fetchLabels();
-  }, [searchFilter, typeFilter]);
+  }, [searchFilter, typeFilter, page, pageSize]);
 
   const fetchLabelTypes = async () => {
     try {
@@ -71,6 +88,24 @@ export default function LabelsPage() {
     try {
       setLoading(true);
 
+      // Get total count for pagination display
+      let countQuery = supabase
+        .from('labels')
+        .select('*', { count: 'exact', head: true });
+
+      if (searchFilter) {
+        countQuery = countQuery.ilike('value', `%${searchFilter}%`);
+      }
+
+      if (typeFilter) {
+        countQuery = countQuery.eq('label_type_id', typeFilter);
+      }
+
+      const { count } = await countQuery;
+      setTotal(count || 0);
+
+      // For tree structure, we fetch all items to maintain hierarchy
+      // Pagination is shown for consistency but tree needs all data
       let query = supabase
         .from('labels')
         .select('*, label_type:label_types(*)')
@@ -121,12 +156,11 @@ export default function LabelsPage() {
     }
   };
 
-  const fetchPotentialParents = async (labelTypeId: string, excludeId?: string) => {
+  const fetchPotentialParents = async (excludeId?: string) => {
     try {
       const query = supabase
         .from('labels')
-        .select('*')
-        .eq('label_type_id', labelTypeId)
+        .select('*, label_type:label_types(*)')
         .order('value');
 
       const { data, error } = await query;
@@ -158,6 +192,47 @@ export default function LabelsPage() {
   const handleClearTypeFilter = () => {
     setTypeFilter('');
   };
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, columnKey: keyof typeof columnWidths) => {
+    resizingColumn.current = columnKey;
+    startX.current = e.clientX;
+    startWidth.current = columnWidths[columnKey];
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!resizingColumn.current) return;
+
+    const diff = e.clientX - startX.current;
+    const newWidth = Math.max(50, startWidth.current + diff);
+
+    setColumnWidths(prev => ({
+      ...prev,
+      [resizingColumn.current!]: newWidth,
+    }));
+  };
+
+  const handleMouseUp = () => {
+    resizingColumn.current = null;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedIds);
@@ -239,14 +314,14 @@ export default function LabelsPage() {
       parent_label_id: label.parent_label_id,
       display_order: label.display_order
     });
-    fetchPotentialParents(label.label_type_id, label.id);
+    fetchPotentialParents(label.id);
     setShowModal(true);
   };
 
   const openAddModal = () => {
     setEditingLabel(null);
     setFormData({ label_type_id: '', value: '', parent_label_id: null, display_order: 0 });
-    setParentLabels([]);
+    fetchPotentialParents();
     setShowModal(true);
   };
 
@@ -257,16 +332,30 @@ export default function LabelsPage() {
     setParentLabels([]);
   };
 
-  const renderLabelRow = (label: Label, level: number = 0): React.ReactElement[] => {
+  const renderLabelRow = (label: Label, index: number, level: number = 0): React.ReactElement[] => {
     const rows: React.ReactElement[] = [];
     const hasChildren = label.children && label.children.length > 0;
     const isExpanded = expandedIds.has(label.id);
 
     rows.push(
       <tr key={label.id} className="border-b hover:bg-gray-50">
-        <td className="px-3 py-2 border-r">
+        <td className="px-3 py-2 border-r text-center" style={{ width: columnWidths.index, minWidth: columnWidths.index }}>
+          <span className="text-xs text-gray-500">{(page - 1) * pageSize + index + 1}</span>
+        </td>
+        <td className="px-3 py-2 border-r" style={{ width: columnWidths.id, minWidth: columnWidths.id }}>
+          <div className="flex items-center justify-between gap-1">
+            <div className="truncate text-xs font-mono text-gray-500">{label.id}</div>
+            <button
+              onClick={() => handleCopyId(label.id)}
+              className="flex-shrink-0 p-1 hover:bg-gray-200 cursor-pointer"
+            >
+              <Copy className="w-3 h-3 text-gray-400" />
+            </button>
+          </div>
+        </td>
+        <td className="px-3 py-2 border-r" style={{ width: columnWidths.label, minWidth: columnWidths.label }}>
           <div className="flex items-center gap-1" style={{ paddingLeft: `${level * 20}px` }}>
-            {hasChildren && (
+            {hasChildren ? (
               <button
                 onClick={() => toggleExpand(label.id)}
                 className="p-0.5 hover:bg-gray-200 cursor-pointer"
@@ -277,28 +366,29 @@ export default function LabelsPage() {
                   <ChevronRight className="w-3 h-3" />
                 )}
               </button>
+            ) : (
+              <div className="w-4 flex-shrink-0" />
             )}
-            {!hasChildren && <div className="w-4" />}
             <span className="text-xs font-medium">{label.value}</span>
           </div>
         </td>
-        <td className="px-3 py-2 border-r">
+        <td className="px-3 py-2 border-r" style={{ width: columnWidths.type, minWidth: columnWidths.type }}>
           <span className="text-xs text-gray-600">{label.label_type?.name || '-'}</span>
         </td>
-        <td className="px-3 py-2 border-r text-center">
+        <td className="px-3 py-2 border-r text-center" style={{ width: columnWidths.order, minWidth: columnWidths.order }}>
           <span className="text-xs text-gray-600">{label.display_order}</span>
         </td>
-        <td className="px-3 py-2 text-center">
+        <td className="px-3 py-2 text-center" style={{ width: columnWidths.actions, minWidth: columnWidths.actions }}>
           <div className="flex items-center justify-center gap-1">
             <button
               onClick={() => openEditModal(label)}
-              className="px-2 py-1 text-xs border hover:bg-gray-50 cursor-pointer"
+              className="px-2 py-1 text-xs border hover:bg-gray-50 cursor-pointer whitespace-nowrap"
             >
               수정
             </button>
             <button
               onClick={() => handleDelete(label.id)}
-              className="px-2 py-1 text-xs border hover:bg-red-50 cursor-pointer text-red-600"
+              className="px-2 py-1 text-xs border hover:bg-red-50 cursor-pointer text-red-600 whitespace-nowrap"
             >
               삭제
             </button>
@@ -309,7 +399,7 @@ export default function LabelsPage() {
 
     if (isExpanded && hasChildren) {
       label.children!.forEach(child => {
-        rows.push(...renderLabelRow(child, level + 1));
+        rows.push(...renderLabelRow(child, 0, level + 1));
       });
     }
 
@@ -333,7 +423,7 @@ export default function LabelsPage() {
     <div className="bg-white h-full flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 60px)' }}>
       <div className="max-w-4xl mx-auto px-4 pt-4 pb-4 w-full flex-1 flex flex-col overflow-hidden">
         <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-base font-normal">라벨</h1>
+          <h1 className="text-base font-medium">라벨</h1>
           <button
             onClick={openAddModal}
             className="flex items-center gap-2 px-3 py-1.5 text-xs border hover:bg-gray-50 cursor-pointer"
@@ -343,12 +433,25 @@ export default function LabelsPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-white shadow flex-1 flex flex-col overflow-hidden mb-4">
+        <div className="bg-white border flex-1 flex flex-col overflow-hidden">
           <div className="overflow-auto flex-1">
             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
               <thead className="bg-gray-100 border-b sticky top-0" style={{ zIndex: 50 }}>
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs border-r" style={{ width: '300px' }}>
+                  <th className="px-3 py-2 text-center text-xs border-r relative" style={{ width: columnWidths.index, minWidth: columnWidths.index }}>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'index')}
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.id, minWidth: columnWidths.id }}>
+                    아이디
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'id')}
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.label, minWidth: columnWidths.label }}>
                     <div className="flex items-center justify-between">
                       <span>라벨</span>
                       <div className="relative">
@@ -387,8 +490,12 @@ export default function LabelsPage() {
                         )}
                       </div>
                     </div>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'label')}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs border-r" style={{ width: '200px' }}>
+                  <th className="px-3 py-2 text-left text-xs border-r relative" style={{ width: columnWidths.type, minWidth: columnWidths.type }}>
                     <div className="flex items-center justify-between">
                       <span>타입</span>
                       <div className="relative">
@@ -423,29 +530,94 @@ export default function LabelsPage() {
                         )}
                       </div>
                     </div>
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'type')}
+                    />
                   </th>
-                  <th className="px-3 py-2 text-center text-xs border-r" style={{ width: '100px' }}>순서</th>
-                  <th className="px-3 py-2 text-center text-xs" style={{ width: '100px' }}>작업</th>
+                  <th className="px-3 py-2 text-center text-xs border-r relative" style={{ width: columnWidths.order, minWidth: columnWidths.order }}>
+                    순서
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'order')}
+                    />
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs relative" style={{ width: columnWidths.actions, minWidth: columnWidths.actions }}>
+                    작업
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500"
+                      onMouseDown={(e) => handleMouseDown(e, 'actions')}
+                    />
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="px-3 py-4 text-center">
+                    <td colSpan={6} className="px-3 py-4 text-center">
                       <Loader className="animate-spin w-4 h-4 inline-block" />
                     </td>
                   </tr>
                 ) : labels.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-3 py-8 text-center text-xs text-gray-500">
+                    <td colSpan={6} className="px-3 py-8 text-center text-xs text-gray-500">
                       {searchFilter || typeFilter ? '검색 결과가 없습니다.' : '라벨이 없습니다.'}
                     </td>
                   </tr>
                 ) : (
-                  labels.flatMap(label => renderLabelRow(label))
+                  labels.flatMap((label, index) => renderLabelRow(label, index, 0))
                 )}
               </tbody>
             </table>
+          </div>
+          {/* Pagination Bar */}
+          <div className="sticky bottom-0 bg-white border-t px-3 flex items-center justify-between text-xs" style={{ height: '33px' }}>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-600">
+                {page} / {Math.ceil(total / pageSize)} 페이지
+              </span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                style={{
+                  paddingLeft: '0.5rem',
+                  paddingRight: '1.75rem',
+                  paddingTop: '0.25rem',
+                  paddingBottom: '0.25rem',
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.25rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.5em 1.5em',
+                }}
+                className="border text-xs appearance-none"
+              >
+                <option value={100}>100개씩 보기</option>
+                <option value={500}>500개씩 보기</option>
+                <option value={1000}>1000개씩 보기</option>
+              </select>
+              <span className="text-gray-600">
+                총 {total}개
+              </span>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                이전
+              </button>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page >= Math.ceil(total / pageSize)}
+                className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                다음
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -468,12 +640,7 @@ export default function LabelsPage() {
                 <select
                   value={formData.label_type_id}
                   onChange={(e) => {
-                    setFormData({ ...formData, label_type_id: e.target.value, parent_label_id: null });
-                    if (e.target.value) {
-                      fetchPotentialParents(e.target.value, editingLabel?.id);
-                    } else {
-                      setParentLabels([]);
-                    }
+                    setFormData({ ...formData, label_type_id: e.target.value });
                   }}
                   disabled={!!editingLabel}
                   className="w-full px-2 py-1.5 text-xs border outline-none focus:border-gray-400"
@@ -489,13 +656,53 @@ export default function LabelsPage() {
                 <label className="block text-xs text-gray-600 mb-1">
                   값 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                  className="w-full px-2 py-1.5 text-xs border outline-none focus:border-gray-400"
-                  placeholder="예: 2015 개정, 경제, 고급"
-                />
+                {(() => {
+                  const selectedType = labelTypes.find(t => t.id === formData.label_type_id);
+                  const isNumeric = selectedType?.value_type === 'numeric';
+                  const constraints = selectedType?.value_constraints;
+                  const min = constraints?.min as number | undefined;
+                  const max = constraints?.max as number | undefined;
+                  const unit = constraints?.unit as string | undefined;
+
+                  if (isNumeric) {
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={formData.value}
+                            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                            className="flex-1 px-2 py-1.5 text-xs border outline-none focus:border-gray-400"
+                            placeholder="숫자 입력"
+                            min={min}
+                            max={max}
+                            step="any"
+                          />
+                          {unit && <span className="text-xs text-gray-500">{unit}</span>}
+                        </div>
+                        {(min !== undefined || max !== undefined) && (
+                          <div className="text-xs text-gray-500">
+                            {min !== undefined && max !== undefined
+                              ? `${min} ~ ${max}${unit ? ` ${unit}` : ''}`
+                              : min !== undefined
+                              ? `최소: ${min}${unit ? ` ${unit}` : ''}`
+                              : `최대: ${max}${unit ? ` ${unit}` : ''}`}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <input
+                      type="text"
+                      value={formData.value}
+                      onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                      className="w-full px-2 py-1.5 text-xs border outline-none focus:border-gray-400"
+                      placeholder="예: 2015 개정, 경제, 고급"
+                    />
+                  );
+                })()}
               </div>
 
               <div>
@@ -504,11 +711,12 @@ export default function LabelsPage() {
                   value={formData.parent_label_id || ''}
                   onChange={(e) => setFormData({ ...formData, parent_label_id: e.target.value || null })}
                   className="w-full px-2 py-1.5 text-xs border outline-none focus:border-gray-400"
-                  disabled={!formData.label_type_id}
                 >
                   <option value="">없음 (최상위)</option>
                   {parentLabels.map(label => (
-                    <option key={label.id} value={label.id}>{label.value}</option>
+                    <option key={label.id} value={label.id}>
+                      {label.value} ({label.label_type?.name || '타입 없음'})
+                    </option>
                   ))}
                 </select>
               </div>
