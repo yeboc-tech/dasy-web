@@ -10,9 +10,10 @@ function getSupabaseConfig() {
     };
   }
 
+  // Use new remote variables if available, otherwise fall back to legacy variables
   return {
-    url: process.env.NEXT_PUBLIC_REMOTE_SUPABASE_URL!,
-    anonKey: process.env.NEXT_PUBLIC_REMOTE_SUPABASE_ANON_KEY!
+    url: process.env.NEXT_PUBLIC_REMOTE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    anonKey: process.env.NEXT_PUBLIC_REMOTE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   };
 }
 
