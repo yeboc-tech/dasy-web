@@ -236,7 +236,14 @@ export default function ConfigurePage() {
         console.log('[PDF Generation] Answer IDs:', answerIds);
         console.log('[PDF Generation] Total resource IDs:', allResourceIds.length);
 
-        const fetchedEditedContents = await getEditedContents(allResourceIds);
+        let fetchedEditedContents: Map<string, string>;
+        try {
+          fetchedEditedContents = await getEditedContents(allResourceIds);
+        } catch (dbError) {
+          // Database fetch failed after all retries - this is CRITICAL
+          console.error('[PDF Generation] ❌ CRITICAL: Failed to fetch edited contents from database:', dbError);
+          throw new Error(`데이터베이스에서 편집된 콘텐츠를 불러오는데 실패했습니다. ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+        }
 
         console.log('[PDF Generation] Received edited content for:', Array.from(fetchedEditedContents.keys()));
         console.log('[PDF Generation] Expected problems:', problemIds.length, 'Received:', fetchedEditedContents.size);
@@ -404,15 +411,25 @@ export default function ConfigurePage() {
       } catch (error: unknown) {
         console.error("Failed to generate PDF:", error);
         setPdfUrl(null);
-        
+
+        // Reset editedContentsMap on error to allow fresh fetch on retry
+        setEditedContentsMap(null);
+
         // Provide more helpful error messages
         let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        if (errorMessage.includes('Network error') || errorMessage.includes('Failed to fetch')) {
+
+        // Check for database fetch errors first (highest priority)
+        if (errorMessage.includes('데이터베이스에서 편집된 콘텐츠를 불러오는데 실패했습니다')) {
+          // Database error - keep the detailed message
+          // errorMessage already contains Korean message from the throw
+        } else if (errorMessage.includes('Database fetch failed') || errorMessage.includes('Failed to fetch edited contents')) {
+          errorMessage = `데이터베이스 연결 실패: 편집된 콘텐츠를 불러올 수 없습니다. 네트워크 연결을 확인하고 다시 시도해주세요.`;
+        } else if (errorMessage.includes('Network error') || errorMessage.includes('Failed to fetch')) {
           errorMessage = 'S3 버킷에서 이미지를 불러올 수 없습니다. S3 설정을 확인하거나 관리자에게 문의하세요.';
         } else if (errorMessage.includes('Failed to load PDF library')) {
           errorMessage = 'PDF 라이브러리 로딩에 실패했습니다. 페이지를 새로고침해 주세요.';
         }
-        
+
         setPdfError(errorMessage);
         lastProcessedImages.current = selectionKey;
       } finally {
@@ -484,6 +501,12 @@ export default function ConfigurePage() {
 
   const handlePDFError = useCallback((error: string) => {
     setPdfError(error || null);
+
+    // If error is being cleared (retry), force PDF regeneration by clearing the last processed key
+    if (!error) {
+      console.log('[Retry] User requested retry, clearing lastProcessedImages to trigger regeneration');
+      lastProcessedImages.current = '';
+    }
   }, []);
 
   const handlePreview = useCallback(() => {
