@@ -89,12 +89,22 @@ export default function Page() {
     }
   }, [viewMode, dialogSelectedChapters.length, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears, problemCount, selectedGrades, selectedMonths, selectedExamTypes]);
 
-  // Fetch edited content when problems change
+  // Fetch edited content when problems change (ONLY for 경제 problems)
   useEffect(() => {
     let cancelled = false;
 
     const fetchEditedContent = async () => {
-      if (filteredProblems.length === 0) {
+      // Only fetch edited content for 경제 mode
+      if (!isEconomyMode) {
+        // For 통합사회, set empty map (not null) so components don't wait
+        setEditedContentsMap(new Map());
+        return;
+      }
+
+      // Combine both filteredProblems (worksheet view) and dialogProblems (add problems view)
+      const allProblems = [...filteredProblems, ...dialogProblems];
+
+      if (allProblems.length === 0) {
         setEditedContentsMap(null); // Set null when no problems (consistent loading state)
         return;
       }
@@ -104,10 +114,10 @@ export default function Page() {
 
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
-      // Collect only problem IDs (build page doesn't show answers)
-      const allResourceIds = filteredProblems.map(p => p.id);
+      // Collect problem IDs from both views, removing duplicates
+      const allResourceIds = Array.from(new Set(allProblems.map(p => p.id)));
 
-      console.log(`[Build Page Preview] Fetching edited content for ${allResourceIds.length} resources`);
+      console.log(`[Build Page Preview] Fetching edited content for ${allResourceIds.length} 경제 resources (${filteredProblems.length} worksheet + ${dialogProblems.length} dialog)`);
       console.log('[Build Page Preview] First 5 resource IDs:', allResourceIds.slice(0, 5));
 
       const fetchedEditedContents = await getEditedContents(allResourceIds);
@@ -130,11 +140,11 @@ export default function Page() {
 
     fetchEditedContent();
 
-    // Cleanup: cancel fetch if component unmounts or filteredProblems changes
+    // Cleanup: cancel fetch if component unmounts or problem lists change
     return () => {
       cancelled = true;
     };
-  }, [filteredProblems]);
+  }, [isEconomyMode, filteredProblems, dialogProblems]);
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
