@@ -167,7 +167,9 @@ export default function ProblemsPanel({
                   {/* Hover overlay - covers whole section */}
                   <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-5 pointer-events-none z-[1] transition-opacity" />
 
-                  {onDeleteProblem && (
+                  {/* Max-width wrapper for content */}
+                  <div className="max-w-[400px] mx-auto">
+                    {onDeleteProblem && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -348,6 +350,7 @@ export default function ProblemsPanel({
                       />
                     </div>
                   )}
+                  </div>
                 </div>
               );
             })}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CustomButton } from '@/components/custom-button';
 import Link from 'next/link';
 
 // Print styles (minimal, just for hiding toolbar if needed)
@@ -417,79 +418,74 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
       <div className="flex flex-col h-full bg-white print:h-auto">
         {/* Worksheet Header Bar */}
         {(worksheetTitle || onEdit || onSave) && (
-          <div className="flex items-center justify-between px-3 bg-white print:hidden h-[49px]">
-            <div className="flex items-center space-x-3">
+          <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white print:hidden">
+            <div className="flex items-center gap-3">
               {worksheetTitle && (
-                <div className="text-sm font-medium text-gray-800">
+                <h1 className="text-lg font-semibold text-[var(--foreground)]">
                   {worksheetTitle}
-                </div>
+                </h1>
               )}
               {worksheetAuthor && (
-                <div className="text-xs text-gray-500">
+                <span className="text-sm text-gray-500">
                   {worksheetAuthor}
-                </div>
+                </span>
               )}
             </div>
-            
-            <div className="flex items-center space-x-2">
+
+            <div className="flex items-center gap-2">
               {worksheetId && (
-                <Button
+                <CustomButton
                   variant="outline"
                   size="sm"
                   onClick={() => window.open(`/worksheets/${worksheetId}/quick-answers`, '_blank')}
-                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
                   title="빠른 정답표 보기"
                 >
                   빠른 정답
-                </Button>
+                </CustomButton>
               )}
 
               {onPreview && (
-                <Button
+                <CustomButton
                   variant="outline"
                   size="sm"
                   onClick={onPreview}
-                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
                   title="문제 목록 미리보기"
                 >
                   프리뷰 보기
-                </Button>
+                </CustomButton>
               )}
 
               {onEdit && !isPublic && (
-                <Button
+                <CustomButton
                   variant="outline"
                   size="sm"
                   onClick={onEdit}
-                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
                   title="학습지 제목 및 출제자 정보 수정"
                 >
                   정보 수정
-                </Button>
+                </CustomButton>
               )}
-              
+
               {onSave && !isPublic && (
-                <Button
+                <CustomButton
                   variant="outline"
                   size="sm"
                   onClick={onSave}
-                  className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
                   title="학습지를 공개 목록에 추가"
                 >
                   목록 추가
-                </Button>
+                </CustomButton>
               )}
 
               {worksheetId && (
                 <Link href={`/worksheets/${worksheetId}/solve`} target="_blank" rel="noopener noreferrer">
-                  <Button
+                  <CustomButton
                     variant="outline"
                     size="sm"
-                    className="h-7 px-3 text-gray-700 text-xs hover:bg-gray-50"
                     title="문제를 바로 풀어보세요"
                   >
                     바로 풀기
-                  </Button>
+                  </CustomButton>
                 </Link>
               )}
             </div>
@@ -497,19 +493,19 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
         )}
 
         {/* PDF Toolbar and Viewer Group */}
-        <div className="flex-1 flex flex-col overflow-hidden rounded-lg">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* PDF Toolbar */}
-          <div className="flex items-center justify-between px-3 py-2 bg-black text-white border-b border-gray-800 print:hidden rounded-t-lg">
+          <div className="flex items-center justify-between px-3 py-2 bg-[var(--gray-100)] text-[var(--gray-900)] border-b border-[var(--border)] print:hidden">
         {/* Left Section */}
         <div className="flex items-center space-x-2">
           {/* Page Navigation */}
           <div className="flex items-center space-x-1">
-            <Button 
+            <Button
               variant="ghost"
               size="icon"
               onClick={goToPreviousPage}
               disabled={currentPage <= 1}
-              className="h-8 w-8 text-white disabled:opacity-50"
+              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
               title="Previous page"
             >
               <ChevronLeft size={16} />
@@ -522,7 +518,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                 onChange={handlePageInputChange}
                 onKeyDown={handlePageInputKeyDown}
                 onBlur={handlePageInputSubmit}
-                className="w-10 px-1 py-0.5 text-center bg-gray-800 border border-gray-600 rounded text-white text-xs"
+                className="w-10 px-1 py-0.5 text-center bg-white border border-[var(--border)] rounded text-[var(--gray-900)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--gray-400)]"
                 min="1"
                 max={totalPages}
                 placeholder="Page"
@@ -531,12 +527,12 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
               <span>{totalPages}</span>
             </div>
             
-            <Button 
+            <Button
               variant="ghost"
               size="icon"
               onClick={goToNextPage}
               disabled={currentPage >= totalPages}
-              className="h-8 w-8 text-white disabled:opacity-50"
+              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
               title="Next page"
             >
               <ChevronRight size={16} />
@@ -545,39 +541,39 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
           
           {/* Zoom Controls */}
           <div className="flex items-center space-x-1">
-            <Button 
+            <Button
               variant="ghost"
               size="icon"
               onClick={zoomOut}
-              className="h-8 w-8 text-white"
+              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
               title="Zoom out"
             >
               <Minus size={16} />
             </Button>
-            
+
             <div
-              className="h-8 text-xs text-white flex items-center justify-center bg-transparent"
+              className="h-8 text-xs text-[var(--gray-900)] flex items-center justify-center bg-transparent"
               style={{ width: '45px' }}
             >
 {Math.min(Math.round(zoom * 100), 100)}%
             </div>
-            
-            <Button 
+
+            <Button
               variant="ghost"
               size="icon"
               onClick={zoomIn}
               disabled={zoom >= 1.0}
-              className="h-8 w-8 text-white disabled:opacity-50"
+              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
               title="Zoom in"
             >
               <Plus size={16} />
             </Button>
-            
-            <Button 
+
+            <Button
               variant="ghost"
               size="icon"
               onClick={fitToPage}
-              className="h-8 w-8 text-white"
+              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
               title="Fit to page"
             >
               <Maximize size={16} />
@@ -587,20 +583,20 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
 
         {/* Right Section */}
         <div className="flex items-center space-x-1">
-          <Button 
+          <Button
             variant="ghost"
             size="icon"
             onClick={downloadPDF}
-            className="h-8 w-8 text-white"
+            className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
             title="Download PDF"
           >
             <Download size={16} />
           </Button>
-          <Button 
+          <Button
             variant="ghost"
             size="icon"
             onClick={printPDF}
-            className="h-8 w-8 text-white"
+            className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
             title="Print"
           >
             <Printer size={16} />

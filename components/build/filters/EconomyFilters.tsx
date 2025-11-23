@@ -17,25 +17,47 @@ import {
   doEconomyDifficultiesMatchCorrectRate
 } from '@/lib/utils/economyDifficultySync';
 
-export default function EconomyFilters() {
-  const {
-    selectedChapters,
-    setSelectedChapters,
-    problemCount,
-    setProblemCount,
-    selectedDifficulties,
-    setSelectedDifficulties,
-    correctRateRange,
-    setCorrectRateRange,
-    selectedYears,
-    setSelectedYears,
-    selectedGrades,
-    setSelectedGrades,
-    selectedMonths,
-    setSelectedMonths,
-    selectedExamTypes,
-    setSelectedExamTypes
-  } = useWorksheetStore();
+interface EconomyFiltersProps {
+  dialogFilters?: {
+    selectedChapters: string[];
+    setSelectedChapters: (value: string[]) => void;
+    selectedDifficulties: string[];
+    setSelectedDifficulties: (value: string[]) => void;
+    correctRateRange: [number, number];
+    setCorrectRateRange: (value: [number, number]) => void;
+    selectedYears: number[];
+    setSelectedYears: (value: number[]) => void;
+    problemCount: number;
+    setProblemCount: (value: number) => void;
+    selectedGrades?: string[];
+    setSelectedGrades?: (value: string[]) => void;
+    selectedMonths?: string[];
+    setSelectedMonths?: (value: string[]) => void;
+    selectedExamTypes?: string[];
+    setSelectedExamTypes?: (value: string[]) => void;
+  };
+}
+
+export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
+  // Use dialogFilters if provided, otherwise use Zustand store
+  const storeFilters = useWorksheetStore();
+
+  const selectedChapters = dialogFilters?.selectedChapters ?? storeFilters.selectedChapters;
+  const setSelectedChapters = dialogFilters?.setSelectedChapters ?? storeFilters.setSelectedChapters;
+  const problemCount = dialogFilters?.problemCount ?? storeFilters.problemCount;
+  const setProblemCount = dialogFilters?.setProblemCount ?? storeFilters.setProblemCount;
+  const selectedDifficulties = dialogFilters?.selectedDifficulties ?? storeFilters.selectedDifficulties;
+  const setSelectedDifficulties = dialogFilters?.setSelectedDifficulties ?? storeFilters.setSelectedDifficulties;
+  const correctRateRange = dialogFilters?.correctRateRange ?? storeFilters.correctRateRange;
+  const setCorrectRateRange = dialogFilters?.setCorrectRateRange ?? storeFilters.setCorrectRateRange;
+  const selectedYears = dialogFilters?.selectedYears ?? storeFilters.selectedYears;
+  const setSelectedYears = dialogFilters?.setSelectedYears ?? storeFilters.setSelectedYears;
+  const selectedGrades = dialogFilters?.selectedGrades ?? storeFilters.selectedGrades;
+  const setSelectedGrades = dialogFilters?.setSelectedGrades ?? storeFilters.setSelectedGrades;
+  const selectedMonths = dialogFilters?.selectedMonths ?? storeFilters.selectedMonths;
+  const setSelectedMonths = dialogFilters?.setSelectedMonths ?? storeFilters.setSelectedMonths;
+  const selectedExamTypes = dialogFilters?.selectedExamTypes ?? storeFilters.selectedExamTypes;
+  const setSelectedExamTypes = dialogFilters?.setSelectedExamTypes ?? storeFilters.setSelectedExamTypes;
 
   const { chapters: economyChapters, loading, error } = useEconomyChapters();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -576,7 +598,7 @@ export default function EconomyFilters() {
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                <div className="h-9 mb-3 flex items-center">
+                <div className="h-9 mb-3 flex items-center max-w-md">
                   <Slider
                     value={correctRateRange}
                     onValueChange={(value) => setCorrectRateRange([value[0], value[1]])}

@@ -1,7 +1,6 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { TopNavbar } from '@/components/topNavbar'
 import { BannerManager } from '@/components/banners/BannerManager'
 import { MobileUnsupportedCard } from '@/components/MobileUnsupportedCard'
 
@@ -17,8 +16,16 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const isAdminPage = pathname?.startsWith('/admin')
   const isQuickAnswersPage = pathname?.includes('/quick-answers')
 
-  if (isAuthPage || isSolvePage || isDataPage || isAdminPage || isQuickAnswersPage) {
-    // Auth pages, solve pages, data pages, admin pages, and quick-answers pages: full screen layout without navbar/banner
+  // App routes now have their own layout with sidebar
+  const isAppRoute = pathname?.startsWith('/build') ||
+                    pathname?.startsWith('/worksheets') ||
+                    pathname?.startsWith('/configure') ||
+                    pathname?.startsWith('/profile') ||
+                    pathname?.startsWith('/my-worksheets') ||
+                    pathname?.startsWith('/feedback')
+
+  if (isAuthPage || isSolvePage || isDataPage || isAdminPage || isQuickAnswersPage || isAppRoute) {
+    // These pages have their own layouts: full screen without navbar/banner
     return (
       <div className="min-h-screen">
         <div className="hidden sm:block h-full">
@@ -31,15 +38,12 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     )
   }
 
-  // Regular pages: with navbar and banner
+  // Landing/marketing pages: with banner only
   return (
     <div className="h-screen flex flex-col">
-      <div className="hidden sm:block">
+      {/* <div className="hidden sm:block">
         <BannerManager />
-      </div>
-      <div className="hidden sm:block">
-        <TopNavbar />
-      </div>
+      </div> */}
       <div className="flex-1 min-h-0">
         <div className="hidden sm:block h-full">
           {children}

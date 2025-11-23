@@ -11,7 +11,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CornerDownLeft, ArrowDownUp } from 'lucide-react';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { CornerDownLeft, ArrowDownUp, ChevronLeft, Check } from 'lucide-react';
+import { CustomButton } from '@/components/custom-button';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
@@ -50,12 +52,42 @@ export default function Page() {
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
-  
+  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems'>('worksheet');
+
+  // Separate filter states for "문제 추가" view
+  const [dialogSelectedChapters, setDialogSelectedChapters] = useState<string[]>([]);
+  const [dialogSelectedDifficulties, setDialogSelectedDifficulties] = useState<string[]>([]);
+  const [dialogSelectedProblemTypes, setDialogSelectedProblemTypes] = useState<string[]>([]);
+  const [dialogSelectedSubjects, setDialogSelectedSubjects] = useState<string[]>([]);
+  const [dialogCorrectRateRange, setDialogCorrectRateRange] = useState<[number, number]>([0, 100]);
+  const [dialogSelectedYears, setDialogSelectedYears] = useState<number[]>([]);
+  const [dialogSelectedGrades, setDialogSelectedGrades] = useState<string[]>([]);
+  const [dialogSelectedMonths, setDialogSelectedMonths] = useState<string[]>([]);
+  const [dialogSelectedExamTypes, setDialogSelectedExamTypes] = useState<string[]>([]);
+  const [dialogProblemCount, setDialogProblemCount] = useState<number>(-1);
+
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
 
   // Check if in economy mode
   const isEconomyMode = selectedMainSubjects.includes('economy');
+
+  // Initialize dialog filters with current worksheet filters when switching to add problems view
+  useEffect(() => {
+    if (viewMode === 'addProblems' && dialogSelectedChapters.length === 0) {
+      // Only initialize if dialog filters are empty (first time opening)
+      setDialogSelectedChapters(selectedChapters);
+      setDialogSelectedDifficulties(selectedDifficulties);
+      setDialogSelectedProblemTypes(selectedProblemTypes);
+      setDialogSelectedSubjects(selectedSubjects);
+      setDialogCorrectRateRange(correctRateRange);
+      setDialogSelectedYears(selectedYears);
+      setDialogProblemCount(problemCount);
+      setDialogSelectedGrades(selectedGrades);
+      setDialogSelectedMonths(selectedMonths);
+      setDialogSelectedExamTypes(selectedExamTypes);
+    }
+  }, [viewMode, dialogSelectedChapters.length, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears, problemCount, selectedGrades, selectedMonths, selectedExamTypes]);
 
   // Fetch edited content when problems change
   useEffect(() => {
@@ -244,31 +276,85 @@ export default function Page() {
   }, [isEconomyMode, selectedChapters, selectedGrades, selectedYears, selectedMonths, selectedExamTypes, selectedDifficulties, correctRateRange, problemCount]);
 
   // Filter problems for dialog when any filter changes (only in filter mode, not AI mode)
+  // Uses separate dialog filter states
   useEffect(() => {
     if (aiMode) return; // Skip filtering in AI mode - let AI control the results
 
-    // Skip if in economy mode - show empty
+    // Handle economy mode for dialog
     if (isEconomyMode) {
-      setDialogProblems([]);
+      const fetchDialogEconomyProblems = async () => {
+        try {
+          const filters = {
+            selectedChapterIds: dialogSelectedChapters || [],
+            selectedGrades: dialogSelectedGrades || ['고3'],
+            selectedYears: dialogSelectedYears || Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i),
+            selectedMonths: dialogSelectedMonths || ['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+            selectedExamTypes: dialogSelectedExamTypes || ['학평', '모평', '수능'],
+            selectedDifficulties: dialogSelectedDifficulties || ['최상', '상', '중상', '중', '중하', '하'],
+            correctRateRange: dialogCorrectRateRange as [number, number]
+          };
+
+          const economyData = await getEconomyProblems(filters);
+
+          // Convert economy problems to ProblemMetadata format (same as main view)
+          const convertedProblems: ProblemMetadata[] = economyData.map((problem) => ({
+            id: problem.problem_id,
+            problem_filename: `${problem.problem_id}.png`,
+            answer_filename: problem.problem_id.replace('_문제', '_해설') + '.png',
+            answer: problem.correct_answer,
+            chapter_id: problem.tag_ids[problem.tag_ids.length - 1] || null,
+            difficulty: problem.difficulty || '중',
+            problem_type: `${problem.exam_type} ${problem.year}년 ${parseInt(problem.month)}월`,
+            tags: problem.tag_labels,
+            related_subjects: ['경제'],
+            correct_rate: problem.accuracy_rate,
+            exam_year: parseInt(problem.year),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }));
+
+          // Remove duplicates
+          const uniqueProblems = convertedProblems.filter((problem, index, self) =>
+            index === self.findIndex(p => p.id === problem.id)
+          );
+
+          // Apply problem count limit with random selection
+          let limitedProblems: ProblemMetadata[];
+          if (dialogProblemCount === -1) {
+            limitedProblems = uniqueProblems;
+          } else {
+            const shuffled = [...uniqueProblems].sort(() => Math.random() - 0.5);
+            limitedProblems = shuffled.slice(0, Math.min(dialogProblemCount, shuffled.length));
+          }
+
+          console.log(`[Dialog Economy Debug] Total: ${uniqueProblems.length}, showing: ${limitedProblems.length}`);
+          setDialogProblems(limitedProblems);
+        } catch (error) {
+          console.error('Error fetching economy problems for dialog:', error);
+          setDialogProblems([]);
+        }
+      };
+
+      fetchDialogEconomyProblems();
       return;
     }
 
     if (!problems || problems.length === 0) return;
 
     const filters = {
-      selectedChapters,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount,
+      selectedChapters: dialogSelectedChapters,
+      selectedDifficulties: dialogSelectedDifficulties,
+      selectedProblemTypes: dialogSelectedProblemTypes,
+      selectedSubjects: dialogSelectedSubjects,
+      problemCount: dialogProblemCount,
       contentTree,
-      correctRateRange,
-      selectedYears
+      correctRateRange: dialogCorrectRateRange,
+      selectedYears: dialogSelectedYears
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     setDialogProblems(filtered);
-  }, [aiMode, isEconomyMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
+  }, [aiMode, isEconomyMode, problems, dialogSelectedChapters, dialogSelectedDifficulties, dialogSelectedProblemTypes, dialogSelectedSubjects, dialogProblemCount, contentTree, dialogCorrectRateRange, dialogSelectedYears, dialogSelectedGrades, dialogSelectedExamTypes, dialogSelectedMonths]);
 
   // Sort main page problems based on worksheet mode
   useEffect(() => {
@@ -625,93 +711,214 @@ export default function Page() {
   };
 
   return (
-    <div className="mx-auto px-4 pt-0 pb-4 w-full max-w-4xl h-full relative">
-      <Card className="overflow-hidden relative p-0 h-full flex flex-row gap-0 ">
-        <FilterPanel
-          contentTree={contentTree}
-          selectedMainSubjects={selectedMainSubjects}
-          onMainSubjectToggle={handleMainSubjectToggle}
-          loading={chaptersLoading}
-          error={chaptersError}
-        />
-        <div className="relative flex-1 flex flex-col">
-          <div className="flex-1 overflow-hidden">
-            {isEconomyMode ? (
-              <EconomyProblemsPanel
-                filteredProblems={sortedFilteredProblems}
-                problemsLoading={economyLoading || chaptersLoading}
-                problemsError={problemsError}
-                onDeleteProblem={handleDeleteProblem}
-                editedContentsMap={editedContentsMap}
-              />
-            ) : (
-              <ProblemsPanel
-                filteredProblems={sortedFilteredProblems}
-                problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
-                problemsError={problemsError}
-                contentTree={contentTree}
-                onDeleteProblem={handleDeleteProblem}
-                editedContentsMap={editedContentsMap}
-              />
-            )}
-          </div>
-
-          {/* Sticky Bottom Bar */}
-          <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
-            <div className="text-xs text-gray-600">
+    <div className="w-full h-full flex flex-col relative overflow-hidden">
+      {/* Worksheet View - with fade transition */}
+      <div
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
+          viewMode === 'worksheet' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        }`}
+      >
+        {/* Top Bar - Worksheet */}
+        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+          <div className="flex items-end gap-2">
+            <h1 className="text-lg font-semibold text-[var(--foreground)] leading-none">학습지 생성</h1>
+            <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
               {sortedFilteredProblems.length}문제
-            </div>
-            <div className="flex gap-0">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-9 px-3 rounded-none hover:bg-gray-100 flex items-center gap-2 border-l border-gray-200 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
-                    <span className="text-sm">{worksheetMode}</span>
-                    <ArrowDownUp className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white">
-                  <DropdownMenuItem
-                    onClick={() => setWorksheetMode('연습')}
-                    className={`flex flex-col items-start cursor-pointer ${worksheetMode === '연습' ? 'bg-gray-100' : ''}`}
-                  >
-                    <div className="font-medium">연습</div>
-                    <div className="text-xs text-gray-500">단원별 태그별 난이도순</div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setWorksheetMode('실전')}
-                    className={`flex flex-col items-start cursor-pointer ${worksheetMode === '실전' ? 'bg-gray-100' : ''}`}
-                  >
-                    <div className="font-medium">실전</div>
-                    <div className="text-xs text-gray-500">완전 랜덤</div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {/* Hide 문제 추가 button in economy mode */}
-              {!isEconomyMode && (
-                <Button
-                  onClick={() => {
-                    setIsDialogOpen(true);
-                    setChatMessages([]); // Reset chat when opening dialog
-                  }}
-                  className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <CustomButton
+                  variant="outline"
+                  size="sm"
                 >
-                  문제 추가
-                </Button>
-              )}
-              <Button
-                onClick={handleCreateWorksheet}
-                disabled={sortedFilteredProblems.length === 0}
-                className="h-9 px-4 text-white rounded-none"
-                style={{ backgroundColor: '#FF00A1' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E6009A'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FF00A1'}
-              >
-                생성
-              </Button>
-            </div>
+                  <ArrowDownUp className="w-3.5 h-3.5 mr-1.5" />
+                  {worksheetMode}
+                </CustomButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white w-64">
+                <DropdownMenuItem
+                  onClick={() => setWorksheetMode('연습')}
+                  className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-start justify-between"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">연습</span>
+                    <span className="text-xs text-[var(--gray-500)]">단원별, 난이도순 정렬</span>
+                  </div>
+                  {worksheetMode === '연습' && <Check className="w-4 h-4 mt-0.5" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setWorksheetMode('실전')}
+                  className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-start justify-between"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">실전</span>
+                    <span className="text-xs text-[var(--gray-500)]">무작위 배치</span>
+                  </div>
+                  {worksheetMode === '실전' && <Check className="w-4 h-4 mt-0.5" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <CustomButton
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode('addProblems')}
+            >
+              문제 추가
+            </CustomButton>
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={handleCreateWorksheet}
+              disabled={sortedFilteredProblems.length === 0}
+            >
+              생성
+            </CustomButton>
           </div>
         </div>
-      </Card>
+
+        {/* Panels - Worksheet */}
+        <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+          {/* Left Panel - Filters */}
+          <ResizablePanel defaultSize={60} minSize={30} maxSize={75}>
+            <FilterPanel
+              contentTree={contentTree}
+              selectedMainSubjects={selectedMainSubjects}
+              onMainSubjectToggle={handleMainSubjectToggle}
+              loading={chaptersLoading}
+              error={chaptersError}
+              isDialog={false}
+            />
+          </ResizablePanel>
+
+          {/* Divider */}
+          <ResizableHandle withHandle className="w-px bg-[var(--border)]" />
+
+          {/* Right Panel - Preview */}
+          <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
+            <div className="h-full overflow-y-auto">
+              {isEconomyMode ? (
+                <EconomyProblemsPanel
+                  filteredProblems={sortedFilteredProblems}
+                  problemsLoading={economyLoading || chaptersLoading}
+                  problemsError={problemsError}
+                  onDeleteProblem={handleDeleteProblem}
+                  editedContentsMap={editedContentsMap}
+                />
+              ) : (
+                <ProblemsPanel
+                  filteredProblems={sortedFilteredProblems}
+                  problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
+                  problemsError={problemsError}
+                  contentTree={contentTree}
+                  onDeleteProblem={handleDeleteProblem}
+                  editedContentsMap={editedContentsMap}
+                />
+              )}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      {/* Add Problems View - with fade transition */}
+      <div
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
+          viewMode === 'addProblems' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        }`}
+      >
+        {/* Top Bar - Add Problems */}
+        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setViewMode('worksheet')}
+              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">문제 추가</h1>
+          </div>
+          <CustomButton
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              // Add dialog problems to the worksheet
+              const newProblems = sortedDialogProblems.filter(
+                problem => !filteredProblems.some(existing => existing.id === problem.id)
+              );
+              setFilteredProblems(prev => [...prev, ...newProblems]);
+              setViewMode('worksheet');
+            }}
+            disabled={sortedDialogProblems.length === 0}
+          >
+            추가
+          </CustomButton>
+        </div>
+
+        {/* Panels - Add Problems */}
+        <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
+          {/* Left Panel - Filters */}
+          <ResizablePanel defaultSize={60} minSize={30} maxSize={75}>
+            <FilterPanel
+              contentTree={contentTree}
+              selectedMainSubjects={selectedMainSubjects}
+              onMainSubjectToggle={handleMainSubjectToggle}
+              loading={chaptersLoading}
+              error={chaptersError}
+              isDialog={true}
+              dialogFilters={{
+                selectedChapters: dialogSelectedChapters,
+                setSelectedChapters: setDialogSelectedChapters,
+                selectedDifficulties: dialogSelectedDifficulties,
+                setSelectedDifficulties: setDialogSelectedDifficulties,
+                selectedProblemTypes: dialogSelectedProblemTypes,
+                setSelectedProblemTypes: setDialogSelectedProblemTypes,
+                selectedSubjects: dialogSelectedSubjects,
+                setSelectedSubjects: setDialogSelectedSubjects,
+                correctRateRange: dialogCorrectRateRange,
+                setCorrectRateRange: setDialogCorrectRateRange,
+                selectedYears: dialogSelectedYears,
+                setSelectedYears: setDialogSelectedYears,
+                problemCount: dialogProblemCount,
+                setProblemCount: setDialogProblemCount,
+                selectedGrades: dialogSelectedGrades,
+                setSelectedGrades: setDialogSelectedGrades,
+                selectedMonths: dialogSelectedMonths,
+                setSelectedMonths: setDialogSelectedMonths,
+                selectedExamTypes: dialogSelectedExamTypes,
+                setSelectedExamTypes: setDialogSelectedExamTypes,
+              }}
+            />
+          </ResizablePanel>
+
+          {/* Divider */}
+          <ResizableHandle withHandle className="w-px bg-[var(--border)]" />
+
+          {/* Right Panel - Preview */}
+          <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
+            <div className="h-full overflow-y-auto">
+              {isEconomyMode ? (
+                <EconomyProblemsPanel
+                  filteredProblems={sortedDialogProblems}
+                  problemsLoading={economyLoading || chaptersLoading}
+                  problemsError={problemsError}
+                  onDeleteProblem={(problemId) => setDialogProblems(prev => prev.filter(p => p.id !== problemId))}
+                  editedContentsMap={editedContentsMap}
+                />
+              ) : (
+                <ProblemsPanel
+                  filteredProblems={sortedDialogProblems}
+                  problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
+                  problemsError={problemsError}
+                  contentTree={contentTree}
+                  onDeleteProblem={(problemId) => setDialogProblems(prev => prev.filter(p => p.id !== problemId))}
+                  editedContentsMap={editedContentsMap}
+                />
+              )}
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
 
       {/* Dialog with filtering and AI functionality */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
