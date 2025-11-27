@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { AuthCheckbox as Checkbox } from '@/components/ui/auth-checkbox';
+import { AuthInput as Input } from '@/components/ui/auth-input';
+import { AuthButton as Button } from '@/components/ui/auth-button';
+import { AuthSlider as Slider } from '@/components/ui/auth-slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { useEconomyChapters } from '@/lib/hooks/useEconomyChapters';

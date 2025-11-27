@@ -5,24 +5,32 @@ import { fetchChapters, fetchSubjects, fetchChapterTree } from './services';
 import { fetchMTChapterTree, fetchEconomyProblems } from './economyServices';
 import type { Chapter, Subject, ChapterTreeItem, EconomyProblem } from '@/lib/types';
 
+const CDN_BASE_URL = 'https://cdn.y3c.kr/tongkidari/edited-contents';
+
 /**
- * Fetch edited content for multiple resource IDs with batching and retry logic
- * Uses RPC function to send IDs in POST body, avoiding URL length limits
- * Automatically batches large requests to prevent timeouts
+ * Get CDN URL for edited content
+ */
+export function getEditedContentUrl(resourceId: string): string {
+  return `${CDN_BASE_URL}/${encodeURIComponent(resourceId)}.png`;
+}
+
+/**
+ * Fetch edited content IDs for multiple resource IDs with batching and retry logic
+ * Uses RPC function to get IDs that have edited content, then returns CDN URLs
  * @throws Error when all retry attempts fail - caller should handle and show error to user
- * @returns Map of resource_id -> base64 string (empty Map is valid when no content is edited)
+ * @returns Map of resource_id -> CDN URL string (empty Map is valid when no content is edited)
  */
 export async function getEditedContents(resourceIds: string[]): Promise<Map<string, string>> {
   if (resourceIds.length === 0) return new Map();
 
-  const BATCH_SIZE = 50; // Fetch 50 IDs per batch (50 × ~171KB = ~8.5MB per batch)
+  const BATCH_SIZE = 100;
   const MAX_RETRIES = 3;
   const RETRY_DELAYS = [0, 1000, 2000]; // 0ms, 1s, 2s
 
   console.log(`[Edited Content] Fetching edited content for ${resourceIds.length} resources...`);
   console.log(`[Edited Content] Sample IDs:`, resourceIds.slice(0, 3));
 
-  // Split into batches
+  // Split into batches for RPC call
   const batches: string[][] = [];
   for (let i = 0; i < resourceIds.length; i += BATCH_SIZE) {
     batches.push(resourceIds.slice(i, i + BATCH_SIZE));
@@ -30,15 +38,14 @@ export async function getEditedContents(resourceIds: string[]): Promise<Map<stri
 
   console.log(`[Edited Content] Split into ${batches.length} batches of max ${BATCH_SIZE} IDs each`);
 
-  // Fetch all batches with retry logic
-  const allResults = new Map<string, string>();
-  let successfulBatches = 0;
+  // Get all resource IDs that have edited content (without base64)
+  const editedResourceIds: string[] = [];
 
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
     const batch = batches[batchIndex];
     const batchNum = batchIndex + 1;
 
-    console.log(`[Edited Content] Fetching batch ${batchNum}/${batches.length} (${batch.length} IDs)...`);
+    console.log(`[Edited Content] Checking batch ${batchNum}/${batches.length} (${batch.length} IDs)...`);
 
     // Retry logic for this batch
     let batchSuccess = false;
@@ -52,7 +59,7 @@ export async function getEditedContents(resourceIds: string[]): Promise<Map<stri
 
         const supabase = createClient();
         const { data, error } = await supabase
-          .rpc('fetch_edited_contents_by_ids', {
+          .rpc('fetch_edited_contents_without_base64_by_ids', {
             p_resource_ids: batch
           });
 
@@ -74,15 +81,14 @@ export async function getEditedContents(resourceIds: string[]): Promise<Map<stri
           continue;
         }
 
-        // Success! Add to results
-        (data || []).forEach((item: { resource_id: string; base64: string }) => {
-          if (item.base64) {
-            allResults.set(item.resource_id, item.base64);
+        // Success! Collect resource IDs that have edited content
+        (data || []).forEach((item: { resource_id: string }) => {
+          if (item.resource_id) {
+            editedResourceIds.push(item.resource_id);
           }
         });
 
-        console.log(`[Edited Content] ✅ Batch ${batchNum}/${batches.length} completed: ${data?.length || 0} items`);
-        successfulBatches++;
+        console.log(`[Edited Content] ✅ Batch ${batchNum}/${batches.length} completed: ${data?.length || 0} edited items found`);
         batchSuccess = true;
         break; // Exit retry loop on success
 
@@ -106,14 +112,21 @@ export async function getEditedContents(resourceIds: string[]): Promise<Map<stri
     }
   }
 
-  console.log(`[Edited Content] ✅ All ${batches.length} batches completed successfully`);
-  console.log(`[Edited Content] Total fetched: ${allResults.size} edited images from ${resourceIds.length} requested IDs`);
+  console.log(`[Edited Content] ✅ RPC completed: ${editedResourceIds.length} resources have edited content`);
 
-  if (allResults.size === 0) {
+  if (editedResourceIds.length === 0) {
     console.log(`[Edited Content] ℹ️ No edited content found (this is OK if no problems have been edited)`);
-  } else {
-    console.log(`[Edited Content] Sample resource IDs:`, Array.from(allResults.keys()).slice(0, 5));
+    return new Map();
   }
+
+  // Build map of resource_id -> CDN URL
+  const allResults = new Map<string, string>();
+  editedResourceIds.forEach((resourceId) => {
+    allResults.set(resourceId, getEditedContentUrl(resourceId));
+  });
+
+  console.log(`[Edited Content] ✅ Generated ${allResults.size} CDN URLs`);
+  console.log(`[Edited Content] Sample URLs:`, Array.from(allResults.values()).slice(0, 2));
 
   return allResults;
 }

@@ -270,16 +270,20 @@ export default function ConfigurePage() {
 
           console.log(`[PDF Image ${index + 1}] Problem ID: ${problemId}, Has edited: ${problemId && fetchedEditedContents.has(problemId)}`);
 
-          // Check if edited content exists first
+          // Check if edited content exists first (now returns CDN URL)
           if (problemId && fetchedEditedContents.has(problemId)) {
-            console.log(`[PDF Image ${index + 1}] ✅ Using edited version from database`);
-            const base64 = fetchedEditedContents.get(problemId)!;
-            // Ensure it has the data URL prefix
-            return base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+            const editedCdnUrl = fetchedEditedContents.get(problemId)!;
+            console.log(`[PDF Image ${index + 1}] ✅ Using edited version from CDN: ${editedCdnUrl}`);
+            try {
+              return await imageToBase64Client(editedCdnUrl);
+            } catch (error) {
+              console.error(`[PDF Image ${index + 1}] ❌ Failed to fetch edited CDN image, trying original`);
+              // Fall through to try original CDN
+            }
           }
 
-          // Otherwise fetch from CDN/S3
-          console.log(`[PDF Image ${index + 1}] ⚠️ No edited content, trying CDN: ${imagePath}`);
+          // Otherwise fetch from original CDN/S3
+          console.log(`[PDF Image ${index + 1}] ⚠️ No edited content or fetch failed, trying CDN: ${imagePath}`);
           try {
             const cdnImage = await imageToBase64Client(imagePath);
             console.log(`[PDF Image ${index + 1}] ✅ Fetched from CDN successfully`);
@@ -318,12 +322,21 @@ export default function ConfigurePage() {
 
           let answerBase64: string;
 
-          // Check if edited content exists first
+          // Check if edited content exists first (now returns CDN URL)
           if (fetchedEditedContents.has(answerId)) {
-            console.log(`[Edited Content] Using edited version for answer: ${answerId}`);
-            const base64 = fetchedEditedContents.get(answerId)!;
-            // Ensure it has the data URL prefix
-            answerBase64 = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+            const editedCdnUrl = fetchedEditedContents.get(answerId)!;
+            console.log(`[Edited Content] Using edited version for answer: ${answerId} from CDN: ${editedCdnUrl}`);
+            try {
+              answerBase64 = await imageToBase64Client(editedCdnUrl);
+            } catch {
+              console.error(`[Edited Content] Failed to fetch edited answer from CDN, trying original`);
+              // Fall through to try original CDN
+              try {
+                answerBase64 = await imageToBase64Client(imagePath);
+              } catch {
+                return getNoImageBase64();
+              }
+            }
           } else {
             // Otherwise fetch from CDN/S3
             try {

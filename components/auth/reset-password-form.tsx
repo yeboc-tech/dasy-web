@@ -41,7 +41,7 @@ export function ResetPasswordForm() {
 
     try {
       await updatePassword(data.password)
-      router.push('/auth/signin?message=Password updated successfully')
+      router.push('/auth/signin?message=비밀번호가 성공적으로 변경되었습니다')
     } catch (err) {
       setError((err as Error).message || '비밀번호 업데이트 중 오류가 발생했습니다')
     } finally {

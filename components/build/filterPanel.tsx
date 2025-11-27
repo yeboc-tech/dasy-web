@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { AuthButton as Button } from '@/components/ui/auth-button';
+import { Button as DisabledButton } from '@/components/ui/button';
 import type { ChapterTreeItem } from '@/lib/types';
 import { Loader } from 'lucide-react';
 import TonghapsahoeFilters from './filters/TonghapsahoeFilters';
@@ -88,14 +89,14 @@ export default function FilterPanel({
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex gap-2">
           <div className="cursor-not-allowed">
-            <Button
+            <DisabledButton
               onClick={() => {}} // Disabled - no action
               variant="outline"
               disabled={true}
               className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
             >
               통합사회 1
-            </Button>
+            </DisabledButton>
           </div>
           {/* Hide 통합사회 2 in dialog mode if economy is selected */}
           {(!isDialog || !isEconomyMode) && (
