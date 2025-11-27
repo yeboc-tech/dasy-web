@@ -13,6 +13,29 @@ interface PdfMakeWindow {
 let pdfMake: PdfMakeAPI | null = null;
 let fontsLoaded = false;
 
+// Cache for static assets (logo, QR code)
+let cachedLogoBase64: string | null = null;
+let cachedQrBase64: string | null = null;
+
+// Result type for imageToBase64WithDimensions
+export interface ImageWithDimensions {
+  base64: string;
+  width: number;
+  height: number;
+}
+
+/**
+ * Preload pdfMake library early to avoid delay during PDF generation.
+ * Call this on page mount to start loading in background.
+ */
+export function preloadPdfMake(): void {
+  if (pdfMake && fontsLoaded) return;
+  // Start loading in background (don't await)
+  loadPdfMake().catch(() => {
+    // Silently ignore preload errors - will retry during actual generation
+  });
+}
+
 async function loadPdfMake() {
   if (pdfMake && fontsLoaded) return pdfMake;
   
@@ -165,6 +188,157 @@ export async function imageToBase64Client(
   });
 }
 
+/**
+ * Convert image to base64 AND return dimensions in a single load.
+ * This eliminates the need for a separate getAllImageHeights() call.
+ *
+ * @param imagePath - URL of the image to convert
+ * @param cropOptions - Optional cropping options (maxHeight)
+ * @param fixedWidth - Width to scale the image to (for height calculation)
+ * @returns Promise<ImageWithDimensions> - { base64, width, height }
+ */
+export async function imageToBase64WithDimensions(
+  imagePath: string,
+  cropOptions?: { maxHeight?: number },
+  fixedWidth: number = 240
+): Promise<ImageWithDimensions> {
+  return new Promise((resolve) => {
+    const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          console.error('Cannot get canvas context');
+          resolve({ base64: getNoImageBase64(), width: 300, height: 200 });
+          return;
+        }
+
+        // Calculate dimensions
+        let sourceHeight = img.naturalHeight;
+        let shouldCrop = false;
+
+        if (cropOptions?.maxHeight && img.naturalHeight > cropOptions.maxHeight) {
+          sourceHeight = cropOptions.maxHeight;
+          shouldCrop = true;
+        }
+
+        canvas.width = img.naturalWidth;
+        canvas.height = sourceHeight;
+
+        // Draw image (cropped if necessary)
+        if (shouldCrop) {
+          ctx.drawImage(
+            img,
+            0, 0, img.naturalWidth, sourceHeight,
+            0, 0, img.naturalWidth, sourceHeight
+          );
+        } else {
+          ctx.drawImage(img, 0, 0);
+        }
+
+        const base64 = canvas.toDataURL('image/png');
+
+        // Calculate scaled height based on fixedWidth (for PDF layout)
+        const aspectRatio = sourceHeight / img.naturalWidth;
+        const scaledHeight = fixedWidth * aspectRatio;
+
+        resolve({
+          base64,
+          width: img.naturalWidth,
+          height: scaledHeight // This is the height at fixedWidth scale
+        });
+      } catch (error) {
+        console.error('Error converting image to base64 with dimensions:', error);
+        resolve({ base64: getNoImageBase64(), width: 300, height: 200 });
+      }
+    };
+
+    img.onerror = function() {
+      resolve({ base64: getNoImageBase64(), width: 300, height: 200 });
+    };
+
+    img.src = proxyUrl;
+  });
+}
+
+/**
+ * Load and cache logo image (singleton pattern)
+ */
+export async function getCachedLogoBase64(): Promise<string> {
+  if (cachedLogoBase64) return cachedLogoBase64;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          resolve('');
+          return;
+        }
+
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+
+        cachedLogoBase64 = canvas.toDataURL('image/jpeg');
+        resolve(cachedLogoBase64);
+      } catch (error) {
+        console.error('Error caching logo:', error);
+        resolve('');
+      }
+    };
+
+    img.onerror = () => resolve('');
+    img.src = '/images/minlab_logo.jpeg';
+  });
+}
+
+/**
+ * Load and cache QR code image (singleton pattern)
+ */
+export async function getCachedQrBase64(): Promise<string> {
+  if (cachedQrBase64) return cachedQrBase64;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          resolve('');
+          return;
+        }
+
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+
+        cachedQrBase64 = canvas.toDataURL('image/png');
+        resolve(cachedQrBase64);
+      } catch (error) {
+        console.error('Error caching QR code:', error);
+        resolve('');
+      }
+    };
+
+    img.onerror = () => resolve('');
+    img.src = '/images/textbook_qr_code.png';
+  });
+}
 
 // Helper function to crop a base64 image from the bottom
 export async function cropBase64ImageClient(
@@ -417,8 +591,6 @@ function createMetadataBadges(problem: { metadata?: Record<string, unknown> }) {
     ? (metadata.tag_labels || metadata.tags)
     : metadata.chapter_path;
 
-  console.log('[PDF Badges] Chapter labels:', { chapterLabels, isEconomyProblem });
-
   // 1. Add chapter hierarchy badges
   if (Array.isArray(chapterLabels) && chapterLabels.length > 0) {
     chapterLabels.forEach((label: unknown) => {
@@ -570,10 +742,11 @@ function createAnswerColumnContent(columnProblems: Array<{ image: string; height
 export async function createColumnBasedLayoutClient(
   problems: string[],
   base64Images: string[],
-  problemMetadata?: Array<Record<string, unknown>>
+  problemMetadata?: Array<Record<string, unknown>>,
+  preCalculatedHeights?: number[] // Optional: skip getAllImageHeights if provided
 ) {
-  // Step 1: Calculate all image heights
-  const imageHeights = await getAllImageHeights(base64Images);
+  // Step 1: Calculate all image heights (skip if pre-calculated)
+  const imageHeights = preCalculatedHeights || await getAllImageHeights(base64Images);
 
   // Step 2: Get available page height
   const maxPageHeight = getAvailablePageHeight();
@@ -736,13 +909,14 @@ export function createFooterClient(currentPage: number) {
 
 // Create answer pages layout with 3 columns
 export async function createAnswerPagesClient(
-  answerImages: string[], 
-  base64AnswerImages: string[]
+  answerImages: string[],
+  base64AnswerImages: string[],
+  preCalculatedHeights?: number[] // Optional: skip getAllImageHeights if provided
 ) {
   if (answerImages.length === 0) return [];
-  
-  // Calculate image heights for answers (495/3 = 165px total problem area divided by 3)
-  const answerHeights = await getAllImageHeights(base64AnswerImages, 165);
+
+  // Calculate image heights for answers (skip if pre-calculated)
+  const answerHeights = preCalculatedHeights || await getAllImageHeights(base64AnswerImages, 165);
   
   // Get available page height
   const maxPageHeight = getAvailablePageHeight();
@@ -868,87 +1042,32 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   creator?: string,
   createdAt?: string,
   subject?: string, // Optional subject, defaults to "통합사회"
-  problemMetadata?: Array<Record<string, unknown>> // Optional problem metadata for badges
+  problemMetadata?: Array<Record<string, unknown>>, // Optional problem metadata for badges
+  preCalculatedProblemHeights?: number[], // Optional: skip image height calculation
+  preCalculatedAnswerHeights?: number[] // Optional: skip answer height calculation
 ) {
-  // Create problem pages
-  const problemContent = await createColumnBasedLayoutClient(problemImages, base64ProblemImages, problemMetadata);
-  
-  // Create answer pages
-  const answerContent = await createAnswerPagesClient(answerImages, base64AnswerImages);
+  // Create problem pages (pass pre-calculated heights if available)
+  const problemContent = await createColumnBasedLayoutClient(
+    problemImages,
+    base64ProblemImages,
+    problemMetadata,
+    preCalculatedProblemHeights
+  );
+
+  // Create answer pages (pass pre-calculated heights if available)
+  const answerContent = await createAnswerPagesClient(
+    answerImages,
+    base64AnswerImages,
+    preCalculatedAnswerHeights
+  );
   
   const allContent: unknown[] = [];
-  
+
   // Add header to first page
-  // Load logo and QR code directly from public path
+  // Load logo and QR code using cached functions (loaded once, reused)
   const [logoBase64, qrBase64] = await Promise.all([
-    new Promise<string>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = function() {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            console.error('Cannot get canvas context for logo');
-            resolve('');
-            return;
-          }
-          
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          ctx.drawImage(img, 0, 0);
-          
-          const base64 = canvas.toDataURL('image/jpeg');
-          resolve(base64);
-        } catch (error) {
-          console.error('Error converting logo to base64:', error);
-          resolve('');
-        }
-      };
-      
-      img.onerror = function(error) {
-        console.error('Failed to load logo:', error);
-        resolve('');
-      };
-      
-      img.src = '/images/minlab_logo.jpeg';
-    }),
-    new Promise<string>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = function() {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            console.error('Cannot get canvas context for QR code');
-            resolve('');
-            return;
-          }
-          
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          ctx.drawImage(img, 0, 0);
-          
-          const base64 = canvas.toDataURL('image/png');
-          resolve(base64);
-        } catch (error) {
-          console.error('Error converting QR code to base64:', error);
-          resolve('');
-        }
-      };
-      
-      img.onerror = function(error) {
-        console.error('Failed to load QR code:', error);
-        resolve('');
-      };
-      
-      img.src = '/images/textbook_qr_code.png';
-    })
+    getCachedLogoBase64(),
+    getCachedQrBase64()
   ]);
 
   // Get date in Korean format (use createdAt if provided, otherwise current date)
