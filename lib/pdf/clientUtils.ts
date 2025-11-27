@@ -195,12 +195,14 @@ export async function imageToBase64Client(
  * @param imagePath - URL of the image to convert
  * @param cropOptions - Optional cropping options (maxHeight)
  * @param fixedWidth - Width to scale the image to (for height calculation)
+ * @param maxPixelWidth - Optional: Scale down images larger than this width (undefined = keep original size)
  * @returns Promise<ImageWithDimensions> - { base64, width, height }
  */
 export async function imageToBase64WithDimensions(
   imagePath: string,
   cropOptions?: { maxHeight?: number },
-  fixedWidth: number = 240
+  fixedWidth: number = 240,
+  maxPixelWidth?: number // Optional: undefined = full resolution (current behavior)
 ): Promise<ImageWithDimensions> {
   return new Promise((resolve) => {
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
@@ -218,7 +220,7 @@ export async function imageToBase64WithDimensions(
           return;
         }
 
-        // Calculate dimensions
+        // Calculate source dimensions (with optional crop)
         let sourceHeight = img.naturalHeight;
         let shouldCrop = false;
 
@@ -227,15 +229,28 @@ export async function imageToBase64WithDimensions(
           shouldCrop = true;
         }
 
-        canvas.width = img.naturalWidth;
-        canvas.height = sourceHeight;
+        // Calculate target dimensions (with optional scaling)
+        let targetWidth = img.naturalWidth;
+        let targetHeight = sourceHeight;
+        let shouldScale = false;
 
-        // Draw image (cropped if necessary)
-        if (shouldCrop) {
+        if (maxPixelWidth && img.naturalWidth > maxPixelWidth) {
+          const scale = maxPixelWidth / img.naturalWidth;
+          targetWidth = maxPixelWidth;
+          targetHeight = Math.round(sourceHeight * scale);
+          shouldScale = true;
+          console.log(`📉 [Image Scale] ${img.naturalWidth}×${sourceHeight} → ${targetWidth}×${targetHeight}`);
+        }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        // Draw image
+        if (shouldScale || shouldCrop) {
           ctx.drawImage(
             img,
-            0, 0, img.naturalWidth, sourceHeight,
-            0, 0, img.naturalWidth, sourceHeight
+            0, 0, img.naturalWidth, sourceHeight,  // source (cropped if needed)
+            0, 0, targetWidth, targetHeight         // destination (scaled if needed)
           );
         } else {
           ctx.drawImage(img, 0, 0);
@@ -244,12 +259,12 @@ export async function imageToBase64WithDimensions(
         const base64 = canvas.toDataURL('image/png');
 
         // Calculate scaled height based on fixedWidth (for PDF layout)
-        const aspectRatio = sourceHeight / img.naturalWidth;
+        const aspectRatio = targetHeight / targetWidth;
         const scaledHeight = fixedWidth * aspectRatio;
 
         resolve({
           base64,
-          width: img.naturalWidth,
+          width: targetWidth,
           height: scaledHeight // This is the height at fixedWidth scale
         });
       } catch (error) {
@@ -1336,7 +1351,7 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
 export async function generatePdfClient(docDefinition: unknown): Promise<Blob> {
   // Ensure pdfMake is loaded before generating PDF
   const pdfMakeInstance = await loadPdfMake();
-  
+
   return new Promise((resolve, reject) => {
     try {
       if (!pdfMakeInstance) {
@@ -1349,5 +1364,53 @@ export async function generatePdfClient(docDefinition: unknown): Promise<Blob> {
     } catch (error) {
       reject(error);
     }
+  });
+}
+
+// Progress callback type
+export type PdfProgressCallback = (progress: {
+  stage: 'fetching_images' | 'loading_library' | 'generating' | 'complete';
+  percent: number;
+  detail?: string;
+}) => void;
+
+/**
+ * Generate PDF using Web Worker (non-blocking)
+ * UI stays responsive during generation
+ */
+export function generatePdfWithWorker(
+  docDefinition: unknown,
+  onProgress?: PdfProgressCallback
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    // Create worker
+    const worker = new Worker('/workers/pdfWorker.js');
+
+    worker.onmessage = (e) => {
+      const { type, stage, percent, blob, message } = e.data;
+
+      if (type === 'progress') {
+        onProgress?.({ stage, percent });
+      } else if (type === 'complete') {
+        worker.terminate();
+        resolve(blob);
+      } else if (type === 'error') {
+        worker.terminate();
+        reject(new Error(message));
+      }
+    };
+
+    worker.onerror = (error) => {
+      worker.terminate();
+      reject(new Error(`Worker error: ${error.message}`));
+    };
+
+    // Remove footer function before sending (functions can't be cloned)
+    // The worker will add its own footer function
+    const serializableDocDef = { ...(docDefinition as Record<string, unknown>) };
+    delete serializableDocDef.footer;
+
+    // Start generation
+    worker.postMessage({ type: 'generate', docDefinition: serializableDocDef });
   });
 }

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useChapters } from '@/lib/hooks/useChapters';
-import { imageToBase64Client, imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient, preloadPdfMake, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import { imageToBase64Client, imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient, generatePdfWithWorker, preloadPdfMake, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions, type PdfProgressCallback } from '@/lib/pdf/clientUtils';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { PublishConfirmDialog } from '@/components/worksheets/PublishConfirmDialog';
 import IsolatedPDFContainer from '@/components/pdf/IsolatedPDFContainer';
@@ -82,6 +82,9 @@ export default function ConfigurePage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [worksheetReady, setWorksheetReady] = useState(false); // New flag to control PDF generation
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
+  const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number; startTime?: number }>({ stage: '', percent: 0 });
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const elapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
@@ -212,29 +215,40 @@ export default function ConfigurePage() {
 
     const generatePdf = async () => {
       try {
-        // Starting PDF generation
+        // ========== TIMING START ==========
+        const timings: Record<string, number> = {};
+        const totalStart = performance.now();
+        let stepStart = performance.now();
+
+        console.log('📊 [PDF TIMING] Starting PDF generation...');
+        console.log(`📊 [PDF TIMING] Problem count: ${selectedImages.length}`);
+        console.log(`📊 [PDF TIMING] Answer count: ${selectedAnswerImages.length}`);
+        // ========== TIMING START ==========
+
         setLoading(true);
-        // Keep showLoader true - no need to delay since we want consistent loading
         setPdfError(null);
-
-        // Set to null to indicate "loading" - prevents race condition in preview
         setEditedContentsMap(null);
+        setElapsedTime(0);
+        setPdfProgress({ stage: '준비 중...', percent: 0, startTime: Date.now() });
 
-        // Fetch edited contents from database
+        // Start elapsed time timer
+        if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+        const startTime = Date.now();
+        elapsedTimerRef.current = setInterval(() => {
+          setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+        }, 1000);
+
+        // STEP 1: Fetch edited contents URLs from database
+        stepStart = performance.now();
         const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
 
-        // Collect all resource IDs (problems + answers)
         const problemIds = worksheetData?.problems.map(p => p.id) || [];
-
-        // For answers: construct proper resource IDs
         const answerIds = worksheetData?.problems
           .filter(p => p.answer_filename)
           .map(p => {
-            // Economy: replace _문제 with _해설
             if (p.id.startsWith('경제_')) {
               return p.id.replace('_문제', '_해설');
             }
-            // Regular problems: use same ID
             return p.id;
           }) || [];
 
@@ -247,15 +261,24 @@ export default function ConfigurePage() {
           console.error('[PDF] Database fetch failed:', dbError);
           throw new Error(`데이터베이스에서 편집된 콘텐츠를 불러오는데 실패했습니다. ${dbError instanceof Error ? dbError.message : String(dbError)}`);
         }
+        timings['1_fetch_urls'] = performance.now() - stepStart;
+        console.log(`📊 [PDF TIMING] Step 1 - Fetch URLs: ${timings['1_fetch_urls'].toFixed(0)}ms`);
 
-        // Store in state for preview dialog to use
         setEditedContentsMap(fetchedEditedContents);
+        setPdfProgress({ stage: '문제 이미지 불러오는 중...', percent: 5 });
 
-        // OPTIMIZATION: Fetch problem and answer images IN PARALLEL (not sequentially)
+        // STEP 2: Fetch images via proxy + convert to base64
+        stepStart = performance.now();
         const ANSWER_MAX_HEIGHT = 2000;
-        const ANSWER_WIDTH = 165; // Width for answer images in PDF (1/3 of problem area)
+        const ANSWER_WIDTH = 165;
 
-        // Create problem image promises
+        // IMAGE SCALING OPTIONS (for testing PDF size vs quality)
+        // undefined = full resolution (current behavior, largest PDF)
+        // 1200 = high quality print (300 DPI)
+        // 800 = good quality print
+        // 600 = smaller PDF, acceptable quality
+        const IMAGE_MAX_WIDTH: number | undefined = undefined; // Disabled - no effect on current images
+
         const problemImagePromises = selectedImages.map(async (imagePath, index): Promise<ImageWithDimensions> => {
           const problemId = worksheetData?.problems[index]?.id;
 
@@ -263,7 +286,7 @@ export default function ConfigurePage() {
           if (problemId && fetchedEditedContents.has(problemId)) {
             const editedCdnUrl = fetchedEditedContents.get(problemId)!;
             try {
-              return await imageToBase64WithDimensions(editedCdnUrl);
+              return await imageToBase64WithDimensions(editedCdnUrl, undefined, 240, IMAGE_MAX_WIDTH);
             } catch {
               // Fall through to try original CDN
             }
@@ -271,7 +294,7 @@ export default function ConfigurePage() {
 
           // Otherwise fetch from original CDN/S3
           try {
-            return await imageToBase64WithDimensions(imagePath);
+            return await imageToBase64WithDimensions(imagePath, undefined, 240, IMAGE_MAX_WIDTH);
           } catch {
             return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
@@ -293,7 +316,7 @@ export default function ConfigurePage() {
           if (fetchedEditedContents.has(answerId)) {
             const editedCdnUrl = fetchedEditedContents.get(answerId)!;
             try {
-              return await imageToBase64WithDimensions(editedCdnUrl, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH);
+              return await imageToBase64WithDimensions(editedCdnUrl, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH, IMAGE_MAX_WIDTH);
             } catch {
               // Fall through to try original CDN
             }
@@ -301,7 +324,7 @@ export default function ConfigurePage() {
 
           // Otherwise fetch from CDN/S3 with cropping
           try {
-            return await imageToBase64WithDimensions(imagePath, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH);
+            return await imageToBase64WithDimensions(imagePath, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH, IMAGE_MAX_WIDTH);
           } catch {
             return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
@@ -312,8 +335,12 @@ export default function ConfigurePage() {
           Promise.allSettled(problemImagePromises),
           Promise.allSettled(answerImagePromises)
         ]);
+        timings['2_fetch_images_and_base64'] = performance.now() - stepStart;
+        console.log(`📊 [PDF TIMING] Step 2 - Fetch images + Base64: ${timings['2_fetch_images_and_base64'].toFixed(0)}ms`);
+        setPdfProgress({ stage: '레이아웃 구성 중...', percent: 20 });
 
-        // Process problem results
+        // STEP 3: Process results
+        stepStart = performance.now();
         const processedProblemData = problemImageResults.map((result) => {
           if (result.status === 'fulfilled') {
             return result.value;
@@ -336,13 +363,15 @@ export default function ConfigurePage() {
         const problemHeights = processedProblemData.map(d => d.height);
         const processedAnswerImages = processedAnswerData.map(d => d.base64);
         const answerHeights = processedAnswerData.map(d => d.height);
-        
-        // Detect if this is an economy worksheet by checking first problem ID
+        timings['3_process_results'] = performance.now() - stepStart;
+        console.log(`📊 [PDF TIMING] Step 3 - Process results: ${timings['3_process_results'].toFixed(0)}ms`);
+
+        // STEP 4: Prepare metadata and layout
+        stepStart = performance.now();
         const isEconomyWorksheet = (worksheetData?.problems?.length ?? 0) > 0 &&
           worksheetData?.problems?.[0]?.id.startsWith('경제_');
         const subject = isEconomyWorksheet ? '경제' : '통합사회';
 
-        // Flatten contentTree to flat array for chapter path lookup
         const flattenChapters = (tree: typeof contentTree, parentId: string | null = null): Array<{ id: string; name: string; parent_id: string | null }> => {
           const result: Array<{ id: string; name: string; parent_id: string | null }> = [];
           tree.forEach(item => {
@@ -355,7 +384,6 @@ export default function ConfigurePage() {
         };
         const flatChapters = contentTree ? flattenChapters(contentTree) : [];
 
-        // Enrich problem metadata with chapter paths for 통합사회 problems
         const enrichedProblems = worksheetData?.problems.map(problem => {
           if (!isEconomyWorksheet && problem.chapter_id && flatChapters.length > 0) {
             const chapterPath = getChapterPathLabels(problem.chapter_id, flatChapters);
@@ -364,7 +392,7 @@ export default function ConfigurePage() {
           return problem;
         });
 
-        // Create document definition with answers (pass pre-calculated heights to skip redundant calculations)
+        // STEP 5: Create document definition (layout calculation)
         const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
           selectedImages,
           processedProblemImages,
@@ -374,17 +402,81 @@ export default function ConfigurePage() {
           worksheetAuthor,
           worksheetData?.worksheet.created_at,
           subject,
-          enrichedProblems as Array<Record<string, unknown>>, // Pass enriched problem metadata for badges
-          problemHeights, // Pre-calculated problem heights (optimization)
-          answerHeights // Pre-calculated answer heights (optimization)
+          enrichedProblems as Array<Record<string, unknown>>,
+          problemHeights,
+          answerHeights
         );
-        
-        // Generate PDF blob
-        const blob = await generatePdfClient(docDefinition);
-        
+        timings['4_metadata_and_5_doc_definition'] = performance.now() - stepStart;
+        console.log(`📊 [PDF TIMING] Step 4+5 - Metadata + Doc definition: ${timings['4_metadata_and_5_doc_definition'].toFixed(0)}ms`);
+        setPdfProgress({ stage: 'PDF 파일 생성 중...', percent: 25 });
+
+        // STEP 6: Generate PDF blob using Web Worker (non-blocking)
+        // Estimate based on actual measurements: ~105ms per problem (90s for 850 problems)
+        const problemCount = selectedImages.length;
+        const estimatedTimeMs = problemCount * 105;
+        const pdfStartTime = Date.now();
+
+        // Time-based progress with asymptotic behavior (never stops moving)
+        const progressInterval = setInterval(() => {
+          const elapsed = Date.now() - pdfStartTime;
+          const ratio = elapsed / estimatedTimeMs;
+
+          let progress: number;
+          let stage: string;
+
+          if (ratio <= 1) {
+            // Normal progress: 0% to 90% during estimated time
+            progress = ratio * 0.9;
+
+            if (ratio < 0.2) stage = 'PDF 파일 생성 중...';
+            else if (ratio < 0.5) stage = '문제 배치 중...';
+            else if (ratio < 0.8) stage = '해설 추가 중...';
+            else stage = '마무리 중...';
+          } else {
+            // Exceeded estimate: asymptotic progress from 90% to 99%
+            // Uses 1 - 1/(1 + x) which approaches 1 as x increases
+            const overtime = ratio - 1; // How much we've exceeded (0 = at estimate, 1 = 2x estimate)
+            progress = 0.9 + 0.09 * (overtime / (overtime + 0.5)); // Slowly approaches 99%
+            stage = '예상보다 오래 걸리고 있습니다...';
+          }
+
+          const percent = 25 + Math.round(progress * 70); // 25% to 95% (or 97% if overtime)
+          setPdfProgress({ stage, percent: Math.min(percent, 97) });
+        }, 500);
+
+        stepStart = performance.now();
+        const blob = await generatePdfWithWorker(docDefinition, (progress) => {
+          if (progress.stage === 'complete') {
+            clearInterval(progressInterval);
+            setPdfProgress({ stage: '완료!', percent: 100 });
+          }
+        });
+        clearInterval(progressInterval);
+        timings['6_pdfmake_generation'] = performance.now() - stepStart;
+        console.log(`📊 [PDF TIMING] Step 6 - pdfMake generation (Worker): ${timings['6_pdfmake_generation'].toFixed(0)}ms`);
+
         if (blob.size === 0) throw new Error("PDF blob is empty");
-        
+
+        // STEP 7: Create blob URL
+        stepStart = performance.now();
         const url = URL.createObjectURL(blob);
+        timings['7_blob_url'] = performance.now() - stepStart;
+
+        // ========== TIMING SUMMARY ==========
+        const totalTime = performance.now() - totalStart;
+        console.log('\n📊 ========== PDF TIMING SUMMARY ==========');
+        console.log(`📊 Step 1 - Fetch URLs from DB:     ${timings['1_fetch_urls']?.toFixed(0) || 0}ms`);
+        console.log(`📊 Step 2 - Fetch images + Base64:  ${timings['2_fetch_images_and_base64']?.toFixed(0) || 0}ms`);
+        console.log(`📊 Step 3 - Process results:        ${timings['3_process_results']?.toFixed(0) || 0}ms`);
+        console.log(`📊 Step 4+5 - Layout + Doc def:     ${timings['4_metadata_and_5_doc_definition']?.toFixed(0) || 0}ms`);
+        console.log(`📊 Step 6 - pdfMake generation:     ${timings['6_pdfmake_generation']?.toFixed(0) || 0}ms`);
+        console.log(`📊 Step 7 - Blob URL:               ${timings['7_blob_url']?.toFixed(0) || 0}ms`);
+        console.log(`📊 ----------------------------------------`);
+        console.log(`📊 TOTAL TIME:                      ${totalTime.toFixed(0)}ms (${(totalTime/1000).toFixed(1)}s)`);
+        console.log(`📊 PDF Size:                        ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+        console.log('📊 ==========================================\n');
+        // ========== TIMING SUMMARY ==========
+
         setPdfUrl(url);
         setPdfError(null);
         lastProcessedImages.current = selectionKey;
@@ -414,6 +506,10 @@ export default function ConfigurePage() {
         lastProcessedImages.current = selectionKey;
       } finally {
         // PDF generation complete
+        if (elapsedTimerRef.current) {
+          clearInterval(elapsedTimerRef.current);
+          elapsedTimerRef.current = null;
+        }
         setLoading(false);
         setShowLoader(false);
       }
@@ -502,8 +598,23 @@ export default function ConfigurePage() {
   // Show loading state while fetching worksheet OR generating PDF
   if ((!worksheetData && loading) || (worksheetReady && showLoader)) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <Loader className="animate-spin w-4 h-4" />
+        {pdfProgress.stage && (
+          <div className="w-64 text-center">
+            <div className="text-xs text-gray-500 mb-2">{pdfProgress.stage}</div>
+            <div className="w-full h-1 bg-gray-200 rounded">
+              <div
+                className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
+                style={{ width: `${pdfProgress.percent}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>{pdfProgress.percent}%</span>
+              <span>{elapsedTime}초</span>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
