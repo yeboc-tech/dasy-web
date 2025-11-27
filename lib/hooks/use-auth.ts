@@ -3,6 +3,13 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/contexts/auth-context'
+import { translateAuthError } from '@/lib/utils/auth-error-messages'
+
+// Helper to create a translated error
+const createTranslatedError = (error: { message: string }) => {
+  const translatedMessage = translateAuthError(error.message)
+  return new Error(translatedMessage)
+}
 
 export const useAuthActions = () => {
   const router = useRouter()
@@ -16,7 +23,7 @@ export const useAuthActions = () => {
     })
 
     if (error) {
-      throw error
+      throw createTranslatedError(error)
     }
 
     router.refresh()
@@ -33,7 +40,7 @@ export const useAuthActions = () => {
     })
 
     if (error) {
-      throw error
+      throw createTranslatedError(error)
     }
   }
 
@@ -43,7 +50,7 @@ export const useAuthActions = () => {
     })
 
     if (error) {
-      throw error
+      throw createTranslatedError(error)
     }
   }
 
@@ -53,7 +60,7 @@ export const useAuthActions = () => {
     })
 
     if (error) {
-      throw error
+      throw createTranslatedError(error)
     }
   }
 

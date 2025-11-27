@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FileText, Share2, User, FileStack, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
 interface NavItem {
   label: string;
@@ -43,6 +44,7 @@ const navGroups: NavGroup[] = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { dismissAuthBlocker } = useAuthBlocker();
 
   // Filter out "내 계정" group if user is not logged in
   const visibleNavGroups = navGroups.filter(
@@ -86,6 +88,7 @@ export function AppSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={dismissAuthBlocker}
                     className={`
                       flex items-center gap-2 px-2 h-8 rounded-md text-sm transition-colors cursor-pointer
                       ${

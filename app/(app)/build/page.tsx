@@ -20,6 +20,9 @@ import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { getEconomyProblems } from '@/lib/supabase/services/clientServices';
+import { useAuth } from '@/lib/contexts/auth-context';
+import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
+import { AuthenticationBlocker } from '@/components/auth/authentication-blocker';
 import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
@@ -68,6 +71,17 @@ export default function Page() {
 
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
+  const { user } = useAuth();
+  const { showAuthBlocker, triggerAuthBlocker, dismissAuthBlocker } = useAuthBlocker();
+
+  // Wrapper function to require auth before executing callback
+  const requireAuth = (callback: () => void) => {
+    if (!user) {
+      triggerAuthBlocker();
+      return;
+    }
+    callback();
+  };
 
   // Check if in economy mode
   const isEconomyMode = selectedMainSubjects.includes('economy');
@@ -737,7 +751,14 @@ export default function Page() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open && !user) {
+                  triggerAuthBlocker();
+                }
+              }}
+              open={!user ? false : undefined}
+            >
               <DropdownMenuTrigger asChild>
                 <CustomButton
                   variant="outline"
@@ -773,14 +794,14 @@ export default function Page() {
             <CustomButton
               variant="outline"
               size="sm"
-              onClick={() => setViewMode('addProblems')}
+              onClick={() => requireAuth(() => setViewMode('addProblems'))}
             >
               문제 추가
             </CustomButton>
             <CustomButton
               variant="primary"
               size="sm"
-              onClick={handleCreateWorksheet}
+              onClick={() => requireAuth(handleCreateWorksheet)}
               disabled={sortedFilteredProblems.length === 0}
             >
               생성
@@ -1089,6 +1110,20 @@ export default function Page() {
         onOpenChange={setShowMetadataDialog}
         onSubmit={handleMetadataSubmit}
       />
+
+      {/* Auth blocker overlay */}
+      {showAuthBlocker && (
+        <div
+          className="absolute inset-0 bg-white/95 backdrop-blur-sm z-50 flex items-center justify-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              dismissAuthBlocker();
+            }
+          }}
+        >
+          <AuthenticationBlocker />
+        </div>
+      )}
     </div>
   );
 }

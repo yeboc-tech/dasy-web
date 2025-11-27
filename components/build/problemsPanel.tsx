@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Loader, Trash2 } from "lucide-react";
 import type { ProblemMetadata } from '@/lib/types/problems';
@@ -15,7 +15,7 @@ interface ProblemsPanelProps {
   contentTree: ChapterTreeItem[];
   onDeleteProblem?: (problemId: string) => void;
   showAnswers?: boolean;
-  editedContentsMap?: Map<string, string> | null;
+  editedContentsMap?: Map<string, string> | null; // Now contains CDN URLs instead of base64
 }
 
 // Create a lookup map for chapter data (label and parent)
@@ -77,57 +77,8 @@ export default function ProblemsPanel({
     return createChapterLookupMap(contentTree);
   }, [contentTree]);
 
-  // State to hold blob URLs for edited content
-  const [blobUrls, setBlobUrls] = useState<Map<string, string>>(new Map());
-
-  // Create blob URLs from edited content when editedContentsMap changes
-  useEffect(() => {
-    console.log(`[ProblemsPanel] editedContentsMap changed, size: ${editedContentsMap?.size || 0}`);
-
-    if (!editedContentsMap || editedContentsMap.size === 0) {
-      console.log('[ProblemsPanel] No edited content available');
-      setBlobUrls(new Map());
-      return;
-    }
-
-    const newBlobUrls = new Map<string, string>();
-
-    editedContentsMap.forEach((base64Data, resourceId) => {
-      try {
-        // Convert base64 to blob
-        const base64String = base64Data.startsWith('data:')
-          ? base64Data.split(',')[1]
-          : base64Data;
-
-        console.log(`[Preview Edited Content] Processing ${resourceId}, base64 length: ${base64String.length}`);
-
-        const byteCharacters = atob(base64String);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'image/png' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        newBlobUrls.set(resourceId, blobUrl);
-        console.log(`[Preview Edited Content] ✅ Created blob URL for ${resourceId}: ${blobUrl}, blob size: ${blob.size} bytes`);
-      } catch (error) {
-        console.error(`[Preview Edited Content] ❌ Failed to create blob URL for ${resourceId}:`, error);
-        console.error(`[Preview Edited Content] ❌ Error details:`, error instanceof Error ? error.message : String(error));
-      }
-    });
-
-    console.log(`[ProblemsPanel] Created ${newBlobUrls.size} blob URLs`);
-    setBlobUrls(newBlobUrls);
-
-    // Cleanup function to revoke blob URLs
-    return () => {
-      newBlobUrls.forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
-    };
-  }, [editedContentsMap]);
+  // Track which CDN URLs have failed to load
+  const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
 
   return (
     <div className="flex-1 flex flex-col h-full relative">
@@ -247,109 +198,108 @@ export default function ProblemsPanel({
                     ))}
 
                     {/* Dev-only: Show if image is from edited_contents DB */}
-                    {process.env.NODE_ENV === 'development' && blobUrls.get(problem.id) && (
+                    {process.env.NODE_ENV === 'development' && editedContentsMap?.get(problem.id) && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 border border-green-300">
                         📝 DB
                       </span>
                     )}
                   </div>
-                  <div className="relative">
-                    <Image
-                      src={blobUrls.get(problem.id) || getProblemImageUrl(problem.id)}
-                      alt={problem.problem_filename}
-                      width={800}
-                      height={600}
-                      className="w-full h-auto object-contain"
-                      unoptimized={!!blobUrls.get(problem.id)}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        // Show error message (only once)
-                        const parent = target.parentElement;
-                        if (parent) {
-                          // Check if error message already exists
-                          const existingError = parent.querySelector('.image-error-message');
-                          if (existingError) {
-                            return; // Don't create duplicate error messages
-                          }
+                  <div className="relative" id={`problem-img-${problem.id}`}>
+                    {(() => {
+                      // Check if there's an edited content URL for this problem
+                      const editedUrl = editedContentsMap?.get(problem.id);
+                      const hasFailed = failedUrls.has(problem.id);
 
-                          const errorDiv = document.createElement('div');
-                          errorDiv.className = 'image-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
-                          errorDiv.innerHTML = `
-                            <div class="text-center text-gray-500">
-                              <div class="text-sm font-medium mb-1">이미지를 불러올 수 없습니다</div>
-                              <div class="text-xs">S3 설정을 확인하세요</div>
-                              <div class="text-xs text-gray-400 mt-1">ID: ${problem.id}</div>
+                      // If URL failed, show error card
+                      if (hasFailed) {
+                        return (
+                          <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
+                            <div className="text-center text-red-600">
+                              <div className="text-sm font-medium mb-1">이미지 로드 실패</div>
+                              <div className="text-xs">이미지를 불러올 수 없습니다</div>
+                              <div className="text-xs text-red-400 mt-1">ID: {problem.id}</div>
                             </div>
-                          `;
-                          parent.appendChild(errorDiv);
-                        }
-                      }}
-                    />
+                          </div>
+                        );
+                      }
+
+                      // Use edited content URL from CDN if available, otherwise original CDN URL
+                      const imageUrl = editedUrl || getProblemImageUrl(problem.id);
+
+                      return (
+                        <Image
+                          key={problem.id}
+                          src={imageUrl}
+                          alt={problem.problem_filename}
+                          width={800}
+                          height={600}
+                          className="w-full h-auto object-contain"
+                          onError={(e) => {
+                            console.error(`[Image Load Error] Failed to load image for ${problem.id}: ${imageUrl}`);
+                            setFailedUrls(prev => new Set(prev).add(problem.id));
+                          }}
+                        />
+                      );
+                    })()}
                   </div>
 
                   {/* Answer image (conditional) */}
-                  {showAnswers && problem.answer_filename && (
-                    <div className="relative mt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="text-xs font-semibold text-gray-600">해설</div>
-                        {/* Dev-only: Show if answer image is from edited_contents DB */}
-                        {(() => {
-                          // Get answer resource ID (for economy: replace _문제 with _해설)
-                          const answerId = problem.id.startsWith('경제_')
-                            ? problem.id.replace('_문제', '_해설')
-                            : problem.id;
-                          const hasEditedAnswer = blobUrls.get(answerId);
+                  {showAnswers && problem.answer_filename && (() => {
+                    // For economy problems, answer ID replaces _문제 with _해설
+                    const answerId = problem.id.startsWith('경제_')
+                      ? problem.id.replace('_문제', '_해설')
+                      : problem.id;
 
-                          return process.env.NODE_ENV === 'development' && hasEditedAnswer && (
+                    return (
+                      <div className="relative mt-4" id={`answer-img-${answerId}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="text-xs font-semibold text-gray-600">해설</div>
+                          {/* Dev-only: Show if answer image is from edited_contents DB */}
+                          {process.env.NODE_ENV === 'development' && editedContentsMap?.get(answerId) && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 border border-green-300">
                               📝 DB
                             </span>
+                          )}
+                        </div>
+                        {(() => {
+                          // Check if there's an edited content URL for this answer
+                          const editedUrl = editedContentsMap?.get(answerId);
+                          const answerHasFailed = failedUrls.has(answerId);
+
+                          // If URL failed, show error card
+                          if (answerHasFailed) {
+                            return (
+                              <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
+                                <div className="text-center text-red-600">
+                                  <div className="text-sm font-medium mb-1">해설 이미지 로드 실패</div>
+                                  <div className="text-xs">이미지를 불러올 수 없습니다</div>
+                                  <div className="text-xs text-red-400 mt-1">ID: {answerId}</div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          // Use edited content URL from CDN if available, otherwise original CDN URL
+                          const imageUrl = editedUrl || getAnswerImageUrl(problem.id);
+
+                          return (
+                            <Image
+                              key={answerId}
+                              src={imageUrl}
+                              alt={problem.answer_filename}
+                              width={800}
+                              height={600}
+                              className="w-full h-auto object-contain"
+                              onError={(e) => {
+                                console.error(`[Answer Image Load Error] Failed to load answer for ${answerId}: ${imageUrl}`);
+                                setFailedUrls(prev => new Set(prev).add(answerId));
+                              }}
+                            />
                           );
                         })()}
                       </div>
-                      <Image
-                        src={(() => {
-                          // Get answer resource ID (for economy: replace _문제 with _해설)
-                          const answerId = problem.id.startsWith('경제_')
-                            ? problem.id.replace('_문제', '_해설')
-                            : problem.id;
-                          return blobUrls.get(answerId) || getAnswerImageUrl(problem.id);
-                        })()}
-                        alt={problem.answer_filename}
-                        width={800}
-                        height={600}
-                        className="w-full h-auto object-contain"
-                        unoptimized={(() => {
-                          const answerId = problem.id.startsWith('경제_')
-                            ? problem.id.replace('_문제', '_해설')
-                            : problem.id;
-                          return !!blobUrls.get(answerId);
-                        })()}
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            const existingError = parent.querySelector('.answer-error-message');
-                            if (existingError) {
-                              return;
-                            }
-
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'answer-error-message flex items-center justify-center p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg';
-                            errorDiv.innerHTML = `
-                              <div class="text-center text-gray-500">
-                                <div class="text-sm font-medium mb-1">해설 이미지를 불러올 수 없습니다</div>
-                                <div class="text-xs">S3 설정을 확인하세요</div>
-                              </div>
-                            `;
-                            parent.appendChild(errorDiv);
-                          }
-                        }}
-                      />
-                    </div>
-                  )}
+                    );
+                  })()}
                   </div>
                 </div>
               );

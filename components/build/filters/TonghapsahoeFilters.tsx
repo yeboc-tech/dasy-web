@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { AuthCheckbox as Checkbox } from '@/components/ui/auth-checkbox';
+import { AuthInput as Input } from '@/components/ui/auth-input';
+import { AuthButton as Button } from '@/components/ui/auth-button';
+import { Button as DisabledButton } from '@/components/ui/button';
+import { AuthSlider as Slider } from '@/components/ui/auth-slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import type { ChapterTreeItem } from '@/lib/types';
@@ -373,14 +374,14 @@ export default function TonghapsahoeFilters({
                   const isSubjectDisabled = !enabledSubjects.includes(subject);
                   return isSubjectDisabled ? (
                     <div key={subject} className="cursor-not-allowed">
-                      <Button
+                      <DisabledButton
                         onClick={() => {}} // No action for disabled
                         variant="outline"
                         disabled={true}
                         className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
                       >
                         {subject}
-                      </Button>
+                      </DisabledButton>
                     </div>
                   ) : (
                     <Button
@@ -582,14 +583,14 @@ export default function TonghapsahoeFilters({
                   const isNjeDisabled = type === 'N제';
                   return isNjeDisabled ? (
                       <div key={type} className="cursor-not-allowed">
-                        <Button
+                        <DisabledButton
                           onClick={() => {}}
                           variant="outline"
                           disabled={true}
                           className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
                         >
                           {type}
-                        </Button>
+                        </DisabledButton>
                       </div>
                     ) : (
                       <Button

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useChapters } from '@/lib/hooks/useChapters';
-import { imageToBase64Client, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient, cropBase64ImageClient } from '@/lib/pdf/clientUtils';
+import { imageToBase64Client, imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfClient, preloadPdfMake, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { PublishConfirmDialog } from '@/components/worksheets/PublishConfirmDialog';
 import IsolatedPDFContainer from '@/components/pdf/IsolatedPDFContainer';
@@ -85,6 +85,14 @@ export default function ConfigurePage() {
 
   // Fetch chapters from database
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
+
+  // OPTIMIZATION: Preload pdfMake library and static assets on page mount
+  useEffect(() => {
+    preloadPdfMake();
+    // Preload logo and QR in background (they'll be cached for later use)
+    getCachedLogoBase64();
+    getCachedQrBase64();
+  }, []);
 
   // Fetch worksheet data
   useEffect(() => {
@@ -232,83 +240,48 @@ export default function ConfigurePage() {
 
         const allResourceIds = [...problemIds, ...answerIds];
 
-        console.log('[PDF Generation] Problem IDs:', problemIds);
-        console.log('[PDF Generation] Answer IDs:', answerIds);
-        console.log('[PDF Generation] Total resource IDs:', allResourceIds.length);
-
         let fetchedEditedContents: Map<string, string>;
         try {
           fetchedEditedContents = await getEditedContents(allResourceIds);
         } catch (dbError) {
-          // Database fetch failed after all retries - this is CRITICAL
-          console.error('[PDF Generation] ❌ CRITICAL: Failed to fetch edited contents from database:', dbError);
+          console.error('[PDF] Database fetch failed:', dbError);
           throw new Error(`데이터베이스에서 편집된 콘텐츠를 불러오는데 실패했습니다. ${dbError instanceof Error ? dbError.message : String(dbError)}`);
         }
 
-        console.log('[PDF Generation] Received edited content for:', Array.from(fetchedEditedContents.keys()));
-        console.log('[PDF Generation] Expected problems:', problemIds.length, 'Received:', fetchedEditedContents.size);
-
-        // Check for missing problems
-        const missingProblems = problemIds.filter(id => !fetchedEditedContents.has(id));
-        if (missingProblems.length > 0) {
-          console.warn('[PDF Generation] ⚠️ Missing edited content for these problems:', missingProblems);
-        }
-
         // Store in state for preview dialog to use
-        console.log('[PDF Generation] Setting editedContentsMap with', fetchedEditedContents.size, 'items');
         setEditedContentsMap(fetchedEditedContents);
-        console.log('[PDF Generation] editedContentsMap state updated');
 
-        if (fetchedEditedContents.size > 0) {
-          console.log(`[Edited Content] Found ${fetchedEditedContents.size} edited images in database`);
-          console.log('[Edited Content] Resource IDs:', Array.from(fetchedEditedContents.keys()));
-        }
+        // OPTIMIZATION: Fetch problem and answer images IN PARALLEL (not sequentially)
+        const ANSWER_MAX_HEIGHT = 2000;
+        const ANSWER_WIDTH = 165; // Width for answer images in PDF (1/3 of problem area)
 
-        // Convert problem images to base64 on client side with error handling
-        const problemImagePromises = selectedImages.map(async (imagePath, index) => {
+        // Create problem image promises
+        const problemImagePromises = selectedImages.map(async (imagePath, index): Promise<ImageWithDimensions> => {
           const problemId = worksheetData?.problems[index]?.id;
 
-          console.log(`[PDF Image ${index + 1}] Problem ID: ${problemId}, Has edited: ${problemId && fetchedEditedContents.has(problemId)}`);
-
-          // Check if edited content exists first
+          // Check if edited content exists first (now returns CDN URL)
           if (problemId && fetchedEditedContents.has(problemId)) {
-            console.log(`[PDF Image ${index + 1}] ✅ Using edited version from database`);
-            const base64 = fetchedEditedContents.get(problemId)!;
-            // Ensure it has the data URL prefix
-            return base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+            const editedCdnUrl = fetchedEditedContents.get(problemId)!;
+            try {
+              return await imageToBase64WithDimensions(editedCdnUrl);
+            } catch {
+              // Fall through to try original CDN
+            }
           }
 
-          // Otherwise fetch from CDN/S3
-          console.log(`[PDF Image ${index + 1}] ⚠️ No edited content, trying CDN: ${imagePath}`);
+          // Otherwise fetch from original CDN/S3
           try {
-            const cdnImage = await imageToBase64Client(imagePath);
-            console.log(`[PDF Image ${index + 1}] ✅ Fetched from CDN successfully`);
-            return cdnImage;
-          } catch (error) {
-            console.error(`[PDF Image ${index + 1}] ❌ CDN fetch failed, using placeholder`);
-            // Silently fall back to placeholder image
-            return getNoImageBase64();
+            return await imageToBase64WithDimensions(imagePath);
+          } catch {
+            return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
         });
 
-        const base64ProblemImages = await Promise.allSettled(problemImagePromises);
-        const processedProblemImages = base64ProblemImages.map((result) => {
-          if (result.status === 'fulfilled') {
-            return result.value;
-          } else {
-            // Silently fall back to placeholder for failed images
-            return getNoImageBase64();
-          }
-        });
-
-        // Convert answer images to base64 on client side with error handling
-        // Max height for answer images to prevent layout overflow
-        const ANSWER_MAX_HEIGHT = 2000;
-
-        const answerImagePromises = selectedAnswerImages.map(async (imagePath, index) => {
+        // Create answer image promises
+        const answerImagePromises = selectedAnswerImages.map(async (imagePath, index): Promise<ImageWithDimensions> => {
           const problem = worksheetData?.problems.filter(p => p.answer_filename)[index];
           if (!problem) {
-            return getNoImageBase64();
+            return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
 
           // Get answer resource ID
@@ -316,42 +289,53 @@ export default function ConfigurePage() {
             ? problem.id.replace('_문제', '_해설')
             : problem.id;
 
-          let answerBase64: string;
-
-          // Check if edited content exists first
+          // Check if edited content exists first (now returns CDN URL)
           if (fetchedEditedContents.has(answerId)) {
-            console.log(`[Edited Content] Using edited version for answer: ${answerId}`);
-            const base64 = fetchedEditedContents.get(answerId)!;
-            // Ensure it has the data URL prefix
-            answerBase64 = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
-          } else {
-            // Otherwise fetch from CDN/S3
+            const editedCdnUrl = fetchedEditedContents.get(answerId)!;
             try {
-              answerBase64 = await imageToBase64Client(imagePath);
+              return await imageToBase64WithDimensions(editedCdnUrl, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH);
             } catch {
-              // Silently fall back to placeholder image
-              return getNoImageBase64();
+              // Fall through to try original CDN
             }
           }
 
-          // Crop the answer image if it exceeds max height
+          // Otherwise fetch from CDN/S3 with cropping
           try {
-            return await cropBase64ImageClient(answerBase64, ANSWER_MAX_HEIGHT);
+            return await imageToBase64WithDimensions(imagePath, { maxHeight: ANSWER_MAX_HEIGHT }, ANSWER_WIDTH);
           } catch {
-            // If cropping fails, return the original
-            return answerBase64;
+            return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
         });
 
-        const base64AnswerImages = await Promise.allSettled(answerImagePromises);
-        const processedAnswerImages = base64AnswerImages.map((result) => {
+        // PARALLEL EXECUTION: Fetch all images simultaneously
+        const [problemImageResults, answerImageResults] = await Promise.all([
+          Promise.allSettled(problemImagePromises),
+          Promise.allSettled(answerImagePromises)
+        ]);
+
+        // Process problem results
+        const processedProblemData = problemImageResults.map((result) => {
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            // Silently fall back to placeholder for failed images
-            return getNoImageBase64();
+            return { base64: getNoImageBase64(), width: 300, height: 200 };
           }
         });
+
+        // Process answer results
+        const processedAnswerData = answerImageResults.map((result) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            return { base64: getNoImageBase64(), width: 300, height: 200 };
+          }
+        });
+
+        // Extract base64 images and heights
+        const processedProblemImages = processedProblemData.map(d => d.base64);
+        const problemHeights = processedProblemData.map(d => d.height);
+        const processedAnswerImages = processedAnswerData.map(d => d.base64);
+        const answerHeights = processedAnswerData.map(d => d.height);
         
         // Detect if this is an economy worksheet by checking first problem ID
         const isEconomyWorksheet = (worksheetData?.problems?.length ?? 0) > 0 &&
@@ -373,20 +357,14 @@ export default function ConfigurePage() {
 
         // Enrich problem metadata with chapter paths for 통합사회 problems
         const enrichedProblems = worksheetData?.problems.map(problem => {
-          // For 통합사회 problems, add chapter_path from chapter tree
           if (!isEconomyWorksheet && problem.chapter_id && flatChapters.length > 0) {
             const chapterPath = getChapterPathLabels(problem.chapter_id, flatChapters);
-            console.log('[Enrich] Problem:', problem.id, 'chapter_id:', problem.chapter_id, 'chapter_path:', chapterPath);
-            return {
-              ...problem,
-              chapter_path: chapterPath // Add chapter path for PDF badges
-            };
+            return { ...problem, chapter_path: chapterPath };
           }
-          console.log('[Enrich] Problem:', problem.id, 'isEconomy:', isEconomyWorksheet, 'has chapter_id:', !!problem.chapter_id, 'flatChapters count:', flatChapters.length);
           return problem;
         });
 
-        // Create document definition with answers
+        // Create document definition with answers (pass pre-calculated heights to skip redundant calculations)
         const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
           selectedImages,
           processedProblemImages,
@@ -396,7 +374,9 @@ export default function ConfigurePage() {
           worksheetAuthor,
           worksheetData?.worksheet.created_at,
           subject,
-          enrichedProblems as Array<Record<string, unknown>> // Pass enriched problem metadata for badges
+          enrichedProblems as Array<Record<string, unknown>>, // Pass enriched problem metadata for badges
+          problemHeights, // Pre-calculated problem heights (optimization)
+          answerHeights // Pre-calculated answer heights (optimization)
         );
         
         // Generate PDF blob
@@ -501,10 +481,8 @@ export default function ConfigurePage() {
 
   const handlePDFError = useCallback((error: string) => {
     setPdfError(error || null);
-
-    // If error is being cleared (retry), force PDF regeneration by clearing the last processed key
+    // If error is being cleared (retry), force PDF regeneration
     if (!error) {
-      console.log('[Retry] User requested retry, clearing lastProcessedImages to trigger regeneration');
       lastProcessedImages.current = '';
     }
   }, []);
@@ -615,7 +593,6 @@ export default function ConfigurePage() {
               (() => {
                 // Wait for edited content to be loaded before showing preview
                 if (editedContentsMap === null) {
-                  console.log('[Preview Dialog] Waiting for editedContentsMap to load...');
                   return (
                     <div className="flex items-center justify-center h-full">
                       <Loader className="animate-spin w-4 h-4 text-gray-400" />
@@ -623,29 +600,8 @@ export default function ConfigurePage() {
                   );
                 }
 
-                // Verify all expected problems are in the map
-                const expectedProblemIds = worksheetData.problems.map(p => p.id);
-                const missingIds = expectedProblemIds.filter(id => !editedContentsMap.has(id));
-
-                console.log('[Preview Dialog] Rendering with editedContentsMap size:', editedContentsMap.size);
-                console.log('[Preview Dialog] Expected problems:', expectedProblemIds.length);
-                console.log('[Preview Dialog] First 5 expected:', expectedProblemIds.slice(0, 5));
-                console.log('[Preview Dialog] First 5 in map:', Array.from(editedContentsMap.keys()).slice(0, 5));
-
-                if (missingIds.length > 0) {
-                  console.warn('[Preview Dialog] ⚠️ Missing edited content for', missingIds.length, 'problems');
-                  console.warn('[Preview Dialog] Missing IDs:', missingIds);
-                  console.log('[Preview Dialog] Total available in map:', editedContentsMap.size);
-                } else {
-                  console.log('[Preview Dialog] ✅ All expected problems found in editedContentsMap');
-                }
-
-                // Detect if it's an economy worksheet
                 const isEconomy = worksheetData.problems.length > 0 &&
                   worksheetData.problems[0].id.startsWith('경제_');
-
-                // Use original problem order from database (preserves worksheet mode from creation)
-                // Do NOT re-sort - the order was set when the worksheet was created (연습 or 실전 mode)
                 const problems = worksheetData.problems;
 
                 return isEconomy ? (
