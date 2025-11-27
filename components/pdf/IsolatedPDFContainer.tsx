@@ -91,7 +91,7 @@ const IsolatedPDFContainer = React.memo(function IsolatedPDFContainer({
   });
 
   return (
-    <div ref={containerRef} className="flex-1 bg-white overflow-y-auto relative">
+    <div ref={containerRef} className="flex-1 bg-white relative flex flex-col overflow-hidden">
       {loading && showLoader && (
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-white bg-opacity-70">
           <Loader className="animate-spin w-4 h-4 text-gray-600" />

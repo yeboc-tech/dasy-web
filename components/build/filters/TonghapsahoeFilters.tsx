@@ -18,28 +18,46 @@ import {
 interface TonghapsahoeFiltersProps {
   contentTree: ChapterTreeItem[];
   selectedMainSubjects: string[];
+  dialogFilters?: {
+    selectedChapters: string[];
+    setSelectedChapters: (value: string[]) => void;
+    selectedDifficulties: string[];
+    setSelectedDifficulties: (value: string[]) => void;
+    selectedProblemTypes: string[];
+    setSelectedProblemTypes: (value: string[]) => void;
+    selectedSubjects: string[];
+    setSelectedSubjects: (value: string[]) => void;
+    correctRateRange: [number, number];
+    setCorrectRateRange: (value: [number, number]) => void;
+    selectedYears: number[];
+    setSelectedYears: (value: number[]) => void;
+    problemCount: number;
+    setProblemCount: (value: number) => void;
+  };
 }
 
 export default function TonghapsahoeFilters({
   contentTree,
-  selectedMainSubjects
+  selectedMainSubjects,
+  dialogFilters
 }: TonghapsahoeFiltersProps) {
-  const {
-    selectedChapters,
-    setSelectedChapters,
-    problemCount,
-    setProblemCount,
-    selectedDifficulties,
-    setSelectedDifficulties,
-    selectedProblemTypes,
-    setSelectedProblemTypes,
-    selectedSubjects,
-    setSelectedSubjects,
-    correctRateRange,
-    setCorrectRateRange,
-    selectedYears,
-    setSelectedYears
-  } = useWorksheetStore();
+  // Use dialogFilters if provided, otherwise use Zustand store
+  const storeFilters = useWorksheetStore();
+
+  const selectedChapters = dialogFilters?.selectedChapters ?? storeFilters.selectedChapters;
+  const setSelectedChapters = dialogFilters?.setSelectedChapters ?? storeFilters.setSelectedChapters;
+  const problemCount = dialogFilters?.problemCount ?? storeFilters.problemCount;
+  const setProblemCount = dialogFilters?.setProblemCount ?? storeFilters.setProblemCount;
+  const selectedDifficulties = dialogFilters?.selectedDifficulties ?? storeFilters.selectedDifficulties;
+  const setSelectedDifficulties = dialogFilters?.setSelectedDifficulties ?? storeFilters.setSelectedDifficulties;
+  const selectedProblemTypes = dialogFilters?.selectedProblemTypes ?? storeFilters.selectedProblemTypes;
+  const setSelectedProblemTypes = dialogFilters?.setSelectedProblemTypes ?? storeFilters.setSelectedProblemTypes;
+  const selectedSubjects = dialogFilters?.selectedSubjects ?? storeFilters.selectedSubjects;
+  const setSelectedSubjects = dialogFilters?.setSelectedSubjects ?? storeFilters.setSelectedSubjects;
+  const correctRateRange = dialogFilters?.correctRateRange ?? storeFilters.correctRateRange;
+  const setCorrectRateRange = dialogFilters?.setCorrectRateRange ?? storeFilters.setCorrectRateRange;
+  const selectedYears = dialogFilters?.selectedYears ?? storeFilters.selectedYears;
+  const setSelectedYears = dialogFilters?.setSelectedYears ?? storeFilters.setSelectedYears;
 
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [problemCountInput, setProblemCountInput] = useState<string>(problemCount.toString());
@@ -499,7 +517,7 @@ export default function TonghapsahoeFilters({
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
-                <div className="h-9 mb-3 flex items-center">
+                <div className="h-9 mb-3 flex items-center max-w-md">
                   <Slider
                     value={correctRateRange}
                     onValueChange={(value) => setCorrectRateRange([value[0], value[1]])}

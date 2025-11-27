@@ -1,23 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/contexts/auth-context'
+import { AuthenticationBlocker } from './authentication-blocker'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  redirectTo?: string
 }
 
-export function ProtectedRoute({ children, redirectTo = '/auth/signin' }: ProtectedRouteProps) {
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push(redirectTo)
-    }
-  }, [user, loading, router, redirectTo])
 
   if (loading) {
     return (
@@ -28,7 +19,7 @@ export function ProtectedRoute({ children, redirectTo = '/auth/signin' }: Protec
   }
 
   if (!user) {
-    return null
+    return <AuthenticationBlocker />
   }
 
   return <>{children}</>
@@ -36,11 +27,10 @@ export function ProtectedRoute({ children, redirectTo = '/auth/signin' }: Protec
 
 // Higher-order component version
 export function withAuth<P extends object>(
-  Component: React.ComponentType<P>,
-  redirectTo?: string
+  Component: React.ComponentType<P>
 ) {
   const AuthenticatedComponent = (props: P) => (
-    <ProtectedRoute redirectTo={redirectTo}>
+    <ProtectedRoute>
       <Component {...props} />
     </ProtectedRoute>
   )

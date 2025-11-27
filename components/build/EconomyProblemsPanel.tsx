@@ -122,7 +122,9 @@ export default function EconomyProblemsPanel({
                   {/* Hover overlay - covers whole section */}
                   <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-5 pointer-events-none z-[1] transition-opacity" />
 
-                  {onDeleteProblem && (
+                  {/* Max-width wrapper for content */}
+                  <div className="max-w-[400px] mx-auto">
+                    {onDeleteProblem && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -233,10 +235,6 @@ export default function EconomyProblemsPanel({
                             className="w-full h-auto object-contain"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              const imgSrc = target.src;
-                              console.error(`[Image Load Error] Failed to load CDN image for ${problem.id}`);
-                              console.error(`[Image Load Error] CDN URL: ${imgSrc}`);
-
                               target.style.display = 'none';
                               const parent = target.parentElement;
                               if (parent) {
@@ -332,10 +330,6 @@ export default function EconomyProblemsPanel({
                                 className="w-full h-auto object-contain"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  const imgSrc = target.src;
-                                  console.error(`[Answer Image Load Error] Failed to load CDN answer for ${answerId}`);
-                                  console.error(`[Answer Image Load Error] CDN URL: ${imgSrc}`);
-
                                   target.style.display = 'none';
                                   const parent = target.parentElement;
                                   if (parent) {
@@ -357,6 +351,7 @@ export default function EconomyProblemsPanel({
                       </div>
                     );
                   })()}
+                  </div>
                 </div>
               );
             })}

@@ -524,12 +524,8 @@ export default function ConfigurePage() {
   // Show loading state while fetching worksheet OR generating PDF
   if ((!worksheetData && loading) || (worksheetReady && showLoader)) {
     return (
-      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <div className="flex-1 bg-white flex items-center justify-center">
-            <Loader className="animate-spin w-4 h-4" />
-          </div>
-        </Card>
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader className="animate-spin w-4 h-4" />
       </div>
     );
   }
@@ -537,66 +533,50 @@ export default function ConfigurePage() {
   // Show error state
   if (fetchError) {
     return (
-      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <div className="flex-1 bg-white flex items-center justify-center">
-            <div className="text-center text-gray-600">
-              {fetchError}
-            </div>
-          </div>
-        </Card>
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center text-gray-600">
+          {fetchError}
+        </div>
       </div>
     );
   }
 
   if (chaptersLoading) {
     return (
-      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <div className="flex-1 bg-white flex items-center justify-center">
-            <Loader className="animate-spin w-4 h-4" />
-          </div>
-        </Card>
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader className="animate-spin w-4 h-4" />
       </div>
     );
   }
 
   if (chaptersError) {
     return (
-      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <div className="flex-1 bg-white flex items-center justify-center">
-            <div className="text-center text-gray-600">
-              단원 정보 오류: {chaptersError}
-            </div>
-          </div>
-        </Card>
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-center text-gray-600">
+          단원 정보 오류: {chaptersError}
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="px-4 pt-0 pb-4 max-w-4xl mx-auto w-full h-full">
-        <Card className="p-0 h-full flex flex-row gap-0 overflow-hidden">
-          <IsolatedPDFContainer
-            pdfUrl={pdfUrl}
-            pdfError={pdfError}
-            loading={loading}
-            showLoader={showLoader}
-            onError={handlePDFError}
-            onEdit={handleEdit}
-            onSave={handleSave}
-            onPreview={handlePreview}
-            subject={subject}
-            selectedImagesLength={selectedImages.length}
-            worksheetTitle={worksheetTitle}
-            worksheetAuthor={worksheetAuthor}
-            isPublic={worksheetData?.worksheet.is_public}
-            worksheetId={worksheetId}
-          />
-        </Card>
-      </div>
+      <IsolatedPDFContainer
+        pdfUrl={pdfUrl}
+        pdfError={pdfError}
+        loading={loading}
+        showLoader={showLoader}
+        onError={handlePDFError}
+        onEdit={handleEdit}
+        onSave={handleSave}
+        onPreview={handlePreview}
+        subject={subject}
+        selectedImagesLength={selectedImages.length}
+        worksheetTitle={worksheetTitle}
+        worksheetAuthor={worksheetAuthor}
+        isPublic={worksheetData?.worksheet.is_public}
+        worksheetId={worksheetId}
+      />
       
       <WorksheetMetadataDialog
         open={showEditDialog}

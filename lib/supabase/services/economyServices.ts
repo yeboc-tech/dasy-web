@@ -195,8 +195,16 @@ export async function fetchEconomyProblems(
       correctRateRange
     } = filters;
 
+    // Safety checks - ensure all arrays are defined
+    const safeGrades = selectedGrades || [];
+    const safeYears = selectedYears || [];
+    const safeMonths = selectedMonths || [];
+    const safeExamTypes = selectedExamTypes || [];
+    const safeDifficulties = selectedDifficulties || [];
+    const safeChapterIds = selectedChapterIds || [];
+
     // If no chapters selected, return empty result immediately
-    if (selectedChapterIds.length === 0) {
+    if (safeChapterIds.length === 0) {
       console.log('[Economy Debug] No chapters selected, returning empty result');
       return [];
     }
@@ -208,7 +216,7 @@ export async function fetchEconomyProblems(
       .eq('type', 'MT_단원_태그');
 
     // Filter by selected chapters (tag_ids overlap)
-    tagsQuery = tagsQuery.overlaps('tag_ids', selectedChapterIds);
+    tagsQuery = tagsQuery.overlaps('tag_ids', safeChapterIds);
 
     const { data: tagsData, error: tagsError } = await tagsQuery;
 
@@ -314,29 +322,29 @@ export async function fetchEconomyProblems(
         }
 
         // Filter by grade
-        if (selectedGrades.length > 0 && !selectedGrades.includes(item.grade)) {
+        if (safeGrades.length > 0 && !safeGrades.includes(item.grade)) {
           return false;
         }
 
         // Filter by year
-        if (selectedYears.length > 0 && !selectedYears.includes(parseInt(item.year, 10))) {
+        if (safeYears.length > 0 && !safeYears.includes(parseInt(item.year, 10))) {
           return false;
         }
 
         // Filter by month
-        if (selectedMonths.length > 0 && !selectedMonths.includes(item.month)) {
+        if (safeMonths.length > 0 && !safeMonths.includes(item.month)) {
           return false;
         }
 
         // Filter by exam type
-        if (selectedExamTypes.length > 0 && !selectedExamTypes.includes(item.exam_type)) {
+        if (safeExamTypes.length > 0 && !safeExamTypes.includes(item.exam_type)) {
           return false;
         }
 
         // Filter by difficulty
         // When all difficulties are selected, include all problems regardless of specific difficulty value
         // This handles non-standard difficulty values like '중상', '중하', '최상'
-        if (selectedDifficulties.length > 0 && selectedDifficulties.length < 3 && item.difficulty) {
+        if (safeDifficulties.length > 0 && safeDifficulties.length < 3 && item.difficulty) {
           // Map non-standard difficulty values to standard ones for filtering
           const difficultyMatches = (difficulty: string, selectedDiffs: string[]): boolean => {
             // Exact match
@@ -350,7 +358,7 @@ export async function fetchEconomyProblems(
             return false;
           };
 
-          if (!difficultyMatches(item.difficulty, selectedDifficulties)) {
+          if (!difficultyMatches(item.difficulty, safeDifficulties)) {
             return false;
           }
         }
@@ -367,11 +375,11 @@ export async function fetchEconomyProblems(
       });
 
     // Count filtered out by each criteria
-    const gradeFiltered = problems.filter(p => selectedGrades.length > 0 && !selectedGrades.includes(p.grade));
-    const yearFiltered = problems.filter(p => selectedYears.length > 0 && !selectedYears.includes(parseInt(p.year, 10)));
-    const monthFiltered = problems.filter(p => selectedMonths.length > 0 && !selectedMonths.includes(p.month));
-    const examTypeFiltered = problems.filter(p => selectedExamTypes.length > 0 && !selectedExamTypes.includes(p.exam_type));
-    const difficultyFiltered = problems.filter(p => selectedDifficulties.length > 0 && p.difficulty && !selectedDifficulties.includes(p.difficulty));
+    const gradeFiltered = problems.filter(p => safeGrades.length > 0 && !safeGrades.includes(p.grade));
+    const yearFiltered = problems.filter(p => safeYears.length > 0 && !safeYears.includes(parseInt(p.year, 10)));
+    const monthFiltered = problems.filter(p => safeMonths.length > 0 && !safeMonths.includes(p.month));
+    const examTypeFiltered = problems.filter(p => safeExamTypes.length > 0 && !safeExamTypes.includes(p.exam_type));
+    const difficultyFiltered = problems.filter(p => safeDifficulties.length > 0 && p.difficulty && !safeDifficulties.includes(p.difficulty));
 
     console.log(`[Economy Debug] Filtered out counts:`, {
       byGrade: gradeFiltered.length,
@@ -383,12 +391,12 @@ export async function fetchEconomyProblems(
 
     console.log(`[Economy Debug] After filtering: ${filteredProblems.length} problems`);
     console.log(`[Economy Debug] Filters applied:`, {
-      selectedChapterIds: selectedChapterIds.length,
-      selectedGrades,
-      selectedYears,
-      selectedMonths,
-      selectedExamTypes,
-      selectedDifficulties,
+      selectedChapterIds: safeChapterIds.length,
+      selectedGrades: safeGrades,
+      selectedYears: safeYears,
+      selectedMonths: safeMonths,
+      selectedExamTypes: safeExamTypes,
+      selectedDifficulties: safeDifficulties,
       correctRateRange
     });
 

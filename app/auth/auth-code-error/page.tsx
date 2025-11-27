@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 
 export default function AuthCodeError() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <div className="flex min-h-svh w-full items-center justify-center px-6 md:px-10">
+      <div className="w-full max-w-sm pb-[60px]">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">인증 오류</h1>
