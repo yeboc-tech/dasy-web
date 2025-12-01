@@ -5,6 +5,7 @@ import type { EconomyProblem } from '@/lib/types';
 interface CreateEconomyWorksheetParams {
   title: string;
   author: string;
+  userId?: string; // Optional: if provided, worksheet is associated with this user
   filters: {
     selectedChapters: string[];
     selectedDifficulties: string[];
@@ -37,7 +38,7 @@ export async function createEconomyWorksheet(
   supabase: SupabaseClient,
   params: CreateEconomyWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, filters, problems } = params;
+  const { title, author, userId, filters, problems } = params;
 
   const selectedProblemIds = problems.map(problem => problem.id);
 
@@ -55,7 +56,8 @@ export async function createEconomyWorksheet(
       filters: {
         ...filters,
         worksheet_type: 'economy' // Mark as economy worksheet
-      }
+      },
+      created_by: userId || null
     })
     .select('id')
     .single();

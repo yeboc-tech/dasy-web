@@ -10,29 +10,22 @@ import {
   Table as TableType,
 } from "@tanstack/react-table"
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
-interface DataTableProps<TData, TValue> {
+interface WorksheetsDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onTableReady?: (table: TableType<TData>) => void
+  emptyMessage?: string
 }
 
-export function DataTable<TData, TValue>({
+export function WorksheetsDataTable<TData, TValue>({
   columns,
   data,
   onTableReady,
-}: DataTableProps<TData, TValue>) {
+  emptyMessage = "데이터가 없습니다.",
+}: WorksheetsDataTableProps<TData, TValue>) {
   const router = useRouter()
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -47,68 +40,87 @@ export function DataTable<TData, TValue>({
     },
   })
 
-  // Notify parent component when table is ready
   useEffect(() => {
     if (onTableReady) {
-      onTableReady(table);
+      onTableReady(table)
     }
-  }, [table, onTableReady]);
+  }, [table, onTableReady])
 
   return (
     <div className="relative w-full">
-      <table className="w-full caption-bottom text-sm">
-        <thead className="sticky top-0 z-10 bg-[var(--gray-50)] border-b border-[var(--border)]">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 z-10 bg-[var(--gray-50)] shadow-[0_1px_0_var(--border)]">
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="border-b border-[var(--border)] hover:bg-[var(--gray-50)]">
+            <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
+                const width = header.column.columnDef.meta?.width
                 return (
-                  <TableHead key={header.id} className="bg-[var(--gray-50)]">
+                  <th
+                    key={header.id}
+                    className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap bg-[var(--gray-50)]"
+                    style={{
+                      width: width || 'auto',
+                      minWidth: header.column.columnDef.meta?.minWidth || 'auto'
+                    }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
-                  </TableHead>
+                  </th>
                 )
               })}
-            </TableRow>
+            </tr>
           ))}
         </thead>
-        <TableBody>
+        <tbody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow
+              <tr
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
                 className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-[var(--border)]"
                 onClick={() => {
-                  const worksheet = row.original as { id: string };
-                  router.push(`/worksheets/${worksheet.id}`);
+                  const worksheet = row.original as { id: string }
+                  router.push(`/worksheets/${worksheet.id}`)
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <td
+                    key={cell.id}
+                    className="p-4 align-middle"
+                  >
                     {flexRender(
                       cell.column.columnDef.cell,
                       cell.getContext()
                     )}
-                  </TableCell>
+                  </td>
                 ))}
-              </TableRow>
+              </tr>
             ))
           ) : (
-            <TableRow className="border-b border-[var(--border)]">
-              <TableCell
+            <tr className="border-b border-[var(--border)]">
+              <td
                 colSpan={columns.length}
-                className="h-24 text-center"
+                className="h-24 text-center text-gray-500"
               >
-                아직 공유된 학습지가 없습니다.
-              </TableCell>
-            </TableRow>
+                {emptyMessage}
+              </td>
+            </tr>
           )}
-        </TableBody>
+        </tbody>
       </table>
     </div>
   )
+}
+
+// Extend tanstack table column meta type
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData, TValue> {
+    width?: string
+    minWidth?: string
+  }
 }

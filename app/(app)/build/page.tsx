@@ -666,6 +666,7 @@ export default function Page() {
         const { id } = await createEconomyWorksheet(supabase, {
           title: data.title,
           author: data.author,
+          userId: user?.id,
           filters: economyFilters,
           problems: sortedFilteredProblems
         });
@@ -688,6 +689,7 @@ export default function Page() {
         const { id } = await createWorksheet(supabase, {
           title: data.title,
           author: data.author,
+          userId: user?.id,
           filters,
           problems: sortedFilteredProblems,
           contentTree
@@ -745,7 +747,7 @@ export default function Page() {
         {/* Top Bar - Worksheet */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-end gap-2">
-            <h1 className="text-lg font-semibold text-[var(--foreground)] leading-none">학습지 생성</h1>
+            <h1 className="text-lg font-semibold text-[var(--foreground)] leading-none">새 학습지</h1>
             <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
               {sortedFilteredProblems.length}문제
             </span>

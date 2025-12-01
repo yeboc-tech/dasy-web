@@ -32,16 +32,16 @@ export function PublishConfirmDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>학습지 목록 추가</DialogTitle>
+          <DialogTitle>학습지 공개</DialogTitle>
           <DialogDescription>
-            학습지 목록에 현재 학습지를 추가합니다.
+            현재 학습지를 공개 학습지 목록에 추가합니다.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Alert className="border-red-200 bg-red-50 p-3">
           <AlertDescription className="m-0 p-0">
             <p className="text-sm">
-              목록에 추가한 후에는 제목과 출제자 정보를 수정할 수 없습니다.
+              공개한 후에는 제목과 출제자 정보를 수정할 수 없습니다.
             </p>
           </AlertDescription>
         </Alert>
@@ -59,7 +59,7 @@ export function PublishConfirmDialog({
             onClick={handleConfirm}
             className="bg-black hover:bg-gray-800 text-white"
           >
-            추가
+            공개
           </Button>
         </DialogFooter>
       </DialogContent>
