@@ -18,12 +18,14 @@ import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { CorrectRateChart } from '@/components/analytics/DifficultyChart';
+import { useAuth } from '@/lib/contexts/auth-context';
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
 export default function BetaBuildPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears} = useWorksheetStore();
+  const { user } = useAuth();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
@@ -233,6 +235,7 @@ export default function BetaBuildPage() {
       const { id } = await createWorksheet(supabase, {
         title: data.title,
         author: data.author,
+        userId: user?.id,
         filters,
         problems: sortedSelectedProblems, // Use sorted problems
         contentTree

@@ -571,7 +571,7 @@ export default function ConfigurePage() {
       );
     } catch (error) {
       console.error('Error publishing worksheet:', error);
-      alert('목록 추가 중 오류가 발생했습니다.');
+      alert('공개 중 오류가 발생했습니다.');
     }
   }, [worksheetId]);
 
@@ -687,7 +687,7 @@ export default function ConfigurePage() {
         <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
           <DialogHeader className="px-4 py-3 border-b">
             <div className="flex items-center justify-between pr-8">
-              <DialogTitle>프리뷰 보기</DialogTitle>
+              <DialogTitle>프리뷰</DialogTitle>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="show-answers" className="text-sm font-medium text-gray-600 cursor-pointer">해설 보기</Label>
                 <Switch

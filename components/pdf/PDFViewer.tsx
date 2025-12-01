@@ -451,7 +451,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                   onClick={onPreview}
                   title="문제 목록 미리보기"
                 >
-                  프리뷰 보기
+                  프리뷰
                 </CustomButton>
               )}
 
@@ -473,7 +473,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                   onClick={onSave}
                   title="학습지를 공개 목록에 추가"
                 >
-                  목록 추가
+                  공개
                 </CustomButton>
               )}
 

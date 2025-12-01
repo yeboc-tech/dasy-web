@@ -6,6 +6,7 @@ import type { ChapterTreeItem } from '@/lib/types/database';
 interface CreateWorksheetParams {
   title: string;
   author: string;
+  userId?: string; // Optional: if provided, worksheet is associated with this user
   filters: {
     selectedChapters: string[];
     selectedDifficulties: string[];
@@ -29,11 +30,11 @@ interface WorksheetData {
 }
 
 export async function createWorksheet(
-  supabase: SupabaseClient, 
+  supabase: SupabaseClient,
   params: CreateWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, filters, problems } = params;
-  
+  const { title, author, userId, filters, problems } = params;
+
   // Use the provided problems directly (they're already filtered from the preview)
   const selectedProblemIds = problems.map(problem => problem.id);
 
@@ -48,7 +49,8 @@ export async function createWorksheet(
       title: title.trim(),
       author: author.trim(),
       selected_problem_ids: selectedProblemIds,
-      filters: filters
+      filters: filters,
+      created_by: userId || null
     })
     .select('id')
     .single();
@@ -197,5 +199,77 @@ export async function publishWorksheet(
   if (error) {
     console.error('Error publishing worksheet:', error);
     throw new Error('Failed to publish worksheet');
+  }
+}
+
+export interface MyWorksheetItem {
+  id: string;
+  title: string;
+  author: string;
+  created_at: string;
+  selected_problem_ids: string[];
+  is_public: boolean;
+}
+
+export async function getMyWorksheets(
+  supabase: SupabaseClient,
+  userId: string,
+  options?: { limit?: number; offset?: number; search?: string }
+): Promise<{ worksheets: MyWorksheetItem[]; total: number }> {
+  const { limit = 20, offset = 0, search } = options || {};
+
+  let query = supabase
+    .from('worksheets')
+    .select('id, title, author, created_at, selected_problem_ids, is_public', { count: 'exact' })
+    .eq('created_by', userId);
+
+  if (search?.trim()) {
+    query = query.ilike('title', `%${search.trim()}%`);
+  }
+
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error('Error fetching user worksheets:', error);
+    throw new Error('Failed to fetch worksheets');
+  }
+
+  return {
+    worksheets: data || [],
+    total: count || 0
+  };
+}
+
+export async function deleteWorksheet(
+  supabase: SupabaseClient,
+  worksheetId: string,
+  userId: string
+): Promise<void> {
+  // Verify ownership before deleting
+  const { data: worksheet, error: fetchError } = await supabase
+    .from('worksheets')
+    .select('created_by')
+    .eq('id', worksheetId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching worksheet:', fetchError);
+    throw new Error('Worksheet not found');
+  }
+
+  if (worksheet.created_by !== userId) {
+    throw new Error('Not authorized to delete this worksheet');
+  }
+
+  const { error } = await supabase
+    .from('worksheets')
+    .delete()
+    .eq('id', worksheetId);
+
+  if (error) {
+    console.error('Error deleting worksheet:', error);
+    throw new Error('Failed to delete worksheet');
   }
 }

@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { WorksheetItem, columns } from './columns';
-import { DataTable } from './data-table';
+import { WorksheetItem, publicWorksheetsColumns } from '@/components/worksheets/columns';
+import { WorksheetsDataTable } from '@/components/worksheets/WorksheetsDataTable';
 import { Loader, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Table as TableType } from '@tanstack/react-table';
 
 const PAGE_SIZE = 20;
 
@@ -14,7 +13,6 @@ export default function WorksheetsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [table, setTable] = useState<TableType<WorksheetItem> | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const observerTarget = useRef<HTMLDivElement>(null);
   const currentPage = useRef(0);
@@ -127,7 +125,7 @@ export default function WorksheetsPage() {
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Top Bar */}
       <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
-        <h1 className="text-lg font-semibold text-[var(--foreground)]">공유 학습지</h1>
+        <h1 className="text-lg font-semibold text-[var(--foreground)]">공개 학습지</h1>
 
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -150,10 +148,10 @@ export default function WorksheetsPage() {
           </div>
         ) : (
           <>
-            <DataTable
-              columns={columns}
+            <WorksheetsDataTable
+              columns={publicWorksheetsColumns}
               data={worksheets}
-              onTableReady={setTable}
+              emptyMessage="아직 공개된 학습지가 없습니다."
             />
 
             {/* Infinite Scroll Observer + Loader - Only show when there's more data */}
