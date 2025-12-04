@@ -17,11 +17,11 @@ export function TopNavbar() {
   });
 
   const isBetaMode = pathname.startsWith('/beta/');
-  const isOnBuildPage = pathname === '/build' || pathname === '/beta/build';
+  const isOnBuildPage = pathname === '/' || pathname === '/beta/build';
 
   const navItems = [
     { href: '/worksheets', label: '학습지 목록' },
-    { href: '/build', label: '학습지 생성' },
+    { href: '/', label: '학습지 생성' },
   ];
 
   const handleFeedbackClick = () => {
@@ -31,7 +31,7 @@ export function TopNavbar() {
   const handleBetaModeToggle = (checked: boolean) => {
     if (checked) {
       // Navigate to beta version of current page
-      if (pathname === '/build') {
+      if (pathname === '/') {
         router.push('/beta/build');
       } else {
         router.push('/beta/build');
@@ -39,9 +39,9 @@ export function TopNavbar() {
     } else {
       // Navigate to regular version
       if (pathname === '/beta/build') {
-        router.push('/build');
+        router.push('/');
       } else {
-        router.push('/build');
+        router.push('/');
       }
     }
   };
@@ -103,8 +103,8 @@ export function TopNavbar() {
           const isActive = isBetaMode
             ? pathname === `/beta${item.href}`
             : pathname === item.href;
-          // Only apply beta prefix to /build, not /worksheets
-          const href = isBetaMode && item.href === '/build' ? `/beta${item.href}` : item.href;
+          // Only apply beta prefix to /, not /worksheets
+          const href = isBetaMode && item.href === '/' ? `/beta/build` : item.href;
 
           return (
             <Link

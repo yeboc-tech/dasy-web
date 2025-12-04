@@ -233,3 +233,54 @@ export function isEconomyWorksheet(problemIds: string[]): boolean {
   // Check first problem ID - if it starts with '경제_', it's an economy worksheet
   return problemIds[0].startsWith('경제_');
 }
+
+interface UpdateEconomyWorksheetParams {
+  title: string;
+  author: string;
+  filters: {
+    selectedChapters: string[];
+    selectedDifficulties: string[];
+    selectedGrades: string[];
+    selectedYears: number[];
+    selectedMonths: string[];
+    selectedExamTypes: string[];
+    correctRateRange: [number, number];
+    problemCount: number;
+  };
+  problems: ProblemMetadata[];
+}
+
+/**
+ * Update an existing economy worksheet
+ */
+export async function updateEconomyWorksheet(
+  supabase: SupabaseClient,
+  id: string,
+  params: UpdateEconomyWorksheetParams
+): Promise<void> {
+  const { title, author, filters, problems } = params;
+
+  const selectedProblemIds = problems.map(problem => problem.id);
+
+  if (selectedProblemIds.length === 0) {
+    throw new Error('No problems to save');
+  }
+
+  const { error } = await supabase
+    .from('worksheets')
+    .update({
+      title: title.trim(),
+      author: author.trim(),
+      selected_problem_ids: selectedProblemIds,
+      filters: {
+        ...filters,
+        worksheet_type: 'economy'
+      }
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating economy worksheet:', error);
+    throw new Error('Failed to update economy worksheet');
+  }
+}

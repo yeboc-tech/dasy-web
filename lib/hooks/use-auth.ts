@@ -27,7 +27,7 @@ export const useAuthActions = () => {
     }
 
     router.refresh()
-    router.push('/build')
+    router.push('/')
   }
 
   const signUp = async (email: string, password: string) => {
@@ -67,7 +67,7 @@ export const useAuthActions = () => {
   const handleSignOut = async () => {
     await signOut()
     router.refresh()
-    router.push('/build')
+    router.push('/')
   }
 
   return {

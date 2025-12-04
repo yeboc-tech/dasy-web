@@ -8,15 +8,14 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Input } from '@/components/ui/input';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const PAGE_SIZE = 20;
@@ -238,28 +237,30 @@ export default function MyWorksheetsPage() {
         </div>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>학습지 삭제</AlertDialogTitle>
-              <AlertDialogDescription>
+        <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))} modal={false}>
+          <DialogContent className="bg-white" onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>학습지 삭제</DialogTitle>
+              <DialogDescription>
                 &quot;{deleteDialog.title}&quot; 학습지를 삭제하시겠습니까?
                 <br />
                 이 작업은 되돌릴 수 없습니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleting}>취소</AlertDialogCancel>
-              <AlertDialogAction
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialog(prev => ({ ...prev, open: false }))} disabled={deleting}>
+                취소
+              </Button>
+              <Button
                 onClick={handleDeleteConfirm}
                 disabled={deleting}
                 className="bg-red-500 hover:bg-red-600"
               >
                 {deleting ? '삭제 중...' : '삭제'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );

@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProblemsPanel from '@/components/build/problemsPanel';
 import EconomyProblemsPanel from '@/components/build/EconomyProblemsPanel';
 import FilterPanel from '@/components/build/filterPanel';
-import { Card } from '@/components/ui/card';
+import WorksheetMetadataPanel from '@/components/build/WorksheetMetadataPanel';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { CornerDownLeft, ArrowDownUp, ChevronLeft, Check } from 'lucide-react';
+import { CornerDownLeft, ChevronLeft, Loader } from 'lucide-react';
+import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import PDFViewer from '@/components/pdf/PDFViewer';
+import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 import { CustomButton } from '@/components/custom-button';
 import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
-import { WorksheetMetadataDialog } from '@/components/worksheets/WorksheetMetadataDialog';
 import { getEconomyProblems } from '@/lib/supabase/services/clientServices';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
@@ -26,7 +27,21 @@ import { AuthenticationBlocker } from '@/components/auth/authentication-blocker'
 import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
-export default function Page() {
+// Convert answer number to circled number character
+function getCircledNumber(answer: string | number | undefined): string {
+  if (!answer) return '-';
+  const num = typeof answer === 'string' ? parseInt(answer) : answer;
+  if (num >= 1 && num <= 20) {
+    return String.fromCharCode(0x2460 + num - 1);
+  }
+  return String(answer);
+}
+
+interface WorksheetBuilderProps {
+  worksheetId?: string;
+}
+
+export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps) {
   const {
     selectedChapters,
     setSelectedChapters,
@@ -41,12 +56,12 @@ export default function Page() {
     selectedExamTypes
   } = useWorksheetStore();
   const [selectedMainSubjects, setSelectedMainSubjects] = useState<string[]>(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']); // 통합사회 2 database ID
+  const [worksheetLoading, setWorksheetLoading] = useState(!!worksheetId);
+  const [worksheetCreatedAt, setWorksheetCreatedAt] = useState<string | undefined>(undefined);
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [economyProblems, setEconomyProblems] = useState<EconomyProblem[]>([]);
   const [dialogProblems, setDialogProblems] = useState<ProblemMetadata[]>([]);
   const [economyLoading, setEconomyLoading] = useState(false);
-  const [showMetadataDialog, setShowMetadataDialog] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
@@ -55,7 +70,16 @@ export default function Page() {
   const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
-  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems'>('worksheet');
+  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>('addProblems');
+  const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>({ stage: '', percent: 0 });
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfElapsedTime, setPdfElapsedTime] = useState(0);
+  const pdfElapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [worksheetTitle, setWorksheetTitle] = useState('');
+  const [worksheetAuthor, setWorksheetAuthor] = useState('');
+  const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
+  const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
 
   // Separate filter states for "문제 추가" view
   const [dialogSelectedChapters, setDialogSelectedChapters] = useState<string[]>([]);
@@ -86,10 +110,102 @@ export default function Page() {
   // Check if in economy mode
   const isEconomyMode = selectedMainSubjects.includes('economy');
 
+  // Determine locked subject based on existing worksheet problems
+  const lockedSubject = filteredProblems.length === 0
+    ? null
+    : filteredProblems.some(p => p.id.startsWith('경제_'))
+      ? 'economy'
+      : 'tonghapsahoe';
+
+  // Track recently added problem IDs for visual distinction
+  const [recentlyAddedProblemIds, setRecentlyAddedProblemIds] = useState<Set<string>>(new Set());
+
+  // Load existing worksheet data if worksheetId is provided
+  useEffect(() => {
+    if (!worksheetId) {
+      setWorksheetLoading(false);
+      return;
+    }
+
+    const loadWorksheet = async () => {
+      try {
+        setWorksheetLoading(true);
+
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+
+        // Fetch the worksheet to check if it's economy or regular
+        const { data: worksheetMeta, error: metaError } = await supabase
+          .from('worksheets')
+          .select('selected_problem_ids, filters, title, author, is_public, created_at')
+          .eq('id', worksheetId)
+          .single();
+
+        if (metaError) {
+          console.error('Worksheet not found:', metaError);
+          setWorksheetLoading(false);
+          return;
+        }
+
+        // Set worksheet metadata
+        setWorksheetTitle(worksheetMeta.title || '');
+        setWorksheetAuthor(worksheetMeta.author || '');
+        setSavedTitle(worksheetMeta.title || null);
+        setWorksheetCreatedAt(worksheetMeta.created_at);
+
+        // Detect if it's an economy worksheet by checking problem ID format
+        const { isEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+        const isEconomy = isEconomyWorksheet(worksheetMeta.selected_problem_ids);
+
+        // Fetch the full worksheet data with problems
+        let data;
+        if (isEconomy) {
+          const { getEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+          data = await getEconomyWorksheet(supabase, worksheetId);
+          setSelectedMainSubjects(['economy']);
+        } else {
+          const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
+          data = await getWorksheet(supabase, worksheetId);
+          setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
+        }
+
+        // Load the problems into the worksheet
+        if (data?.problems) {
+          setFilteredProblems(data.problems);
+          setSortedFilteredProblems(data.problems);
+        }
+
+        // Fetch edited contents for preview
+        const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+        const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
+        const answerIds = data?.problems
+          ?.filter((p: ProblemMetadata) => p.answer_filename)
+          ?.map((p: ProblemMetadata) => {
+            if (p.id.startsWith('경제_')) {
+              return p.id.replace('_문제', '_해설');
+            }
+            return p.id;
+          }) || [];
+        const allResourceIds = [...problemIds, ...answerIds];
+        const fetchedEditedContents = await getEditedContents(allResourceIds);
+        setEditedContentsMap(fetchedEditedContents);
+
+        // Start in worksheet view when editing existing worksheet
+        setViewMode('worksheet');
+
+      } catch (error) {
+        console.error('Error loading worksheet:', error);
+      } finally {
+        setWorksheetLoading(false);
+      }
+    };
+
+    loadWorksheet();
+  }, [worksheetId]);
+
   // Initialize dialog filters with current worksheet filters when switching to add problems view
   useEffect(() => {
     if (viewMode === 'addProblems' && dialogSelectedChapters.length === 0) {
-      // Only initialize if dialog filters are empty (first time opening)
       setDialogSelectedChapters(selectedChapters);
       setDialogSelectedDifficulties(selectedDifficulties);
       setDialogSelectedProblemTypes(selectedProblemTypes);
@@ -108,53 +224,31 @@ export default function Page() {
     let cancelled = false;
 
     const fetchEditedContent = async () => {
-      // Only fetch edited content for 경제 mode
       if (!isEconomyMode) {
-        // For 통합사회, set empty map (not null) so components don't wait
         setEditedContentsMap(new Map());
         return;
       }
 
-      // Combine both filteredProblems (worksheet view) and dialogProblems (add problems view)
       const allProblems = [...filteredProblems, ...dialogProblems];
 
       if (allProblems.length === 0) {
-        setEditedContentsMap(null); // Set null when no problems (consistent loading state)
+        setEditedContentsMap(null);
         return;
       }
 
-      // Set to null to indicate "loading"
       setEditedContentsMap(null);
 
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-
-      // Collect problem IDs from both views, removing duplicates
       const allResourceIds = Array.from(new Set(allProblems.map(p => p.id)));
-
-      console.log(`[Build Page Preview] Fetching edited content for ${allResourceIds.length} 경제 resources (${filteredProblems.length} worksheet + ${dialogProblems.length} dialog)`);
-      console.log('[Build Page Preview] First 5 resource IDs:', allResourceIds.slice(0, 5));
-
       const fetchedEditedContents = await getEditedContents(allResourceIds);
 
-      // Only update state if this fetch hasn't been cancelled
-      if (cancelled) {
-        console.log('[Build Page Preview] ⚠️ Fetch cancelled - problem list changed');
-        return;
-      }
-
-      if (fetchedEditedContents.size > 0) {
-        console.log(`[Build Page Preview] ✅ Found ${fetchedEditedContents.size} edited images in database`);
-        console.log('[Build Page Preview] Resource IDs with edited content:', Array.from(fetchedEditedContents.keys()));
-      } else {
-        console.log('[Build Page Preview] ⚠️ No edited content found in database for these problems');
-      }
+      if (cancelled) return;
 
       setEditedContentsMap(fetchedEditedContents);
     };
 
     fetchEditedContent();
 
-    // Cleanup: cancel fetch if component unmounts or problem lists change
     return () => {
       cancelled = true;
     };
@@ -162,14 +256,12 @@ export default function Page() {
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
-    // Skip if in economy mode
     if (isEconomyMode) return;
     if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
       const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
       const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
 
       if (tonghapsahoe2Item) {
-        // Use the same logic as handleCheckboxChange when checking a parent
         const getAllChildIds = (item: ChapterTreeItem): string[] => {
           const childIds: string[] = [];
           if (item.children && item.children.length > 0) {
@@ -181,130 +273,20 @@ export default function Page() {
           return childIds;
         };
 
-        // Simulate checking 통합사회 2 - add parent + all children (same as FilterPanel logic)
         const allChildIds = getAllChildIds(tonghapsahoe2Item);
         const itemsToAdd = [tonghapsahoe2Id, ...allChildIds];
         const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
 
-        // Simulating 통합사회 2 checkbox click - selecting parent and all children
         setSelectedChapters(newSelectedChapters);
         setHasSetDefaultSelection(true);
       }
     }
   }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters, isEconomyMode]);
 
-  // Filter problems for main page when filters change
+  // Filter problems for dialog when any filter changes
   useEffect(() => {
-    // Skip if in economy mode - show empty
-    if (isEconomyMode) {
-      setFilteredProblems([]);
-      return;
-    }
+    if (aiMode) return;
 
-    if (!problems || problems.length === 0) {
-      return;
-    }
-
-    const filters = {
-      selectedChapters,
-      selectedDifficulties,
-      selectedProblemTypes,
-      selectedSubjects,
-      problemCount,
-      contentTree,
-      correctRateRange,
-      selectedYears
-    };
-
-    const filtered = ProblemFilter.filterProblems(problems, filters);
-    setFilteredProblems(filtered);
-  }, [isEconomyMode, problems, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, problemCount, contentTree, correctRateRange, selectedYears]);
-
-  // Fetch economy problems when in economy mode
-  useEffect(() => {
-    if (!isEconomyMode) {
-      setEconomyProblems([]);
-      setEconomyLoading(false);
-      // Don't clear filteredProblems here - let the other useEffect handle it
-      return;
-    }
-
-    async function fetchEconomyData() {
-      try {
-        setEconomyLoading(true);
-
-        const filters = {
-          selectedChapterIds: selectedChapters,
-          selectedGrades,
-          selectedYears,
-          selectedMonths,
-          selectedExamTypes,
-          selectedDifficulties,
-          correctRateRange
-        };
-
-        const economyData = await getEconomyProblems(filters);
-        setEconomyProblems(economyData);
-
-        // Convert economy problems to ProblemMetadata format for display
-        const convertedProblems: ProblemMetadata[] = economyData.map((problem) => ({
-          id: problem.problem_id,
-          problem_filename: `${problem.problem_id}.png`,
-          answer_filename: problem.problem_id.replace('_문제', '_해설') + '.png',
-          answer: problem.correct_answer,
-          chapter_id: problem.tag_ids[problem.tag_ids.length - 1] || null, // Use most specific chapter
-          difficulty: problem.difficulty || '중',
-          problem_type: `${problem.exam_type} ${problem.year}년 ${parseInt(problem.month)}월`,
-          tags: problem.tag_labels,
-          related_subjects: ['경제'],
-          correct_rate: problem.accuracy_rate,
-          exam_year: parseInt(problem.year),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-        // Remove duplicates based on problem ID
-        const uniqueProblems = convertedProblems.filter((problem, index, self) =>
-          index === self.findIndex(p => p.id === problem.id)
-        );
-
-        if (uniqueProblems.length !== convertedProblems.length) {
-          console.warn(`[Economy Debug] Removed ${convertedProblems.length - uniqueProblems.length} duplicate problems`);
-        }
-
-        // Apply problem count limit with random selection
-        let limitedProblems: ProblemMetadata[];
-        if (problemCount === -1) {
-          // Show all problems
-          limitedProblems = uniqueProblems;
-        } else {
-          // Randomly select problems first, then they will be sorted later
-          const shuffled = [...uniqueProblems].sort(() => Math.random() - 0.5);
-          limitedProblems = shuffled.slice(0, Math.min(problemCount, shuffled.length));
-        }
-
-        console.log(`[Economy Debug] Total problems: ${uniqueProblems.length}, showing: ${limitedProblems.length}`);
-        console.log(`[Economy Debug] First 5 problem IDs:`, limitedProblems.slice(0, 5).map(p => p.id));
-
-        setFilteredProblems(limitedProblems);
-      } catch (error) {
-        console.error('Error fetching economy problems:', error);
-        setEconomyProblems([]);
-        setFilteredProblems([]);
-      } finally {
-        setEconomyLoading(false);
-      }
-    }
-
-    fetchEconomyData();
-  }, [isEconomyMode, selectedChapters, selectedGrades, selectedYears, selectedMonths, selectedExamTypes, selectedDifficulties, correctRateRange, problemCount]);
-
-  // Filter problems for dialog when any filter changes (only in filter mode, not AI mode)
-  // Uses separate dialog filter states
-  useEffect(() => {
-    if (aiMode) return; // Skip filtering in AI mode - let AI control the results
-
-    // Handle economy mode for dialog
     if (isEconomyMode) {
       const fetchDialogEconomyProblems = async () => {
         try {
@@ -320,7 +302,6 @@ export default function Page() {
 
           const economyData = await getEconomyProblems(filters);
 
-          // Convert economy problems to ProblemMetadata format (same as main view)
           const convertedProblems: ProblemMetadata[] = economyData.map((problem) => ({
             id: problem.problem_id,
             problem_filename: `${problem.problem_id}.png`,
@@ -337,12 +318,10 @@ export default function Page() {
             updated_at: new Date().toISOString()
           }));
 
-          // Remove duplicates
           const uniqueProblems = convertedProblems.filter((problem, index, self) =>
             index === self.findIndex(p => p.id === problem.id)
           );
 
-          // Apply problem count limit with random selection
           let limitedProblems: ProblemMetadata[];
           if (dialogProblemCount === -1) {
             limitedProblems = uniqueProblems;
@@ -351,7 +330,6 @@ export default function Page() {
             limitedProblems = shuffled.slice(0, Math.min(dialogProblemCount, shuffled.length));
           }
 
-          console.log(`[Dialog Economy Debug] Total: ${uniqueProblems.length}, showing: ${limitedProblems.length}`);
           setDialogProblems(limitedProblems);
         } catch (error) {
           console.error('Error fetching economy problems for dialog:', error);
@@ -387,7 +365,6 @@ export default function Page() {
       return;
     }
 
-    // For non-economy mode, we need contentTree
     if (!isEconomyMode && !contentTree) {
       setSortedFilteredProblems([]);
       return;
@@ -395,49 +372,36 @@ export default function Page() {
 
     let sorted = [...filteredProblems];
 
-    console.log(`[Sort Debug] Mode: ${worksheetMode}, Problems to sort: ${sorted.length}, IsEconomyMode: ${isEconomyMode}`);
-
     if (worksheetMode === '연습') {
       if (isEconomyMode) {
-        // Economy mode: Sort by tag hierarchy -> group by complete tag path -> sort by correct rate
         sorted.sort((a, b) => {
           const tagsA = a.tags || [];
           const tagsB = b.tags || [];
 
-          // Compare tag hierarchy level by level (chapter hierarchy)
           const minLength = Math.min(tagsA.length, tagsB.length);
           for (let i = 0; i < minLength; i++) {
-            // Extract leading numbers for numeric comparison
             const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
             const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
 
-            // If both have numbers, compare numerically
             if (numA !== numB) {
               return numA - numB;
             }
 
-            // If numbers are equal or don't exist, fall back to string comparison
             const comparison = tagsA[i].localeCompare(tagsB[i]);
             if (comparison !== 0) {
               return comparison;
             }
           }
 
-          // If one path is shorter (e.g., ['경제', '시장'] vs ['경제', '시장', '수요'])
-          // Put the shorter one first
           if (tagsA.length !== tagsB.length) {
             return tagsA.length - tagsB.length;
           }
 
-          // Same tag path (same chapter at deepest level)
-          // Sort by correct rate descending (highest first = easiest first)
           const aCorrectRate = a.correct_rate ?? 0;
           const bCorrectRate = b.correct_rate ?? 0;
           return bCorrectRate - aCorrectRate;
         });
       } else {
-        // Regular mode: Use the same hierarchical sorting as ProblemFilter
-        // Build chapter path map
         const pathMap = new Map<string, number[]>();
         const traverse = (items: ChapterTreeItem[], path: number[]) => {
           items.forEach((item, index) => {
@@ -450,66 +414,42 @@ export default function Page() {
         };
         traverse(contentTree, []);
 
-        // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
         sorted.sort((a, b) => {
           const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
           const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-          // If one problem has no chapter path, put it at the end
           if (!pathA && !pathB) return 0;
           if (!pathA) return 1;
           if (!pathB) return -1;
 
-          // Compare chapter hierarchy first
           const minLength = Math.min(pathA.length, pathB.length);
           for (let i = 0; i < minLength; i++) {
             if (pathA[i] !== pathB[i]) {
               return pathA[i] - pathB[i];
             }
           }
-          // If all common levels are equal, shorter path comes first
           if (pathA.length !== pathB.length) {
             return pathA.length - pathB.length;
           }
 
-          // If in same chapter, group by tags
           const tagsA = (a.tags || []).sort().join(',');
           const tagsB = (b.tags || []).sort().join(',');
           if (tagsA !== tagsB) {
             return tagsA.localeCompare(tagsB);
           }
 
-          // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
           const aCorrectRate = a.correct_rate ?? 0;
           const bCorrectRate = b.correct_rate ?? 0;
           return bCorrectRate - aCorrectRate;
         });
       }
     } else {
-      // 실전: totally random
       sorted = sorted
         .map(value => ({ value, sort: Math.random() }))
         .sort((a, b) => a.sort - b.sort)
         .map(({ value }) => value);
     }
 
-    console.log(`[Sort Debug] After sorting, first 3 problems:`, sorted.slice(0, 3).map(p => ({
-      id: p.id,
-      chapter: p.chapter_id,
-      tags: p.tags,
-      difficulty: p.difficulty,
-      correctRate: p.correct_rate
-    })));
-
-    // Check for duplicates
-    const ids = sorted.map(p => p.id);
-    const uniqueIds = new Set(ids);
-    if (ids.length !== uniqueIds.size) {
-      console.warn(`[Economy Debug] Found ${ids.length - uniqueIds.size} duplicate problems in sorted list`);
-      console.warn('[Economy Debug] Sample duplicates:', ids.filter((id, index) => ids.indexOf(id) !== index).slice(0, 3));
-    }
-
-    console.log(`[Economy Debug] Setting sortedFilteredProblems: ${sorted.length} problems`);
     setSortedFilteredProblems(sorted);
   }, [filteredProblems, worksheetMode, contentTree, isEconomyMode]);
 
@@ -520,7 +460,6 @@ export default function Page() {
       return;
     }
 
-    // For non-economy mode, we need contentTree
     if (!isEconomyMode && !contentTree) {
       setSortedDialogProblems([]);
       return;
@@ -530,45 +469,34 @@ export default function Page() {
 
     if (worksheetMode === '연습') {
       if (isEconomyMode) {
-        // Economy mode: Sort by tag hierarchy -> group by complete tag path -> sort by correct rate
         sorted.sort((a, b) => {
           const tagsA = a.tags || [];
           const tagsB = b.tags || [];
 
-          // Compare tag hierarchy level by level (chapter hierarchy)
           const minLength = Math.min(tagsA.length, tagsB.length);
           for (let i = 0; i < minLength; i++) {
-            // Extract leading numbers for numeric comparison
             const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
             const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
 
-            // If both have numbers, compare numerically
             if (numA !== numB) {
               return numA - numB;
             }
 
-            // If numbers are equal or don't exist, fall back to string comparison
             const comparison = tagsA[i].localeCompare(tagsB[i]);
             if (comparison !== 0) {
               return comparison;
             }
           }
 
-          // If one path is shorter (e.g., ['경제', '시장'] vs ['경제', '시장', '수요'])
-          // Put the shorter one first
           if (tagsA.length !== tagsB.length) {
             return tagsA.length - tagsB.length;
           }
 
-          // Same tag path (same chapter at deepest level)
-          // Sort by correct rate descending (highest first = easiest first)
           const aCorrectRate = a.correct_rate ?? 0;
           const bCorrectRate = b.correct_rate ?? 0;
           return bCorrectRate - aCorrectRate;
         });
       } else {
-        // Regular mode: Use the same hierarchical sorting as ProblemFilter
-        // Build chapter path map
         const pathMap = new Map<string, number[]>();
         const traverse = (items: ChapterTreeItem[], path: number[]) => {
           items.forEach((item, index) => {
@@ -581,43 +509,36 @@ export default function Page() {
         };
         traverse(contentTree, []);
 
-        // Sort hierarchically: root chapter -> sub-chapters -> tags -> correct rate
         sorted.sort((a, b) => {
           const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
           const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
 
-          // If one problem has no chapter path, put it at the end
           if (!pathA && !pathB) return 0;
           if (!pathA) return 1;
           if (!pathB) return -1;
 
-          // Compare chapter hierarchy first
           const minLength = Math.min(pathA.length, pathB.length);
           for (let i = 0; i < minLength; i++) {
             if (pathA[i] !== pathB[i]) {
               return pathA[i] - pathB[i];
             }
           }
-          // If all common levels are equal, shorter path comes first
           if (pathA.length !== pathB.length) {
             return pathA.length - pathB.length;
           }
 
-          // If in same chapter, group by tags
           const tagsA = (a.tags || []).sort().join(',');
           const tagsB = (b.tags || []).sort().join(',');
           if (tagsA !== tagsB) {
             return tagsA.localeCompare(tagsB);
           }
 
-          // If in same chapter and same tag group, sort by correct rate descending (highest first = easiest first)
           const aCorrectRate = a.correct_rate ?? 0;
           const bCorrectRate = b.correct_rate ?? 0;
           return bCorrectRate - aCorrectRate;
         });
       }
     } else {
-      // 실전: totally random
       sorted = sorted
         .map(value => ({ value, sort: Math.random() }))
         .sort((a, b) => a.sort - b.sort)
@@ -628,7 +549,6 @@ export default function Page() {
   }, [dialogProblems, worksheetMode, contentTree, isEconomyMode]);
 
   const handleMainSubjectToggle = (subject: string) => {
-    // Only one subject can be selected at a time (exclusive selection)
     setSelectedMainSubjects([subject]);
   };
 
@@ -636,72 +556,355 @@ export default function Page() {
     setFilteredProblems(prev => prev.filter(p => p.id !== problemId));
   };
 
-  const handleCreateWorksheet = () => {
+  const handleSaveWorksheet = async () => {
     if (sortedFilteredProblems.length === 0) return;
-    setShowMetadataDialog(true);
-  };
 
-  const handleMetadataSubmit = async (data: { title: string; author: string }) => {
+    const errors: { title?: string; author?: string } = {};
+    if (!worksheetTitle.trim()) {
+      errors.title = '학습지명을 입력해주세요';
+    }
+    if (!worksheetAuthor.trim()) {
+      errors.author = '출제자를 입력해주세요';
+    }
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
     try {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
 
-      let worksheetId: string;
+      // If worksheetId exists, update; otherwise create new
+      if (worksheetId) {
+        // Update existing worksheet
+        if (isEconomyMode) {
+          const { updateEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
 
-      if (isEconomyMode) {
-        // Use economy worksheet service
-        const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+          const economyFilters = {
+            selectedChapters,
+            selectedDifficulties,
+            selectedGrades,
+            selectedYears,
+            selectedMonths,
+            selectedExamTypes,
+            correctRateRange,
+            problemCount
+          };
 
-        const economyFilters = {
-          selectedChapters,
-          selectedDifficulties,
-          selectedGrades,
-          selectedYears,
-          selectedMonths,
-          selectedExamTypes,
-          correctRateRange,
-          problemCount
-        };
+          await updateEconomyWorksheet(supabase, worksheetId, {
+            title: worksheetTitle,
+            author: worksheetAuthor,
+            filters: economyFilters,
+            problems: sortedFilteredProblems
+          });
+        } else {
+          const { updateWorksheetFull } = await import('@/lib/supabase/services/worksheetService');
 
-        const { id } = await createEconomyWorksheet(supabase, {
-          title: data.title,
-          author: data.author,
-          userId: user?.id,
-          filters: economyFilters,
-          problems: sortedFilteredProblems
-        });
+          const filters = {
+            selectedChapters,
+            selectedDifficulties,
+            selectedProblemTypes,
+            selectedSubjects,
+            problemCount,
+            correctRateRange,
+            selectedYears
+          };
 
-        worksheetId = id;
+          await updateWorksheetFull(supabase, worksheetId, {
+            title: worksheetTitle,
+            author: worksheetAuthor,
+            filters,
+            problems: sortedFilteredProblems
+          });
+        }
+
+        // Update saved title and show success message
+        setSavedTitle(worksheetTitle);
+        const { toast } = await import('sonner');
+        toast.success('저장되었습니다');
       } else {
-        // Use regular worksheet service for 통합사회
-        const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+        // Create new worksheet
+        let newWorksheetId: string;
 
-        const filters = {
-          selectedChapters,
-          selectedDifficulties,
-          selectedProblemTypes,
-          selectedSubjects,
-          problemCount,
-          correctRateRange,
-          selectedYears
-        };
+        if (isEconomyMode) {
+          const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
 
-        const { id } = await createWorksheet(supabase, {
-          title: data.title,
-          author: data.author,
-          userId: user?.id,
-          filters,
-          problems: sortedFilteredProblems,
-          contentTree
-        });
+          const economyFilters = {
+            selectedChapters,
+            selectedDifficulties,
+            selectedGrades,
+            selectedYears,
+            selectedMonths,
+            selectedExamTypes,
+            correctRateRange,
+            problemCount
+          };
 
-        worksheetId = id;
+          const { id } = await createEconomyWorksheet(supabase, {
+            title: worksheetTitle,
+            author: worksheetAuthor,
+            userId: user?.id,
+            filters: economyFilters,
+            problems: sortedFilteredProblems
+          });
+
+          newWorksheetId = id;
+        } else {
+          const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+
+          const filters = {
+            selectedChapters,
+            selectedDifficulties,
+            selectedProblemTypes,
+            selectedSubjects,
+            problemCount,
+            correctRateRange,
+            selectedYears
+          };
+
+          const { id } = await createWorksheet(supabase, {
+            title: worksheetTitle,
+            author: worksheetAuthor,
+            userId: user?.id,
+            filters,
+            problems: sortedFilteredProblems,
+            contentTree
+          });
+
+          newWorksheetId = id;
+        }
+
+        // Navigate to the new worksheet page
+        window.location.href = `/w/${newWorksheetId}`;
+      }
+    } catch (error) {
+      console.error('Error saving worksheet:', error);
+      alert('워크시트 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  // Open quick answers in a new window
+  const openQuickAnswers = () => {
+    const title = worksheetTitle || '학습지명';
+    const author = worksheetAuthor || '출제자';
+    const date = worksheetCreatedAt
+      ? new Date(worksheetCreatedAt).toLocaleDateString('ko-KR')
+      : new Date().toLocaleDateString('ko-KR');
+    const count = sortedFilteredProblems.length;
+
+    const rows = Array.from({ length: Math.ceil(count / 10) }, (_, rowIndex) => {
+      const cells = Array.from({ length: 10 }, (_, colIndex) => {
+        const problemIndex = rowIndex * 10 + colIndex;
+        const problem = sortedFilteredProblems[problemIndex];
+        if (!problem) {
+          return '<td class="cell"></td>';
+        }
+        const circledNum = getCircledNumber(problem.answer);
+        return `<td class="cell">
+          <div class="cell-content">
+            <span class="num">${problemIndex + 1}</span>
+            <span class="answer">${circledNum}</span>
+          </div>
+        </td>`;
+      }).join('');
+      const rowClass = rowIndex % 2 === 1 ? 'alt-row' : '';
+      return `<tr class="${rowClass}">${cells}</tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>빠른 정답 - ${title}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh;
+      background-color: white;
+    }
+    .container {
+      max-width: 896px;
+      margin: 0 auto;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 24px;
+    }
+    .meta {
+      font-size: 0.875rem;
+      color: #4b5563;
+      margin-bottom: 24px;
+    }
+    .table-wrapper {
+      background-color: white;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      border: 1px solid #d1d5db;
+    }
+    table {
+      width: 100%;
+      font-size: 0.875rem;
+      border-collapse: collapse;
+    }
+    .cell {
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      border: 1px solid #d1d5db;
+    }
+    .alt-row {
+      background-color: rgba(253, 242, 248, 0.3);
+    }
+    .cell-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .num {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #FF00A1;
+      min-width: 2ch;
+      text-align: right;
+    }
+    .answer {
+      font-size: 1rem;
+      color: #374151;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>빠른 정답</h1>
+    <div class="meta">${title} - ${author}, ${count}문제, ${date}</div>
+    <div class="table-wrapper">
+      <table>${rows}</table>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(html);
+      newWindow.document.close();
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    if (sortedFilteredProblems.length === 0) return;
+
+    setPdfProgress({ stage: '준비 중...', percent: 0 });
+    setPdfUrl(null);
+    setPdfError(null);
+    setPdfElapsedTime(0);
+    setViewMode('pdfGeneration');
+
+    if (pdfElapsedTimerRef.current) {
+      clearInterval(pdfElapsedTimerRef.current);
+    }
+    pdfElapsedTimerRef.current = setInterval(() => {
+      setPdfElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    try {
+      setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
+
+      const problemImageUrls = sortedFilteredProblems.map(p => {
+        const editedUrl = editedContentsMap?.get(p.id);
+        return editedUrl || getProblemImageUrl(p.id);
+      });
+
+      const answerImageUrls = sortedFilteredProblems.map(p => {
+        const answerId = p.id.startsWith('경제_') ? p.id.replace('_문제', '_해설') : p.id;
+        const editedUrl = editedContentsMap?.get(answerId);
+        return editedUrl || getAnswerImageUrl(p.id);
+      });
+
+      const problemImages: ImageWithDimensions[] = [];
+      const answerImages: ImageWithDimensions[] = [];
+
+      for (let i = 0; i < problemImageUrls.length; i++) {
+        const percent = 5 + Math.round((i / problemImageUrls.length) * 20);
+        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+
+        try {
+          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
+          problemImages.push(imgData);
+        } catch (err) {
+          console.error(`Failed to load problem image ${i}:`, err);
+          problemImages.push({ base64: '', width: 0, height: 0 });
+        }
       }
 
-      window.location.href = `/worksheets/${worksheetId}`;
+      for (let i = 0; i < answerImageUrls.length; i++) {
+        const percent = 25 + Math.round((i / answerImageUrls.length) * 20);
+        setPdfProgress({ stage: `해설 이미지 로딩 중... (${i + 1}/${answerImageUrls.length})`, percent });
+
+        try {
+          const imgData = await imageToBase64WithDimensions(answerImageUrls[i]);
+          answerImages.push(imgData);
+        } catch (err) {
+          console.error(`Failed to load answer image ${i}:`, err);
+          answerImages.push({ base64: '', width: 0, height: 0 });
+        }
+      }
+
+      setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+      const base64ProblemImages = problemImages.map(img => img.base64);
+      const base64AnswerImages = answerImages.map(img => img.base64);
+      const problemHeights = problemImages.map(img => img.height);
+      const answerHeights = answerImages.map(img => img.height);
+
+      const subject = sortedFilteredProblems[0]?.id.startsWith('경제_') ? '경제' : '통합사회';
+
+      const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+        problemImageUrls,
+        base64ProblemImages,
+        answerImageUrls,
+        base64AnswerImages,
+        worksheetTitle || '학습지명',
+        worksheetAuthor || '출제자',
+        worksheetCreatedAt,
+        subject,
+        undefined,
+        problemHeights,
+        answerHeights
+      );
+
+      setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+
+      const blob = await generatePdfWithWorker(docDefinition, (progress) => {
+        if (progress.stage === 'complete') {
+          setPdfProgress({ stage: '완료!', percent: 100 });
+        }
+      });
+
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      setPdfProgress({ stage: '완료!', percent: 100 });
+
+      if (pdfElapsedTimerRef.current) {
+        clearInterval(pdfElapsedTimerRef.current);
+        pdfElapsedTimerRef.current = null;
+      }
+
     } catch (error) {
-      console.error('Error creating worksheet:', error);
-      alert('워크시트 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('PDF generation error:', error);
+      setPdfError('PDF 생성 중 오류가 발생했습니다.');
+      setPdfProgress({ stage: '오류 발생', percent: 0 });
+
+      if (pdfElapsedTimerRef.current) {
+        clearInterval(pdfElapsedTimerRef.current);
+        pdfElapsedTimerRef.current = null;
+      }
     }
   };
 
@@ -713,12 +916,9 @@ export default function Page() {
     setChatInput('');
 
     try {
-      // Import the agent function dynamically
       const { processUserMessage } = await import('@/lib/ai/agent');
 
-      // Process the message with the AI agent, passing current chat history
       const response = await processUserMessage(userMessage, chatMessages, (problems) => {
-        // Update the dialog problems when agent finds results
         setDialogProblems(problems);
       });
 
@@ -736,6 +936,15 @@ export default function Page() {
     }
   };
 
+  // Show loading state when loading existing worksheet
+  if (worksheetLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <Loader className="animate-spin w-4 h-4" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden">
       {/* Worksheet View - with fade transition */}
@@ -747,52 +956,14 @@ export default function Page() {
         {/* Top Bar - Worksheet */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-end gap-2">
-            <h1 className="text-lg font-semibold text-[var(--foreground)] leading-none">새 학습지</h1>
+            <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">
+              {worksheetId ? (savedTitle || '학습지명') : '새 학습지'}
+            </h1>
             <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
               {sortedFilteredProblems.length}문제
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (open && !user) {
-                  triggerAuthBlocker();
-                }
-              }}
-              open={!user ? false : undefined}
-            >
-              <DropdownMenuTrigger asChild>
-                <CustomButton
-                  variant="outline"
-                  size="sm"
-                >
-                  <ArrowDownUp className="w-3.5 h-3.5 mr-1.5" />
-                  {worksheetMode}
-                </CustomButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-white w-64">
-                <DropdownMenuItem
-                  onClick={() => setWorksheetMode('연습')}
-                  className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-start justify-between"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">연습</span>
-                    <span className="text-xs text-[var(--gray-500)]">단원별, 난이도순 정렬</span>
-                  </div>
-                  {worksheetMode === '연습' && <Check className="w-4 h-4 mt-0.5" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setWorksheetMode('실전')}
-                  className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-start justify-between"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">실전</span>
-                    <span className="text-xs text-[var(--gray-500)]">무작위 배치</span>
-                  </div>
-                  {worksheetMode === '실전' && <Check className="w-4 h-4 mt-0.5" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <CustomButton
               variant="outline"
               size="sm"
@@ -801,34 +972,50 @@ export default function Page() {
               문제 추가
             </CustomButton>
             <CustomButton
-              variant="primary"
+              variant="outline"
               size="sm"
-              onClick={() => requireAuth(handleCreateWorksheet)}
+              onClick={() => requireAuth(handleGeneratePdf)}
               disabled={sortedFilteredProblems.length === 0}
             >
-              생성
+              PDF 생성
+            </CustomButton>
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={() => requireAuth(handleSaveWorksheet)}
+              disabled={sortedFilteredProblems.length === 0}
+            >
+              저장
             </CustomButton>
           </div>
         </div>
 
         {/* Panels - Worksheet */}
         <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-          {/* Left Panel - Filters */}
           <ResizablePanel defaultSize={60} minSize={30} maxSize={75}>
-            <FilterPanel
-              contentTree={contentTree}
-              selectedMainSubjects={selectedMainSubjects}
-              onMainSubjectToggle={handleMainSubjectToggle}
-              loading={chaptersLoading}
-              error={chaptersError}
-              isDialog={false}
+            <WorksheetMetadataPanel
+              title={worksheetTitle}
+              setTitle={(value) => {
+                setWorksheetTitle(value);
+                if (validationErrors.title) {
+                  setValidationErrors(prev => ({ ...prev, title: undefined }));
+                }
+              }}
+              author={worksheetAuthor}
+              setAuthor={(value) => {
+                setWorksheetAuthor(value);
+                if (validationErrors.author) {
+                  setValidationErrors(prev => ({ ...prev, author: undefined }));
+                }
+              }}
+              worksheetMode={worksheetMode}
+              setWorksheetMode={setWorksheetMode}
+              errors={validationErrors}
             />
           </ResizablePanel>
 
-          {/* Divider */}
           <ResizableHandle withHandle className="w-px bg-[var(--border)]" />
 
-          {/* Right Panel - Preview */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
             <div className="h-full overflow-y-auto">
               {isEconomyMode ? (
@@ -838,6 +1025,8 @@ export default function Page() {
                   problemsError={problemsError}
                   onDeleteProblem={handleDeleteProblem}
                   editedContentsMap={editedContentsMap}
+                  emptyMessage="문제 추가를 눌러 문제를 추가하세요."
+                  addedProblemIds={recentlyAddedProblemIds}
                 />
               ) : (
                 <ProblemsPanel
@@ -847,6 +1036,8 @@ export default function Page() {
                   contentTree={contentTree}
                   onDeleteProblem={handleDeleteProblem}
                   editedContentsMap={editedContentsMap}
+                  emptyMessage="문제 추가를 눌러 문제를 추가하세요."
+                  addedProblemIds={recentlyAddedProblemIds}
                 />
               )}
             </div>
@@ -875,11 +1066,11 @@ export default function Page() {
             variant="primary"
             size="sm"
             onClick={() => {
-              // Add dialog problems to the worksheet
               const newProblems = sortedDialogProblems.filter(
                 problem => !filteredProblems.some(existing => existing.id === problem.id)
               );
               setFilteredProblems(prev => [...prev, ...newProblems]);
+              setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
               setViewMode('worksheet');
             }}
             disabled={sortedDialogProblems.length === 0}
@@ -890,7 +1081,6 @@ export default function Page() {
 
         {/* Panels - Add Problems */}
         <ResizablePanelGroup direction="horizontal" className="flex-1 overflow-hidden">
-          {/* Left Panel - Filters */}
           <ResizablePanel defaultSize={60} minSize={30} maxSize={75}>
             <FilterPanel
               contentTree={contentTree}
@@ -898,7 +1088,7 @@ export default function Page() {
               onMainSubjectToggle={handleMainSubjectToggle}
               loading={chaptersLoading}
               error={chaptersError}
-              isDialog={true}
+              lockedSubject={lockedSubject}
               dialogFilters={{
                 selectedChapters: dialogSelectedChapters,
                 setSelectedChapters: setDialogSelectedChapters,
@@ -924,10 +1114,8 @@ export default function Page() {
             />
           </ResizablePanel>
 
-          {/* Divider */}
           <ResizableHandle withHandle className="w-px bg-[var(--border)]" />
 
-          {/* Right Panel - Preview */}
           <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
             <div className="h-full overflow-y-auto">
               {isEconomyMode ? (
@@ -953,12 +1141,92 @@ export default function Page() {
         </ResizablePanelGroup>
       </div>
 
+      {/* PDF Generation View - with fade transition */}
+      <div
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
+          viewMode === 'pdfGeneration' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        }`}
+      >
+        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (pdfElapsedTimerRef.current) {
+                  clearInterval(pdfElapsedTimerRef.current);
+                  pdfElapsedTimerRef.current = null;
+                }
+                if (pdfUrl) {
+                  URL.revokeObjectURL(pdfUrl);
+                }
+                setPdfUrl(null);
+                setPdfError(null);
+                setPdfProgress({ stage: '', percent: 0 });
+                setPdfElapsedTime(0);
+                setViewMode('worksheet');
+              }}
+              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
+              PDF 생성
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <CustomButton
+              variant="outline"
+              size="sm"
+              disabled={!pdfUrl}
+              onClick={openQuickAnswers}
+            >
+              빠른 정답
+            </CustomButton>
+          </div>
+        </div>
+
+        {pdfError ? (
+          <div className="flex-1 flex flex-col items-center justify-center bg-[var(--gray-50)]">
+            <div className="text-center">
+              <div className="text-red-500 mb-2">{pdfError}</div>
+              <CustomButton variant="outline" size="sm" onClick={() => setViewMode('worksheet')}>
+                돌아가기
+              </CustomButton>
+            </div>
+          </div>
+        ) : pdfUrl ? (
+          <PDFViewer
+            pdfUrl={pdfUrl}
+            hideHeader={true}
+          />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-[var(--gray-50)]">
+            <div className="flex flex-col items-center gap-4">
+              <Loader className="animate-spin w-4 h-4" />
+              {pdfProgress.stage && (
+                <div className="w-64 text-center">
+                  <div className="text-xs text-gray-500 mb-2">{pdfProgress.stage}</div>
+                  <div className="w-full h-1 bg-gray-200 rounded">
+                    <div
+                      className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
+                      style={{ width: `${pdfProgress.percent}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>{pdfProgress.percent}%</span>
+                    <span>{pdfElapsedTime}초</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Dialog with filtering and AI functionality */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-full h-[90vh] p-0 gap-0 overflow-hidden flex flex-col" style={{ maxWidth: 'min(56rem, 90vw)' }}>
           <div className="border-b flex-shrink-0">
             <div className="flex h-12">
-              {/* Left half of header */}
               <div className="w-1/2 p-4 border-r border-gray-200 flex items-center justify-between">
                 <DialogTitle>문제 추가</DialogTitle>
                 <div className="flex items-center space-x-2">
@@ -971,17 +1239,13 @@ export default function Page() {
                   />
                 </div>
               </div>
-              {/* Right half of header */}
               <div className="w-1/2 p-4">
-                {/* Empty right header space */}
               </div>
             </div>
           </div>
           <div className="flex flex-1 overflow-hidden">
             {aiMode ? (
-              /* AI Chat Interface in Dialog */
               <div className="w-1/2 border-r border-gray-200 bg-gray-50 flex flex-col">
-                {/* Chat Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {chatMessages.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
@@ -1016,7 +1280,6 @@ export default function Page() {
                   )}
                 </div>
 
-                {/* Message Input */}
                 <div className="p-4">
                   <div className="border border-gray-300 rounded-lg p-3 flex flex-col gap-3 bg-white">
                     <Textarea
@@ -1046,7 +1309,6 @@ export default function Page() {
                 </div>
               </div>
             ) : (
-              /* Original Filter Panel - with isDialog=true to hide 경제 */
               <FilterPanel
                 contentTree={contentTree}
                 selectedMainSubjects={selectedMainSubjects}
@@ -1082,7 +1344,6 @@ export default function Page() {
                 )}
               </div>
 
-              {/* Sticky Bottom Bar */}
               <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
                 <div className="text-xs text-gray-600">
                   {sortedDialogProblems.length}문제
@@ -1091,7 +1352,6 @@ export default function Page() {
                   disabled={sortedDialogProblems.length === 0}
                   className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
                   onClick={() => {
-                    // Add dialog problems to the worksheet
                     const newProblems = sortedDialogProblems.filter(
                       problem => !filteredProblems.some(existing => existing.id === problem.id)
                     );
@@ -1106,12 +1366,6 @@ export default function Page() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <WorksheetMetadataDialog
-        open={showMetadataDialog}
-        onOpenChange={setShowMetadataDialog}
-        onSubmit={handleMetadataSubmit}
-      />
 
       {/* Auth blocker overlay */}
       {showAuthBlocker && (

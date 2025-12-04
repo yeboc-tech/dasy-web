@@ -14,6 +14,8 @@ interface EconomyProblemsPanelProps {
   onDeleteProblem?: (problemId: string) => void;
   showAnswers?: boolean;
   editedContentsMap?: Map<string, string> | null; // Now contains CDN URLs instead of base64
+  emptyMessage?: string;
+  addedProblemIds?: Set<string>; // IDs of problems already added to worksheet
 }
 
 export default function EconomyProblemsPanel({
@@ -22,7 +24,9 @@ export default function EconomyProblemsPanel({
   problemsError,
   onDeleteProblem,
   showAnswers = false,
-  editedContentsMap
+  editedContentsMap,
+  emptyMessage = '선택한 조건에 맞는 문제가 없습니다.',
+  addedProblemIds
 }: EconomyProblemsPanelProps) {
   // Track which CDN URLs have failed
   const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
@@ -48,19 +52,20 @@ export default function EconomyProblemsPanel({
       <div className="flex-1 overflow-y-auto">
         {filteredProblems.length === 0 ? (
           <div className="flex items-center justify-center min-h-full text-gray-500 text-sm">
-            선택한 조건에 맞는 문제가 없습니다.
+            {emptyMessage}
           </div>
         ) : (
           <div>
             {filteredProblems.map((problem: ProblemMetadata, index: number) => {
-              const isFirst = index === 0;
+              const isLast = index === filteredProblems.length - 1;
+              const isAlreadyAdded = addedProblemIds?.has(problem.id);
 
               return (
                 <div
                   key={problem.id}
                   className={`relative w-full p-4 pb-6 transition-all group ${
-                    index < filteredProblems.length - 1 ? 'border-b border-gray-200' : ''
-                  } ${isFirst ? 'rounded-tr-xl' : ''}`}
+                    !isLast ? 'border-b border-gray-200' : 'rounded-br-xl'
+                  }`}
                 >
                   {/* Hover overlay - covers whole section */}
                   <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-5 pointer-events-none z-[1] transition-opacity" />

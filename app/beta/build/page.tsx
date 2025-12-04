@@ -241,7 +241,7 @@ export default function BetaBuildPage() {
         contentTree
       });
 
-      window.location.href = `/worksheets/${id}`;
+      window.location.href = `/w/${id}`;
     } catch (error) {
       console.error('Error creating worksheet:', error);
       alert('워크시트 생성 중 오류가 발생했습니다. 다시 시도해주세요.');

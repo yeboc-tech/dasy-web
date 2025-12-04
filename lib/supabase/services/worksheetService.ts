@@ -187,6 +187,49 @@ export async function updateWorksheet(
   }
 }
 
+interface UpdateWorksheetFullParams {
+  title: string;
+  author: string;
+  filters: {
+    selectedChapters: string[];
+    selectedDifficulties: string[];
+    selectedProblemTypes: string[];
+    selectedSubjects: string[];
+    problemCount: number;
+    correctRateRange: [number, number];
+  };
+  problems: ProblemMetadata[];
+}
+
+export async function updateWorksheetFull(
+  supabase: SupabaseClient,
+  id: string,
+  params: UpdateWorksheetFullParams
+): Promise<void> {
+  const { title, author, filters, problems } = params;
+
+  const selectedProblemIds = problems.map(problem => problem.id);
+
+  if (selectedProblemIds.length === 0) {
+    throw new Error('No problems to save');
+  }
+
+  const { error } = await supabase
+    .from('worksheets')
+    .update({
+      title: title.trim(),
+      author: author.trim(),
+      selected_problem_ids: selectedProblemIds,
+      filters: filters
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating worksheet:', error);
+    throw new Error('Failed to update worksheet');
+  }
+}
+
 export async function publishWorksheet(
   supabase: SupabaseClient,
   id: string

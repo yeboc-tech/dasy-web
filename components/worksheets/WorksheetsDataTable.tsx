@@ -47,7 +47,7 @@ export function WorksheetsDataTable<TData, TValue>({
   }, [table, onTableReady])
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full animate-fade-in">
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-10 bg-[var(--gray-50)] shadow-[0_1px_0_var(--border)]">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -84,7 +84,7 @@ export function WorksheetsDataTable<TData, TValue>({
                 className="hover:bg-gray-50 cursor-pointer transition-colors border-b border-[var(--border)]"
                 onClick={() => {
                   const worksheet = row.original as { id: string }
-                  router.push(`/worksheets/${worksheet.id}`)
+                  router.push(`/w/${worksheet.id}`)
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
