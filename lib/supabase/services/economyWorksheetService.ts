@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { EconomyProblem } from '@/lib/types';
+import type { SortRule } from '@/lib/types/sorting';
 
 interface CreateEconomyWorksheetParams {
   title: string;
@@ -17,6 +18,7 @@ interface CreateEconomyWorksheetParams {
     problemCount: number;
   };
   problems: ProblemMetadata[]; // Already converted economy problems
+  sorting?: SortRule[];
 }
 
 interface EconomyWorksheetData {
@@ -28,6 +30,7 @@ interface EconomyWorksheetData {
   selected_problem_ids: string[];
   is_public: boolean;
   worksheet_type: 'economy'; // Mark as economy worksheet
+  sorting: SortRule[];
 }
 
 /**
@@ -38,7 +41,7 @@ export async function createEconomyWorksheet(
   supabase: SupabaseClient,
   params: CreateEconomyWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, userId, filters, problems } = params;
+  const { title, author, userId, filters, problems, sorting } = params;
 
   const selectedProblemIds = problems.map(problem => problem.id);
 
@@ -57,7 +60,8 @@ export async function createEconomyWorksheet(
         ...filters,
         worksheet_type: 'economy' // Mark as economy worksheet
       },
-      created_by: userId || null
+      created_by: userId || null,
+      sorting: sorting || []
     })
     .select('id')
     .single();
@@ -174,7 +178,8 @@ export async function getEconomyWorksheet(
       created_at: worksheet.created_at,
       selected_problem_ids: worksheet.selected_problem_ids,
       is_public: worksheet.is_public || false,
-      worksheet_type: 'economy'
+      worksheet_type: 'economy',
+      sorting: worksheet.sorting || []
     },
     problems: sortedProblems
   };
@@ -248,6 +253,7 @@ interface UpdateEconomyWorksheetParams {
     problemCount: number;
   };
   problems: ProblemMetadata[];
+  sorting?: SortRule[];
 }
 
 /**
@@ -258,7 +264,7 @@ export async function updateEconomyWorksheet(
   id: string,
   params: UpdateEconomyWorksheetParams
 ): Promise<void> {
-  const { title, author, filters, problems } = params;
+  const { title, author, filters, problems, sorting } = params;
 
   const selectedProblemIds = problems.map(problem => problem.id);
 
@@ -275,7 +281,8 @@ export async function updateEconomyWorksheet(
       filters: {
         ...filters,
         worksheet_type: 'economy'
-      }
+      },
+      sorting: sorting || []
     })
     .eq('id', id);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,11 @@ import {
   SortRule,
   SortPreset,
   SORT_FIELD_LABELS,
-  PRESET_RULES,
+  TONGHAP_PRESET_RULES,
+  ECONOMY_PRESET_RULES,
   getMatchingPreset,
+  TONGHAP_SORT_FIELDS,
+  ECONOMY_SORT_FIELDS,
 } from '@/lib/types/sorting';
 import {
   DndContext,
@@ -44,12 +47,13 @@ interface SortableItemProps {
   id: string;
   rule: SortRule;
   index: number;
+  availableFieldsForDropdown: SortField[]; // Fields available to select (current + unused from mode-specific list)
   onFieldChange: (index: number, field: SortField) => void;
   onDirectionChange: (index: number, checked: boolean) => void;
   onRemove: (index: number) => void;
 }
 
-function SortableItem({ id, rule, index, onFieldChange, onDirectionChange, onRemove }: SortableItemProps) {
+function SortableItem({ id, rule, index, availableFieldsForDropdown, onFieldChange, onDirectionChange, onRemove }: SortableItemProps) {
   const {
     attributes,
     listeners,
@@ -91,9 +95,9 @@ function SortableItem({ id, rule, index, onFieldChange, onDirectionChange, onRem
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            {Object.entries(SORT_FIELD_LABELS).map(([field, label]) => (
+            {availableFieldsForDropdown.map((field) => (
               <SelectItem key={field} value={field} className="cursor-pointer hover:bg-gray-100">
-                {label}
+                {SORT_FIELD_LABELS[field]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -131,8 +135,9 @@ interface WorksheetMetadataPanelProps {
   setTitle: (value: string) => void;
   author: string;
   setAuthor: (value: string) => void;
-  worksheetMode: '연습' | '실전';
-  setWorksheetMode: (value: '연습' | '실전') => void;
+  sortRules: SortRule[];
+  setSortRules: (rules: SortRule[]) => void;
+  isEconomyMode: boolean;
   errors?: {
     title?: string;
     author?: string;
@@ -144,14 +149,31 @@ export default function WorksheetMetadataPanel({
   setTitle,
   author,
   setAuthor,
-  worksheetMode,
-  setWorksheetMode,
+  sortRules,
+  setSortRules,
+  isEconomyMode,
   errors,
 }: WorksheetMetadataPanelProps) {
-  // Local state for sorting UI (will be lifted to parent later)
-  // Each rule has a stable unique id for drag-and-drop
-  const [sortRulesWithIds, setSortRulesWithIds] = useState<(SortRule & { id: string })[]>([]);
-  const [activePreset, setActivePreset] = useState<SortPreset>('실전');
+  // Internal IDs for drag-and-drop stability (derived from sortRules prop)
+  const [internalIds, setInternalIds] = useState<Map<number, string>>(new Map());
+
+  // Derive sortRulesWithIds from props + internal IDs
+  const sortRulesWithIds = (sortRules || []).map((rule, index) => ({
+    ...rule,
+    id: internalIds.get(index) || `rule-${index}-${Date.now()}`
+  }));
+
+  // Sync internal IDs when sortRules changes externally
+  useEffect(() => {
+    const newIds = new Map<number, string>();
+    (sortRules || []).forEach((_, index) => {
+      newIds.set(index, internalIds.get(index) || `rule-${index}-${Date.now()}`);
+    });
+    setInternalIds(newIds);
+  }, [(sortRules || []).length]);
+
+  // Derive active preset from current rules
+  const activePreset = getMatchingPreset(sortRules || [], isEconomyMode);
 
   // dnd-kit sensors
   const sensors = useSensors(
@@ -169,60 +191,78 @@ export default function WorksheetMetadataPanel({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setSortRulesWithIds((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id);
-        const newIndex = items.findIndex(item => item.id === over.id);
-        const newRules = arrayMove(items, oldIndex, newIndex);
-        setActivePreset(getMatchingPreset(newRules));
-        return newRules;
+      const oldIndex = sortRulesWithIds.findIndex(item => item.id === active.id);
+      const newIndex = sortRulesWithIds.findIndex(item => item.id === over.id);
+      const reordered = arrayMove(sortRules, oldIndex, newIndex);
+      setSortRules(reordered);
+
+      // Update internal IDs to match new order
+      const newIds = new Map<number, string>();
+      const reorderedWithIds = arrayMove(sortRulesWithIds, oldIndex, newIndex);
+      reorderedWithIds.forEach((rule, index) => {
+        newIds.set(index, rule.id);
       });
+      setInternalIds(newIds);
     }
   };
 
   const handlePresetClick = (preset: SortPreset) => {
-    setActivePreset(preset);
+    const presetRules = isEconomyMode ? ECONOMY_PRESET_RULES : TONGHAP_PRESET_RULES;
+
     if (preset === '실전') {
-      setSortRulesWithIds([]);
+      setSortRules([]);
+      setInternalIds(new Map());
     } else if (preset === '연습') {
-      const rulesWithIds = PRESET_RULES['연습'].map((rule, i) => ({
-        ...rule,
-        id: `preset-rule-${i}-${Date.now()}`
-      }));
-      setSortRulesWithIds(rulesWithIds);
+      const newRules = presetRules['연습'];
+      setSortRules(newRules);
+      const newIds = new Map<number, string>();
+      newRules.forEach((_, i) => {
+        newIds.set(i, `preset-rule-${i}-${Date.now()}`);
+      });
+      setInternalIds(newIds);
     }
     // 커스텀: keep current rules
   };
 
+  // Get mode-specific fields and filter out already used ones
+  const modeFields = isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS;
+  const usedFields = (sortRules || []).map(r => r.field);
+  const availableFields = modeFields.filter(field => !usedFields.includes(field));
+
   const handleAddRule = () => {
-    const newRule = { field: 'chapter' as SortField, direction: 'asc' as const, id: `rule-${Date.now()}` };
-    setSortRulesWithIds(prev => [...prev, newRule]);
-    setActivePreset('커스텀');
+    if (availableFields.length === 0) return;
+
+    const newRule: SortRule = { field: availableFields[0], direction: 'asc' };
+    const newRules = [...sortRules, newRule];
+    setSortRules(newRules);
+    const newIds = new Map(internalIds);
+    newIds.set(newRules.length - 1, `rule-${Date.now()}`);
+    setInternalIds(newIds);
   };
 
   const handleRemoveRule = (index: number) => {
-    setSortRulesWithIds(prev => {
-      const newRules = prev.filter((_, i) => i !== index);
-      setActivePreset(getMatchingPreset(newRules));
-      return newRules;
-    });
+    const newRules = sortRules.filter((_, i) => i !== index);
+    setSortRules(newRules);
+    // Rebuild internal IDs
+    const newIds = new Map<number, string>();
+    sortRulesWithIds
+      .filter((_, i) => i !== index)
+      .forEach((rule, newIndex) => {
+        newIds.set(newIndex, rule.id);
+      });
+    setInternalIds(newIds);
   };
 
   const handleFieldChange = (index: number, field: SortField) => {
-    setSortRulesWithIds(prev => {
-      const newRules = [...prev];
-      newRules[index] = { ...newRules[index], field };
-      setActivePreset(getMatchingPreset(newRules));
-      return newRules;
-    });
+    const newRules = [...sortRules];
+    newRules[index] = { ...newRules[index], field };
+    setSortRules(newRules);
   };
 
   const handleDirectionChange = (index: number, checked: boolean) => {
-    setSortRulesWithIds(prev => {
-      const newRules = [...prev];
-      newRules[index] = { ...newRules[index], direction: checked ? 'desc' : 'asc' };
-      setActivePreset(getMatchingPreset(newRules));
-      return newRules;
-    });
+    const newRules = [...sortRules];
+    newRules[index] = { ...newRules[index], direction: checked ? 'desc' : 'asc' };
+    setSortRules(newRules);
   };
 
   return (
@@ -309,29 +349,37 @@ export default function WorksheetMetadataPanel({
                       onDragEnd={handleDragEnd}
                     >
                       <SortableContext items={sortRulesWithIds.map(r => r.id)} strategy={verticalListSortingStrategy}>
-                        {sortRulesWithIds.map((rule, index) => (
-                          <SortableItem
-                            key={rule.id}
-                            id={rule.id}
-                            rule={rule}
-                            index={index}
-                            onFieldChange={handleFieldChange}
-                            onDirectionChange={handleDirectionChange}
-                            onRemove={handleRemoveRule}
-                          />
-                        ))}
+                        {sortRulesWithIds.map((rule, index) => {
+                          // Available fields for this dropdown: current field + unused fields from mode
+                          const otherUsedFields = usedFields.filter(f => f !== rule.field);
+                          const availableForThisRow = modeFields.filter(f => !otherUsedFields.includes(f));
+                          return (
+                            <SortableItem
+                              key={rule.id}
+                              id={rule.id}
+                              rule={rule}
+                              index={index}
+                              availableFieldsForDropdown={availableForThisRow}
+                              onFieldChange={handleFieldChange}
+                              onDirectionChange={handleDirectionChange}
+                              onRemove={handleRemoveRule}
+                            />
+                          );
+                        })}
                       </SortableContext>
                     </DndContext>
                   )}
 
-                  {/* Add rule button */}
-                  <button
-                    onClick={handleAddRule}
-                    className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="text-sm">정렬 추가</span>
-                  </button>
+                  {/* Add rule button - hidden when all fields are used */}
+                  {availableFields.length > 0 && (
+                    <button
+                      onClick={handleAddRule}
+                      className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="text-sm">정렬 추가</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </AccordionContent>

@@ -26,6 +26,8 @@ import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 import { AuthenticationBlocker } from '@/components/auth/authentication-blocker';
 import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
+import type { SortRule } from '@/lib/types/sorting';
+import { applySortRules } from '@/lib/utils/sorting';
 
 // Convert answer number to circled number character
 function getCircledNumber(answer: string | number | undefined): string {
@@ -66,8 +68,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
   const [aiMode, setAiMode] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [worksheetMode, setWorksheetMode] = useState<'연습' | '실전'>('연습');
-  const [sortedDialogProblems, setSortedDialogProblems] = useState<ProblemMetadata[]>([]);
+  const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
   const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>('addProblems');
@@ -173,6 +174,11 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
         if (data?.problems) {
           setFilteredProblems(data.problems);
           setSortedFilteredProblems(data.problems);
+        }
+
+        // Load sorting preferences
+        if (data?.worksheet?.sorting) {
+          setSortRules(data.worksheet.sorting);
         }
 
         // Fetch edited contents for preview
@@ -358,7 +364,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     setDialogProblems(filtered);
   }, [aiMode, isEconomyMode, problems, dialogSelectedChapters, dialogSelectedDifficulties, dialogSelectedProblemTypes, dialogSelectedSubjects, dialogProblemCount, contentTree, dialogCorrectRateRange, dialogSelectedYears, dialogSelectedGrades, dialogSelectedExamTypes, dialogSelectedMonths]);
 
-  // Sort main page problems based on worksheet mode
+  // Sort main page problems based on sort rules
   useEffect(() => {
     if (!filteredProblems || filteredProblems.length === 0) {
       setSortedFilteredProblems([]);
@@ -370,183 +376,14 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
       return;
     }
 
-    let sorted = [...filteredProblems];
-
-    if (worksheetMode === '연습') {
-      if (isEconomyMode) {
-        sorted.sort((a, b) => {
-          const tagsA = a.tags || [];
-          const tagsB = b.tags || [];
-
-          const minLength = Math.min(tagsA.length, tagsB.length);
-          for (let i = 0; i < minLength; i++) {
-            const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
-            const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
-
-            if (numA !== numB) {
-              return numA - numB;
-            }
-
-            const comparison = tagsA[i].localeCompare(tagsB[i]);
-            if (comparison !== 0) {
-              return comparison;
-            }
-          }
-
-          if (tagsA.length !== tagsB.length) {
-            return tagsA.length - tagsB.length;
-          }
-
-          const aCorrectRate = a.correct_rate ?? 0;
-          const bCorrectRate = b.correct_rate ?? 0;
-          return bCorrectRate - aCorrectRate;
-        });
-      } else {
-        const pathMap = new Map<string, number[]>();
-        const traverse = (items: ChapterTreeItem[], path: number[]) => {
-          items.forEach((item, index) => {
-            const currentPath = [...path, index];
-            pathMap.set(item.id, currentPath);
-            if (item.children && item.children.length > 0) {
-              traverse(item.children, currentPath);
-            }
-          });
-        };
-        traverse(contentTree, []);
-
-        sorted.sort((a, b) => {
-          const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
-          const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
-
-          if (!pathA && !pathB) return 0;
-          if (!pathA) return 1;
-          if (!pathB) return -1;
-
-          const minLength = Math.min(pathA.length, pathB.length);
-          for (let i = 0; i < minLength; i++) {
-            if (pathA[i] !== pathB[i]) {
-              return pathA[i] - pathB[i];
-            }
-          }
-          if (pathA.length !== pathB.length) {
-            return pathA.length - pathB.length;
-          }
-
-          const tagsA = (a.tags || []).sort().join(',');
-          const tagsB = (b.tags || []).sort().join(',');
-          if (tagsA !== tagsB) {
-            return tagsA.localeCompare(tagsB);
-          }
-
-          const aCorrectRate = a.correct_rate ?? 0;
-          const bCorrectRate = b.correct_rate ?? 0;
-          return bCorrectRate - aCorrectRate;
-        });
-      }
-    } else {
-      sorted = sorted
-        .map(value => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
-    }
+    const sorted = applySortRules(filteredProblems, sortRules, {
+      isEconomyMode,
+      contentTree
+    });
 
     setSortedFilteredProblems(sorted);
-  }, [filteredProblems, worksheetMode, contentTree, isEconomyMode]);
+  }, [filteredProblems, sortRules, contentTree, isEconomyMode]);
 
-  // Sort dialog problems based on worksheet mode
-  useEffect(() => {
-    if (!dialogProblems || dialogProblems.length === 0) {
-      setSortedDialogProblems([]);
-      return;
-    }
-
-    if (!isEconomyMode && !contentTree) {
-      setSortedDialogProblems([]);
-      return;
-    }
-
-    let sorted = [...dialogProblems];
-
-    if (worksheetMode === '연습') {
-      if (isEconomyMode) {
-        sorted.sort((a, b) => {
-          const tagsA = a.tags || [];
-          const tagsB = b.tags || [];
-
-          const minLength = Math.min(tagsA.length, tagsB.length);
-          for (let i = 0; i < minLength; i++) {
-            const numA = parseInt(tagsA[i].match(/^\d+/)?.[0] || '0', 10);
-            const numB = parseInt(tagsB[i].match(/^\d+/)?.[0] || '0', 10);
-
-            if (numA !== numB) {
-              return numA - numB;
-            }
-
-            const comparison = tagsA[i].localeCompare(tagsB[i]);
-            if (comparison !== 0) {
-              return comparison;
-            }
-          }
-
-          if (tagsA.length !== tagsB.length) {
-            return tagsA.length - tagsB.length;
-          }
-
-          const aCorrectRate = a.correct_rate ?? 0;
-          const bCorrectRate = b.correct_rate ?? 0;
-          return bCorrectRate - aCorrectRate;
-        });
-      } else {
-        const pathMap = new Map<string, number[]>();
-        const traverse = (items: ChapterTreeItem[], path: number[]) => {
-          items.forEach((item, index) => {
-            const currentPath = [...path, index];
-            pathMap.set(item.id, currentPath);
-            if (item.children && item.children.length > 0) {
-              traverse(item.children, currentPath);
-            }
-          });
-        };
-        traverse(contentTree, []);
-
-        sorted.sort((a, b) => {
-          const pathA = a.chapter_id ? pathMap.get(a.chapter_id) : undefined;
-          const pathB = b.chapter_id ? pathMap.get(b.chapter_id) : undefined;
-
-          if (!pathA && !pathB) return 0;
-          if (!pathA) return 1;
-          if (!pathB) return -1;
-
-          const minLength = Math.min(pathA.length, pathB.length);
-          for (let i = 0; i < minLength; i++) {
-            if (pathA[i] !== pathB[i]) {
-              return pathA[i] - pathB[i];
-            }
-          }
-          if (pathA.length !== pathB.length) {
-            return pathA.length - pathB.length;
-          }
-
-          const tagsA = (a.tags || []).sort().join(',');
-          const tagsB = (b.tags || []).sort().join(',');
-          if (tagsA !== tagsB) {
-            return tagsA.localeCompare(tagsB);
-          }
-
-          const aCorrectRate = a.correct_rate ?? 0;
-          const bCorrectRate = b.correct_rate ?? 0;
-          return bCorrectRate - aCorrectRate;
-        });
-      }
-    } else {
-      sorted = sorted
-        .map(value => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
-    }
-
-    setSortedDialogProblems(sorted);
-  }, [dialogProblems, worksheetMode, contentTree, isEconomyMode]);
 
   const handleMainSubjectToggle = (subject: string) => {
     setSelectedMainSubjects([subject]);
@@ -596,7 +433,8 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             title: worksheetTitle,
             author: worksheetAuthor,
             filters: economyFilters,
-            problems: sortedFilteredProblems
+            problems: sortedFilteredProblems,
+            sorting: sortRules
           });
         } else {
           const { updateWorksheetFull } = await import('@/lib/supabase/services/worksheetService');
@@ -615,7 +453,8 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             title: worksheetTitle,
             author: worksheetAuthor,
             filters,
-            problems: sortedFilteredProblems
+            problems: sortedFilteredProblems,
+            sorting: sortRules
           });
         }
 
@@ -646,7 +485,8 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             author: worksheetAuthor,
             userId: user?.id,
             filters: economyFilters,
-            problems: sortedFilteredProblems
+            problems: sortedFilteredProblems,
+            sorting: sortRules
           });
 
           newWorksheetId = id;
@@ -669,7 +509,8 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             userId: user?.id,
             filters,
             problems: sortedFilteredProblems,
-            contentTree
+            contentTree,
+            sorting: sortRules
           });
 
           newWorksheetId = id;
@@ -1008,8 +849,9 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
                   setValidationErrors(prev => ({ ...prev, author: undefined }));
                 }
               }}
-              worksheetMode={worksheetMode}
-              setWorksheetMode={setWorksheetMode}
+              sortRules={sortRules}
+              setSortRules={setSortRules}
+              isEconomyMode={isEconomyMode}
               errors={validationErrors}
             />
           </ResizablePanel>
@@ -1066,14 +908,14 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             variant="primary"
             size="sm"
             onClick={() => {
-              const newProblems = sortedDialogProblems.filter(
+              const newProblems = dialogProblems.filter(
                 problem => !filteredProblems.some(existing => existing.id === problem.id)
               );
               setFilteredProblems(prev => [...prev, ...newProblems]);
               setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
               setViewMode('worksheet');
             }}
-            disabled={sortedDialogProblems.length === 0}
+            disabled={dialogProblems.length === 0}
           >
             추가
           </CustomButton>
@@ -1120,7 +962,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             <div className="h-full overflow-y-auto">
               {isEconomyMode ? (
                 <EconomyProblemsPanel
-                  filteredProblems={sortedDialogProblems}
+                  filteredProblems={dialogProblems}
                   problemsLoading={economyLoading || chaptersLoading}
                   problemsError={problemsError}
                   onDeleteProblem={(problemId) => setDialogProblems(prev => prev.filter(p => p.id !== problemId))}
@@ -1128,7 +970,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
                 />
               ) : (
                 <ProblemsPanel
-                  filteredProblems={sortedDialogProblems}
+                  filteredProblems={dialogProblems}
                   problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                   problemsError={problemsError}
                   contentTree={contentTree}
@@ -1322,7 +1164,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
               <div className="flex-1 overflow-hidden">
                 {isEconomyMode ? (
                   <EconomyProblemsPanel
-                    filteredProblems={sortedDialogProblems}
+                    filteredProblems={dialogProblems}
                     problemsLoading={economyLoading || chaptersLoading}
                     problemsError={problemsError}
                     onDeleteProblem={(problemId) => {
@@ -1332,7 +1174,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
                   />
                 ) : (
                   <ProblemsPanel
-                    filteredProblems={sortedDialogProblems}
+                    filteredProblems={dialogProblems}
                     problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                     problemsError={problemsError}
                     contentTree={contentTree}
@@ -1346,13 +1188,13 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
 
               <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
                 <div className="text-xs text-gray-600">
-                  {sortedDialogProblems.length}문제
+                  {dialogProblems.length}문제
                 </div>
                 <Button
-                  disabled={sortedDialogProblems.length === 0}
+                  disabled={dialogProblems.length === 0}
                   className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
                   onClick={() => {
-                    const newProblems = sortedDialogProblems.filter(
+                    const newProblems = dialogProblems.filter(
                       problem => !filteredProblems.some(existing => existing.id === problem.id)
                     );
                     setFilteredProblems(prev => [...prev, ...newProblems]);
