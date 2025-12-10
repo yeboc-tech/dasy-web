@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { WorksheetItem, createMyWorksheetsColumns } from '@/components/worksheets/columns';
 import { WorksheetsDataTable } from '@/components/worksheets/WorksheetsDataTable';
 import { Search, Loader } from 'lucide-react';
@@ -8,15 +9,14 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { Input } from '@/components/ui/input';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const PAGE_SIZE = 20;
@@ -34,6 +34,7 @@ export default function MyWorksheetsPage() {
   });
   const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
 
   const observerTarget = useRef<HTMLDivElement>(null);
   const currentPage = useRef(0);
@@ -137,6 +138,10 @@ export default function MyWorksheetsPage() {
     setDeleteDialog({ open: true, id, title });
   }, []);
 
+  const handlePdfGenerate = useCallback((id: string) => {
+    router.push(`/w/${id}?pdf=true`);
+  }, [router]);
+
   const handleShareClick = useCallback(async (id: string, title: string, isCurrentlyPublic: boolean) => {
     try {
       const { createClient } = await import('@/lib/supabase/client');
@@ -187,8 +192,8 @@ export default function MyWorksheetsPage() {
   }, [user?.id, deleteDialog.id]);
 
   const columns = useMemo(
-    () => createMyWorksheetsColumns(handleDeleteClick, handleShareClick),
-    [handleDeleteClick, handleShareClick]
+    () => createMyWorksheetsColumns(handleDeleteClick, handleShareClick, handlePdfGenerate),
+    [handleDeleteClick, handleShareClick, handlePdfGenerate]
   );
 
   return (
@@ -238,28 +243,30 @@ export default function MyWorksheetsPage() {
         </div>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>학습지 삭제</AlertDialogTitle>
-              <AlertDialogDescription>
+        <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))} modal={false}>
+          <DialogContent className="bg-white" onInteractOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
+              <DialogTitle>학습지 삭제</DialogTitle>
+              <DialogDescription>
                 &quot;{deleteDialog.title}&quot; 학습지를 삭제하시겠습니까?
                 <br />
                 이 작업은 되돌릴 수 없습니다.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleting}>취소</AlertDialogCancel>
-              <AlertDialogAction
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialog(prev => ({ ...prev, open: false }))} disabled={deleting}>
+                취소
+              </Button>
+              <Button
                 onClick={handleDeleteConfirm}
                 disabled={deleting}
                 className="bg-red-500 hover:bg-red-600"
               >
                 {deleting ? '삭제 중...' : '삭제'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );

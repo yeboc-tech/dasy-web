@@ -61,15 +61,15 @@ export default function QuickAnswersPage() {
           throw new Error('Worksheet not found');
         }
 
-        // Detect if it's an economy worksheet by checking problem ID format
-        const { isEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
-        const isEconomy = isEconomyWorksheet(worksheetMeta.selected_problem_ids);
+        // Detect if it's a tagged worksheet by checking problem ID format
+        const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
+        const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
 
         let data;
-        if (isEconomy) {
-          // Use economy worksheet service
-          const { getEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
-          data = await getEconomyWorksheet(supabase, worksheetId);
+        if (isTagged) {
+          // Use tagged worksheet service
+          const { getTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
+          data = await getTaggedWorksheet(supabase, worksheetId);
         } else {
           // Use regular worksheet service
           const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');

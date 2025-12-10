@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileText, Globe, User, FileStack, MessageSquare } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
@@ -20,10 +20,9 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    title: '생성 및 탐색',
+    title: '생성',
     items: [
-      { label: '새 학습지', href: '/build', icon: <FileText className="w-4 h-4" /> },
-      { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
+      { label: '새 학습지', href: '/', icon: <FilePlus className="w-4 h-4" /> },
     ],
   },
   {
@@ -31,6 +30,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '프로필', href: '/profile', icon: <User className="w-4 h-4" /> },
       { label: '내 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: '탐색',
+    items: [
+      { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
     ],
   },
   {

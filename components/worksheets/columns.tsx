@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Globe, Lock, MoreHorizontal, Trash2, Share2 } from "lucide-react"
+import { Globe, Lock, MoreHorizontal, Trash2, FileSearch } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +20,9 @@ export interface WorksheetItem {
 }
 
 // Columns for 공유 학습지 (public worksheets)
-export const publicWorksheetsColumns: ColumnDef<WorksheetItem>[] = [
+export const createPublicWorksheetsColumns = (
+  onPdfGenerate: (id: string) => void
+): ColumnDef<WorksheetItem>[] => [
   {
     accessorKey: "title",
     header: "제목",
@@ -31,6 +33,26 @@ export const publicWorksheetsColumns: ColumnDef<WorksheetItem>[] = [
         <div className="text-sm text-gray-500">{row.original.author}</div>
       </div>
     ),
+  },
+  {
+    id: "pdf",
+    header: "PDF",
+    meta: { width: '80px', minWidth: '80px' },
+    cell: ({ row }) => {
+      return (
+        <div className="flex items-center justify-start">
+          <button
+            className="h-8 w-8 flex items-center justify-center rounded-md text-gray-500 bg-[var(--gray-100)] hover:bg-[var(--gray-200)] hover:text-gray-700 transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              onPdfGenerate(row.original.id)
+            }}
+          >
+            <FileSearch className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    },
   },
   {
     accessorKey: "selected_problem_ids",
@@ -51,10 +73,14 @@ export const publicWorksheetsColumns: ColumnDef<WorksheetItem>[] = [
   },
 ]
 
+// Legacy export for backwards compatibility
+export const publicWorksheetsColumns: ColumnDef<WorksheetItem>[] = createPublicWorksheetsColumns(() => {})
+
 // Columns for 내 학습지 (my worksheets) - with actions dropdown
 export const createMyWorksheetsColumns = (
   onDelete: (id: string, title: string) => void,
-  onShare: (id: string, title: string, isPublic: boolean) => void
+  onShare: (id: string, title: string, isPublic: boolean) => void,
+  onPdfGenerate: (id: string) => void
 ): ColumnDef<WorksheetItem>[] => [
   {
     accessorKey: "title",
@@ -66,6 +92,26 @@ export const createMyWorksheetsColumns = (
         <div className="text-sm text-gray-500">{row.original.author}</div>
       </div>
     ),
+  },
+  {
+    id: "pdf",
+    header: "PDF",
+    meta: { width: '80px', minWidth: '80px' },
+    cell: ({ row }) => {
+      return (
+        <div className="flex items-center justify-start">
+          <button
+            className="h-8 w-8 flex items-center justify-center rounded-md text-gray-500 bg-[var(--gray-100)] hover:bg-[var(--gray-200)] hover:text-gray-700 transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              onPdfGenerate(row.original.id)
+            }}
+          >
+            <FileSearch className="w-4 h-4" />
+          </button>
+        </div>
+      )
+    },
   },
   {
     accessorKey: "selected_problem_ids",
@@ -127,7 +173,7 @@ export const createMyWorksheetsColumns = (
               }}
               className="cursor-pointer hover:bg-[var(--gray-100)]"
             >
-              <Share2 className="w-4 h-4 mr-2" />
+              <Globe className="w-4 h-4 mr-2" />
               {isPublic ? '공개 해제' : '공개하기'}
             </DropdownMenuItem>
             <DropdownMenuItem

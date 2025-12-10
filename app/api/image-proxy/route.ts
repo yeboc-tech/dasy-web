@@ -14,8 +14,6 @@ export async function GET(request: NextRequest) {
     const response = await fetch(imageUrl);
 
     if (!response.ok) {
-      console.log(`[Image Proxy] S3 fetch failed (${response.status}), trying Supabase...`);
-
       // Extract problem_id from URL
       // URL format: https://cdn.y3c.kr/tongkidari/contents/{problem_id}.png
       const decodedUrl = decodeURIComponent(imageUrl);
@@ -24,7 +22,6 @@ export async function GET(request: NextRequest) {
       if (urlParts.length === 2) {
         // Remove .png extension to get problem_id
         const problemId = urlParts[1].replace('.png', '');
-        console.log(`[Image Proxy] Extracted problem_id: ${problemId}`);
 
         // Query Supabase edited_contents table
         const supabase = createClient();
@@ -35,12 +32,10 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (error) {
-          console.error(`[Image Proxy] Supabase query error:`, error);
           throw new Error(`Failed to fetch from S3 and Supabase: ${error.message}`);
         }
 
         if (data && data.base64) {
-          console.log(`[Image Proxy] ✅ Found base64 in Supabase for ${problemId}`);
 
           // Convert base64 to ArrayBuffer
           // Remove data URL prefix if present (e.g., "data:image/png;base64,")
@@ -65,7 +60,6 @@ export async function GET(request: NextRequest) {
             },
           });
         } else {
-          console.log(`[Image Proxy] ⚠️ No base64 found in Supabase for ${problemId}`);
           throw new Error('Image not found in S3 or Supabase');
         }
       } else {
@@ -85,8 +79,7 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       },
     });
-  } catch (error) {
-    console.error('Image proxy error:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch image' },
       { status: 500 }

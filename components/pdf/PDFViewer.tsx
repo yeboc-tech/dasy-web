@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CustomButton } from '@/components/custom-button';
 import Link from 'next/link';
@@ -29,14 +29,18 @@ interface PDFViewerProps {
   onEdit?: () => void;
   onSave?: () => void;
   onPreview?: () => void;
+  onBack?: () => void;
   subject?: string;
   worksheetTitle?: string;
   worksheetAuthor?: string;
+  isTitlePlaceholder?: boolean;
+  isAuthorPlaceholder?: boolean;
   isPublic?: boolean;
   worksheetId?: string;
+  hideHeader?: boolean;
 }
 
-const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, onPreview, subject, worksheetTitle, worksheetAuthor, isPublic, worksheetId }: PDFViewerProps) {
+const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, onPreview, onBack, subject, worksheetTitle, worksheetAuthor, isTitlePlaceholder, isAuthorPlaceholder, isPublic, worksheetId, hideHeader }: PDFViewerProps) {
   console.log('🟠 PDFViewer component render - pdfUrl:', !!pdfUrl);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -417,16 +421,24 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
       
       <div className="flex flex-col h-full bg-white print:h-auto">
         {/* Worksheet Header Bar */}
-        {(worksheetTitle || onEdit || onSave) && (
+        {!hideHeader && (worksheetTitle || onEdit || onSave || onBack) && (
           <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white print:hidden">
             <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
               {worksheetTitle && (
-                <h1 className="text-lg font-semibold text-[var(--foreground)]">
+                <h1 className={`text-lg font-semibold ${isTitlePlaceholder ? 'text-gray-400' : 'text-[var(--foreground)]'}`}>
                   {worksheetTitle}
                 </h1>
               )}
               {worksheetAuthor && (
-                <span className="text-sm text-gray-500">
+                <span className={`text-sm ${isAuthorPlaceholder ? 'text-gray-400' : 'text-gray-500'}`}>
                   {worksheetAuthor}
                 </span>
               )}
@@ -437,7 +449,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                 <CustomButton
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(`/worksheets/${worksheetId}/quick-answers`, '_blank')}
+                  onClick={() => window.open(`/w/${worksheetId}/quick-answers`, '_blank')}
                   title="빠른 정답표 보기"
                 >
                   빠른 정답
@@ -478,7 +490,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
               )}
 
               {worksheetId && (
-                <Link href={`/worksheets/${worksheetId}/solve`} target="_blank" rel="noopener noreferrer">
+                <Link href={`/w/${worksheetId}/solve`} target="_blank" rel="noopener noreferrer">
                   <CustomButton
                     variant="outline"
                     size="sm"

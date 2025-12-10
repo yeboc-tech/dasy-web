@@ -17,9 +17,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const isQuickAnswersPage = pathname?.includes('/quick-answers')
 
   // App routes now have their own layout with sidebar
-  const isAppRoute = pathname?.startsWith('/build') ||
+  const isAppRoute = pathname === '/' ||
+                    pathname?.startsWith('/w/') ||
                     pathname?.startsWith('/worksheets') ||
-                    pathname?.startsWith('/configure') ||
                     pathname?.startsWith('/profile') ||
                     pathname?.startsWith('/my-worksheets') ||
                     pathname?.startsWith('/feedback')

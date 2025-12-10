@@ -10,8 +10,8 @@ export function BannerManager() {
   const [showAppBanner, setShowAppBanner] = useState(true);
   const [showInterviewBanner, setShowInterviewBanner] = useState(true);
 
-  // Show interview banner ONLY on worksheet detail pages (/worksheets/[id])
-  if (pathname?.startsWith('/worksheets/') && pathname !== '/worksheets' && showInterviewBanner) {
+  // Show interview banner ONLY on worksheet detail pages (/w/[id])
+  if (pathname?.startsWith('/w/') && showInterviewBanner) {
     return <InterviewBanner onDismiss={() => setShowInterviewBanner(false)} />;
   }
 

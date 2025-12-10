@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Top Navbar */}
         <div className="w-full h-14 flex items-center justify-between px-4 gap-2 shrink-0">
           {/* Logo with subtitle */}
-          <Link href="/build" className="flex items-end gap-2">
+          <Link href="/" className="flex items-end gap-2">
             <span className="text-xl font-semibold text-[var(--foreground)] leading-none">KIDARI</span>
             <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">학습지 제작 도구</span>
           </Link>

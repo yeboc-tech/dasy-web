@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getMTChapterTree } from '@/lib/supabase/services/clientServices';
+import { getTaggedChapterTree } from '@/lib/supabase/services/clientServices';
 import type { ChapterTreeItem } from '@/lib/types';
 
-export function useEconomyChapters() {
+/**
+ * Hook to fetch chapters for a tagged subject (경제, 사회문화, 생활과윤리, etc.)
+ */
+export function useTaggedChapters(subject: string) {
   const [chapters, setChapters] = useState<ChapterTreeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,28 +17,28 @@ export function useEconomyChapters() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getMTChapterTree();
+        const data = await getTaggedChapterTree(subject);
         setChapters(data);
       } catch (err) {
-        console.error('Error loading economy chapters:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load economy chapters');
+        console.error(`Error loading ${subject} chapters:`, err);
+        setError(err instanceof Error ? err.message : `Failed to load ${subject} chapters`);
       } finally {
         setLoading(false);
       }
     }
 
     loadChapters();
-  }, []);
+  }, [subject]);
 
   const refetch = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getMTChapterTree();
+      const data = await getTaggedChapterTree(subject);
       setChapters(data);
     } catch (err) {
-      console.error('Error refetching economy chapters:', err);
-      setError(err instanceof Error ? err.message : 'Failed to refetch economy chapters');
+      console.error(`Error refetching ${subject} chapters:`, err);
+      setError(err instanceof Error ? err.message : `Failed to refetch ${subject} chapters`);
     } finally {
       setLoading(false);
     }

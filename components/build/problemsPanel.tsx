@@ -7,6 +7,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 import { getDifficultyFromCorrectRate } from '@/lib/utils/difficultyCorrectRateSync';
+import { getSubjectFromProblemId } from '@/lib/supabase/services/taggedWorksheetService';
 
 interface ProblemsPanelProps {
   filteredProblems: ProblemMetadata[];
@@ -16,6 +17,8 @@ interface ProblemsPanelProps {
   onDeleteProblem?: (problemId: string) => void;
   showAnswers?: boolean;
   editedContentsMap?: Map<string, string> | null; // Now contains CDN URLs instead of base64
+  emptyMessage?: string;
+  addedProblemIds?: Set<string>; // IDs of problems already added to worksheet
 }
 
 // Create a lookup map for chapter data (label and parent)
@@ -70,7 +73,9 @@ export default function ProblemsPanel({
   contentTree,
   onDeleteProblem,
   showAnswers = false,
-  editedContentsMap
+  editedContentsMap,
+  emptyMessage = '선택한 조건에 맞는 문제가 없습니다.',
+  addedProblemIds
 }: ProblemsPanelProps) {
   // Create chapter lookup map once when contentTree changes
   const chapterLookupMap = useMemo(() => {
@@ -101,19 +106,20 @@ export default function ProblemsPanel({
       <div className="flex-1 overflow-y-auto">
         {filteredProblems.length === 0 ? (
           <div className="flex items-center justify-center min-h-full text-gray-500 text-sm">
-            선택한 조건에 맞는 문제가 없습니다.
+            {emptyMessage}
           </div>
         ) : (
           <div>
             {filteredProblems.map((problem: ProblemMetadata, index: number) => {
-              const isFirst = index === 0;
+              const isLast = index === filteredProblems.length - 1;
+              const isAlreadyAdded = addedProblemIds?.has(problem.id);
 
               return (
                 <div
                   key={problem.id}
                   className={`relative w-full p-4 pb-6 transition-all group ${
-                    index < filteredProblems.length - 1 ? 'border-b border-gray-200' : ''
-                  } ${isFirst ? 'rounded-tr-xl' : ''}`}
+                    !isLast ? 'border-b border-gray-200' : 'rounded-br-xl'
+                  }`}
                 >
                   {/* Hover overlay - covers whole section */}
                   <div className="absolute inset-0 bg-gray-500 opacity-0 group-hover:opacity-5 pointer-events-none z-[1] transition-opacity" />
@@ -245,8 +251,9 @@ export default function ProblemsPanel({
 
                   {/* Answer image (conditional) */}
                   {showAnswers && problem.answer_filename && (() => {
-                    // For economy problems, answer ID replaces _문제 with _해설
-                    const answerId = problem.id.startsWith('경제_')
+                    // For tagged subject problems, answer ID replaces _문제 with _해설
+                    const isTaggedSubject = getSubjectFromProblemId(problem.id) !== null;
+                    const answerId = isTaggedSubject
                       ? problem.id.replace('_문제', '_해설')
                       : problem.id;
 

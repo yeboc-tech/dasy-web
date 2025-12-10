@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types/database';
+import type { SortRule } from '@/lib/types/sorting';
 
 interface CreateWorksheetParams {
   title: string;
@@ -17,6 +18,7 @@ interface CreateWorksheetParams {
   };
   problems: ProblemMetadata[];
   contentTree?: ChapterTreeItem[];
+  sorting?: SortRule[];
 }
 
 interface WorksheetData {
@@ -27,13 +29,14 @@ interface WorksheetData {
   created_at: string;
   selected_problem_ids: string[];
   is_public: boolean;
+  sorting: SortRule[];
 }
 
 export async function createWorksheet(
   supabase: SupabaseClient,
   params: CreateWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, userId, filters, problems } = params;
+  const { title, author, userId, filters, problems, sorting } = params;
 
   // Use the provided problems directly (they're already filtered from the preview)
   const selectedProblemIds = problems.map(problem => problem.id);
@@ -50,7 +53,8 @@ export async function createWorksheet(
       author: author.trim(),
       selected_problem_ids: selectedProblemIds,
       filters: filters,
-      created_by: userId || null
+      created_by: userId || null,
+      sorting: sorting || []
     })
     .select('id')
     .single();
@@ -60,7 +64,7 @@ export async function createWorksheet(
     throw new Error('Failed to create worksheet');
   }
 
-  return { 
+  return {
     id: worksheet.id,
     problemCount: selectedProblemIds.length
   };
@@ -165,7 +169,8 @@ export async function getWorksheet(
       filters: worksheet.filters,
       created_at: worksheet.created_at,
       selected_problem_ids: worksheet.selected_problem_ids,
-      is_public: worksheet.is_public || false
+      is_public: worksheet.is_public || false,
+      sorting: worksheet.sorting || []
     },
     problems: sortedProblems
   };
@@ -179,6 +184,51 @@ export async function updateWorksheet(
   const { error } = await supabase
     .from('worksheets')
     .update(updates)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating worksheet:', error);
+    throw new Error('Failed to update worksheet');
+  }
+}
+
+interface UpdateWorksheetFullParams {
+  title: string;
+  author: string;
+  filters: {
+    selectedChapters: string[];
+    selectedDifficulties: string[];
+    selectedProblemTypes: string[];
+    selectedSubjects: string[];
+    problemCount: number;
+    correctRateRange: [number, number];
+  };
+  problems: ProblemMetadata[];
+  sorting?: SortRule[];
+}
+
+export async function updateWorksheetFull(
+  supabase: SupabaseClient,
+  id: string,
+  params: UpdateWorksheetFullParams
+): Promise<void> {
+  const { title, author, filters, problems, sorting } = params;
+
+  const selectedProblemIds = problems.map(problem => problem.id);
+
+  if (selectedProblemIds.length === 0) {
+    throw new Error('No problems to save');
+  }
+
+  const { error } = await supabase
+    .from('worksheets')
+    .update({
+      title: title.trim(),
+      author: author.trim(),
+      selected_problem_ids: selectedProblemIds,
+      filters: filters,
+      sorting: sorting || []
+    })
     .eq('id', id);
 
   if (error) {
