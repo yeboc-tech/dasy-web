@@ -7,6 +7,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 import { getDifficultyFromCorrectRate } from '@/lib/utils/difficultyCorrectRateSync';
+import { getSubjectFromProblemId } from '@/lib/supabase/services/taggedWorksheetService';
 
 interface ProblemsPanelProps {
   filteredProblems: ProblemMetadata[];
@@ -250,8 +251,9 @@ export default function ProblemsPanel({
 
                   {/* Answer image (conditional) */}
                   {showAnswers && problem.answer_filename && (() => {
-                    // For economy problems, answer ID replaces _문제 with _해설
-                    const answerId = problem.id.startsWith('경제_')
+                    // For tagged subject problems, answer ID replaces _문제 with _해설
+                    const isTaggedSubject = getSubjectFromProblemId(problem.id) !== null;
+                    const answerId = isTaggedSubject
                       ? problem.id.replace('_문제', '_해설')
                       : problem.id;
 

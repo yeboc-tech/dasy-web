@@ -1,6 +1,7 @@
 import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types/database';
 import type { SortRule, SortField } from '@/lib/types/sorting';
+import { getSubjectFromProblemId } from '@/lib/supabase/services/taggedWorksheetService';
 
 /**
  * Fisher-Yates shuffle for random ordering (실전 mode)
@@ -53,20 +54,22 @@ function comparePaths(pathA: number[] | undefined, pathB: number[] | undefined):
 }
 
 /**
- * Parse exam year from economy problem ID
- * Format: 경제_고3_2022_06_모평_1_문제
+ * Parse exam year from tagged problem ID
+ * Format: {subject}_고3_2022_06_모평_1_문제
  */
-function parseEconomyExamYear(problemId: string): number {
-  const match = problemId.match(/경제_고\d_(\d{4})_/);
+function parseTaggedExamYear(problemId: string): number {
+  // Match any tagged subject prefix followed by grade, year
+  const match = problemId.match(/_고\d_(\d{4})_/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
 /**
- * Parse problem type from economy problem ID
+ * Parse problem type from tagged problem ID
  * Returns: 학평, 모평, 수능
  */
-function parseEconomyProblemType(problemId: string): string {
-  const match = problemId.match(/경제_고\d_\d{4}_\d{2}_([^_]+)_/);
+function parseTaggedProblemType(problemId: string): string {
+  // Match any tagged subject prefix followed by grade, year, month, then exam type
+  const match = problemId.match(/_고\d_\d{4}_\d{2}_([^_]+)_/);
   return match ? match[1] : '';
 }
 
@@ -97,37 +100,37 @@ function getTonghapsahoeFieldValue(
 }
 
 /**
- * Get field value for comparison - 경제
+ * Get field value for comparison - Tagged subjects (경제, 사회문화, 생활과윤리)
  */
-function getEconomyFieldValue(
+function getTaggedFieldValue(
   problem: ProblemMetadata,
   field: SortField
 ): number | string[] | string {
   switch (field) {
     case 'chapter':
-      // Use tags array for chapter sorting in economy mode
+      // Use tags array for chapter sorting in tagged mode
       return problem.tags || [];
     case 'tags':
-      // For 경제, tags is same as chapter (both use tags array)
+      // For tagged subjects, tags is same as chapter (both use tags array)
       return problem.tags || [];
     case 'correct_rate':
       return problem.correct_rate ?? 50;
     case 'exam_year':
       // Parse from problem ID if not available
-      return problem.exam_year ?? parseEconomyExamYear(problem.id);
+      return problem.exam_year ?? parseTaggedExamYear(problem.id);
     case 'problem_type':
       // Parse from problem ID if not available
-      return problem.problem_type || parseEconomyProblemType(problem.id);
+      return problem.problem_type || parseTaggedProblemType(problem.id);
     default:
       return 0;
   }
 }
 
 /**
- * Compare two economy tag arrays (chapter hierarchy)
- * Tags are like ["1 시장경제의 기본 원리", "1-1 시장과 경쟁"]
+ * Compare two tagged tag arrays (chapter hierarchy)
+ * Tags are like ["경제", "1 시장경제의 기본 원리", "1-1 시장과 경쟁"]
  */
-function compareEconomyTags(tagsA: string[], tagsB: string[]): number {
+function compareTaggedTags(tagsA: string[], tagsB: string[]): number {
   const minLength = Math.min(tagsA.length, tagsB.length);
 
   for (let i = 0; i < minLength; i++) {
@@ -173,12 +176,12 @@ function compareValues(
   valueA: number | number[] | string | string[],
   valueB: number | number[] | string | string[],
   field: SortField,
-  isEconomyMode: boolean
+  isTaggedMode: boolean
 ): number {
   // Handle chapter field specially
   if (field === 'chapter') {
-    if (isEconomyMode) {
-      return compareEconomyTags(valueA as string[], valueB as string[]);
+    if (isTaggedMode) {
+      return compareTaggedTags(valueA as string[], valueB as string[]);
     } else {
       return comparePaths(valueA as number[], valueB as number[]);
     }
@@ -186,9 +189,9 @@ function compareValues(
 
   // Handle tags field (string arrays)
   if (field === 'tags') {
-    if (isEconomyMode) {
-      // For 경제, tags uses same comparison as chapter
-      return compareEconomyTags(valueA as string[], valueB as string[]);
+    if (isTaggedMode) {
+      // For tagged subjects, tags uses same comparison as chapter
+      return compareTaggedTags(valueA as string[], valueB as string[]);
     } else {
       // For 통합사회, use simple string array comparison
       return compareTags(valueA as string[], valueB as string[]);
@@ -242,15 +245,15 @@ function createTonghapsahoeComparator(
 }
 
 /**
- * Create comparator function for 경제 problems
+ * Create comparator function for tagged subject problems
  */
-function createEconomyComparator(
+function createTaggedComparator(
   rules: SortRule[]
 ): (a: ProblemMetadata, b: ProblemMetadata) => number {
   return (a: ProblemMetadata, b: ProblemMetadata): number => {
     for (const rule of rules) {
-      const valueA = getEconomyFieldValue(a, rule.field);
-      const valueB = getEconomyFieldValue(b, rule.field);
+      const valueA = getTaggedFieldValue(a, rule.field);
+      const valueB = getTaggedFieldValue(b, rule.field);
 
       let comparison = compareValues(valueA, valueB, rule.field, true);
 
@@ -267,7 +270,7 @@ function createEconomyComparator(
 }
 
 export interface ApplySortRulesOptions {
-  isEconomyMode: boolean;
+  isTaggedMode: boolean;
   contentTree?: ChapterTreeItem[];
 }
 
@@ -301,19 +304,20 @@ export function applySortRules(
     return shuffle(problems);
   }
 
-  const { isEconomyMode, contentTree } = options;
+  const { isTaggedMode, contentTree } = options;
 
   // Create appropriate comparator based on mode
-  const comparator = isEconomyMode
-    ? createEconomyComparator(rules)
+  const comparator = isTaggedMode
+    ? createTaggedComparator(rules)
     : createTonghapsahoeComparator(rules, contentTree || []);
 
   return [...problems].sort(comparator);
 }
 
 /**
- * Check if the problem list contains economy problems
+ * Check if the problem list contains tagged subject problems (경제, 사회문화, 생활과윤리)
  */
-export function isEconomyProblemList(problems: ProblemMetadata[]): boolean {
-  return problems.length > 0 && problems[0].id.startsWith('경제_');
+export function isTaggedProblemList(problems: ProblemMetadata[]): boolean {
+  if (problems.length === 0) return false;
+  return getSubjectFromProblemId(problems[0].id) !== null;
 }

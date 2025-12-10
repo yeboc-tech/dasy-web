@@ -1,9 +1,11 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import type { ProblemMetadata } from '@/lib/types/problems';
-import type { EconomyProblem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
 
-interface CreateEconomyWorksheetParams {
+// List of tagged subject prefixes
+const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_'];
+
+interface CreateTaggedWorksheetParams {
   title: string;
   author: string;
   userId?: string; // Optional: if provided, worksheet is associated with this user
@@ -17,11 +19,11 @@ interface CreateEconomyWorksheetParams {
     correctRateRange: [number, number];
     problemCount: number;
   };
-  problems: ProblemMetadata[]; // Already converted economy problems
+  problems: ProblemMetadata[]; // Already converted problems
   sorting?: SortRule[];
 }
 
-interface EconomyWorksheetData {
+interface TaggedWorksheetData {
   id: string;
   title: string;
   author: string;
@@ -29,17 +31,37 @@ interface EconomyWorksheetData {
   created_at: string;
   selected_problem_ids: string[];
   is_public: boolean;
-  worksheet_type: 'economy'; // Mark as economy worksheet
   sorting: SortRule[];
 }
 
 /**
- * Create a worksheet for economy problems
- * Stores economy problem IDs (like "경제_고3_2024_03_학평_1_문제")
+ * Get the tag type for a given subject
+ * e.g., '경제' -> '단원_사회탐구_경제'
  */
-export async function createEconomyWorksheet(
+function getTagType(subject: string): string {
+  return `단원_사회탐구_${subject}`;
+}
+
+/**
+ * Detect subject from problem ID
+ * e.g., '경제_고3_2024_03_학평_1_문제' -> '경제'
+ */
+export function getSubjectFromProblemId(problemId: string): string | null {
+  for (const prefix of TAGGED_SUBJECT_PREFIXES) {
+    if (problemId.startsWith(prefix)) {
+      return prefix.slice(0, -1); // Remove trailing '_'
+    }
+  }
+  return null;
+}
+
+/**
+ * Create a worksheet for tagged problems
+ * Stores problem IDs (like "경제_고3_2024_03_학평_1_문제")
+ */
+export async function createTaggedWorksheet(
   supabase: SupabaseClient,
-  params: CreateEconomyWorksheetParams
+  params: CreateTaggedWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
   const { title, author, userId, filters, problems, sorting } = params;
 
@@ -49,17 +71,14 @@ export async function createEconomyWorksheet(
     throw new Error('No problems match the selected filters');
   }
 
-  // Insert worksheet with economy-specific filters
+  // Insert worksheet
   const { data: worksheet, error } = await supabase
     .from('worksheets')
     .insert({
       title: title.trim(),
       author: author.trim(),
       selected_problem_ids: selectedProblemIds,
-      filters: {
-        ...filters,
-        worksheet_type: 'economy' // Mark as economy worksheet
-      },
+      filters: filters,
       created_by: userId || null,
       sorting: sorting || []
     })
@@ -67,8 +86,8 @@ export async function createEconomyWorksheet(
     .single();
 
   if (error) {
-    console.error('Error creating economy worksheet:', error);
-    throw new Error('Failed to create economy worksheet');
+    console.error('Error creating tagged worksheet:', error);
+    throw new Error('Failed to create worksheet');
   }
 
   return {
@@ -78,13 +97,13 @@ export async function createEconomyWorksheet(
 }
 
 /**
- * Get an economy worksheet and its problems
+ * Get a tagged worksheet and its problems
  * Fetches from problem_tags + accuracy_rate tables
  */
-export async function getEconomyWorksheet(
+export async function getTaggedWorksheet(
   supabase: SupabaseClient,
   id: string
-): Promise<{ worksheet: EconomyWorksheetData; problems: ProblemMetadata[] }> {
+): Promise<{ worksheet: TaggedWorksheetData; problems: ProblemMetadata[] }> {
   // Fetch worksheet
   const { data: worksheet, error: worksheetError } = await supabase
     .from('worksheets')
@@ -96,11 +115,15 @@ export async function getEconomyWorksheet(
     if (worksheetError.code === 'PGRST116') {
       throw new Error('Worksheet not found');
     }
-    console.error('Error fetching economy worksheet:', worksheetError);
-    throw new Error('Failed to fetch economy worksheet');
+    console.error('Error fetching tagged worksheet:', worksheetError);
+    throw new Error('Failed to fetch worksheet');
   }
 
   const problemIds = worksheet.selected_problem_ids as string[];
+
+  // Detect subject from first problem ID
+  const subject = problemIds.length > 0 ? getSubjectFromProblemId(problemIds[0]) : null;
+  const tagType = subject ? getTagType(subject) : null;
 
   // Fetch problems from problem_tags and accuracy_rate
   const BATCH_SIZE = 50;
@@ -109,16 +132,33 @@ export async function getEconomyWorksheet(
   for (let i = 0; i < problemIds.length; i += BATCH_SIZE) {
     const batch = problemIds.slice(i, i + BATCH_SIZE);
 
-    // Fetch problem tags
-    const { data: tagsData, error: tagsError } = await supabase
-      .from('problem_tags')
-      .select('problem_id, tag_ids, tag_labels')
-      .in('problem_id', batch)
-      .eq('type', 'MT_단원_태그');
+    // Fetch problem tags - try with detected tag type first, fallback to any match
+    let tagsData = null;
+    let tagsError = null;
+
+    if (tagType) {
+      const result = await supabase
+        .from('problem_tags')
+        .select('problem_id, tag_ids, tag_labels')
+        .in('problem_id', batch)
+        .eq('type', tagType);
+      tagsData = result.data;
+      tagsError = result.error;
+    }
+
+    // If no results with specific tag type, try without type filter
+    if (!tagsData || tagsData.length === 0) {
+      const result = await supabase
+        .from('problem_tags')
+        .select('problem_id, tag_ids, tag_labels')
+        .in('problem_id', batch);
+      tagsData = result.data;
+      tagsError = result.error;
+    }
 
     if (tagsError) {
-      console.error('Error fetching economy problem tags:', tagsError);
-      throw new Error('Failed to fetch economy problems');
+      console.error('Error fetching problem tags:', tagsError);
+      throw new Error('Failed to fetch problems');
     }
 
     // Fetch accuracy data
@@ -128,8 +168,8 @@ export async function getEconomyWorksheet(
       .in('problem_id', batch);
 
     if (accuracyError) {
-      console.error('Error fetching economy problem accuracy:', accuracyError);
-      throw new Error('Failed to fetch economy problem data');
+      console.error('Error fetching problem accuracy:', accuracyError);
+      throw new Error('Failed to fetch problem data');
     }
 
     // Create accuracy map
@@ -153,8 +193,8 @@ export async function getEconomyWorksheet(
         chapter_id: tagItem.tag_ids[tagItem.tag_ids.length - 1] || null,
         difficulty: accuracyInfo?.difficulty || '중',
         problem_type: `${parsed.exam_type} ${parsed.year}년 ${parseInt(parsed.month)}월`,
-        tags: tagItem.tag_labels,
-        related_subjects: ['경제'],
+        tags: [parsed.subject, ...tagItem.tag_labels],
+        related_subjects: [parsed.subject],
         correct_rate: accuracyInfo?.accuracy_rate,
         exam_year: parseInt(parsed.year),
         created_at: new Date().toISOString(),
@@ -178,7 +218,6 @@ export async function getEconomyWorksheet(
       created_at: worksheet.created_at,
       selected_problem_ids: worksheet.selected_problem_ids,
       is_public: worksheet.is_public || false,
-      worksheet_type: 'economy',
       sorting: worksheet.sorting || []
     },
     problems: sortedProblems
@@ -186,8 +225,8 @@ export async function getEconomyWorksheet(
 }
 
 /**
- * Parse economy problem ID to extract metadata
- * Format: 경제_고3_2024_03_학평_1_문제
+ * Parse problem ID to extract metadata
+ * Format: {subject}_고3_2024_03_학평_1_문제
  */
 function parseProblemId(problemId: string): {
   subject: string;
@@ -229,17 +268,18 @@ function parseProblemId(problemId: string): {
 }
 
 /**
- * Detect if problem IDs are economy problems
- * Economy problems have format: 경제_고3_2024_03_학평_1_문제
+ * Detect if problem IDs are from tagged subjects
+ * Tagged problems have format: {subject}_고3_2024_03_학평_1_문제
  */
-export function isEconomyWorksheet(problemIds: string[]): boolean {
+export function isTaggedWorksheet(problemIds: string[]): boolean {
   if (problemIds.length === 0) return false;
 
-  // Check first problem ID - if it starts with '경제_', it's an economy worksheet
-  return problemIds[0].startsWith('경제_');
+  // Check first problem ID - if it starts with any tagged subject prefix
+  return TAGGED_SUBJECT_PREFIXES.some(prefix => problemIds[0].startsWith(prefix));
 }
 
-interface UpdateEconomyWorksheetParams {
+
+interface UpdateTaggedWorksheetParams {
   title: string;
   author: string;
   filters: {
@@ -257,12 +297,12 @@ interface UpdateEconomyWorksheetParams {
 }
 
 /**
- * Update an existing economy worksheet
+ * Update an existing tagged worksheet
  */
-export async function updateEconomyWorksheet(
+export async function updateTaggedWorksheet(
   supabase: SupabaseClient,
   id: string,
-  params: UpdateEconomyWorksheetParams
+  params: UpdateTaggedWorksheetParams
 ): Promise<void> {
   const { title, author, filters, problems, sorting } = params;
 
@@ -278,16 +318,14 @@ export async function updateEconomyWorksheet(
       title: title.trim(),
       author: author.trim(),
       selected_problem_ids: selectedProblemIds,
-      filters: {
-        ...filters,
-        worksheet_type: 'economy'
-      },
+      filters: filters,
       sorting: sorting || []
     })
     .eq('id', id);
 
   if (error) {
-    console.error('Error updating economy worksheet:', error);
-    throw new Error('Failed to update economy worksheet');
+    console.error('Error updating tagged worksheet:', error);
+    throw new Error('Failed to update worksheet');
   }
 }
+

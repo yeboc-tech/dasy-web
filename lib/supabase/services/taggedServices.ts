@@ -1,12 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import type { ChapterTreeItem, EconomyProblem } from '@/lib/types';
+import type { ChapterTreeItem, TaggedProblem } from '@/lib/types';
 
-interface MTTagRow {
+interface TagRow {
   tag_ids: string[];
   tag_labels: string[];
 }
 
-interface EconomyFilters {
+interface TaggedFilters {
   selectedChapterIds: string[];
   selectedGrades: string[];
   selectedYears: number[];
@@ -17,18 +17,32 @@ interface EconomyFilters {
 }
 
 /**
- * Fetch MT chapter tags and build a hierarchical tree structure
+ * Get the tag type for a given subject
+ * e.g., '경제' -> '단원_사회탐구_경제'
  */
-export async function fetchMTChapterTree(supabase: SupabaseClient): Promise<ChapterTreeItem[]> {
+function getTagType(subject: string): string {
+  return `단원_사회탐구_${subject}`;
+}
+
+/**
+ * Fetch chapter tags for a subject and build a hierarchical tree structure
+ * The subject itself is used as the top-level wrapper (similar to 통합사회 2)
+ */
+export async function fetchTaggedChapterTree(
+  supabase: SupabaseClient,
+  subject: string
+): Promise<ChapterTreeItem[]> {
   try {
-    // Fetch all distinct MT_단원_태그 entries
+    const tagType = getTagType(subject);
+
+    // Fetch all distinct tag entries for this subject
     const { data, error } = await supabase
       .from('problem_tags')
       .select('tag_ids, tag_labels')
-      .eq('type', 'MT_단원_태그');
+      .eq('type', tagType);
 
     if (error) {
-      console.error('Error fetching MT tags:', error);
+      console.error(`Error fetching ${subject} tags:`, error);
       throw error;
     }
 
@@ -37,9 +51,20 @@ export async function fetchMTChapterTree(supabase: SupabaseClient): Promise<Chap
     }
 
     // Build tree from tag paths
-    return buildTreeFromTags(data as MTTagRow[]);
+    const chapters = buildTreeFromTags(data as TagRow[]);
+
+    // Wrap with subject as the top-level parent (similar to 통합사회 2)
+    const subjectWrapper: ChapterTreeItem = {
+      id: subject, // Use subject name as ID (e.g., '경제', '사회문화')
+      label: subject,
+      type: 'category',
+      expanded: true, // Start expanded so children are visible
+      children: chapters
+    };
+
+    return [subjectWrapper];
   } catch (error) {
-    console.error('Error in fetchMTChapterTree:', error);
+    console.error(`Error in fetchTaggedChapterTree for ${subject}:`, error);
     throw error;
   }
 }
@@ -48,16 +73,25 @@ export async function fetchMTChapterTree(supabase: SupabaseClient): Promise<Chap
  * Build a tree structure from flat tag paths
  * Each tag row represents a path from root to leaf
  */
-function buildTreeFromTags(tags: MTTagRow[]): ChapterTreeItem[] {
+function buildTreeFromTags(tags: TagRow[]): ChapterTreeItem[] {
   const nodeMap = new Map<string, ChapterTreeItem>();
   const roots: ChapterTreeItem[] = [];
 
   // Process each tag path
   tags.forEach(({ tag_ids, tag_labels }) => {
+    // Filter out subject prefix tags (e.g., "사회탐구_사회문화") that some records have
+    // These are inconsistent and cause duplicate parent nodes
+    let filteredIds = tag_ids;
+    let filteredLabels = tag_labels;
+    if (tag_ids[0]?.startsWith('사회탐구_')) {
+      filteredIds = tag_ids.slice(1);
+      filteredLabels = tag_labels.slice(1);
+    }
+
     // Iterate through each level in the path
-    for (let i = 0; i < tag_ids.length; i++) {
-      const id = tag_ids[i];
-      const label = tag_labels[i];
+    for (let i = 0; i < filteredIds.length; i++) {
+      const id = filteredIds[i];
+      const label = filteredLabels[i];
 
       // Skip if node already exists
       if (nodeMap.has(id)) {
@@ -83,7 +117,7 @@ function buildTreeFromTags(tags: MTTagRow[]): ChapterTreeItem[] {
         }
       } else {
         // Child level - add to parent
-        const parentId = tag_ids[i - 1];
+        const parentId = filteredIds[i - 1];
         const parent = nodeMap.get(parentId);
         if (parent && !parent.children?.some(c => c.id === id)) {
           parent.children?.push(node);
@@ -134,7 +168,7 @@ function buildTreeFromTags(tags: MTTagRow[]): ChapterTreeItem[] {
 
 /**
  * Parse problem_id to extract metadata
- * Format: 경제_고3_2024_03_학평_1_문제
+ * Format: {subject}_고3_2024_03_학평_1_문제
  */
 function parseProblemId(problemId: string): {
   subject: string;
@@ -177,14 +211,16 @@ function parseProblemId(problemId: string): {
 }
 
 /**
- * Fetch economy problems with filters
- * Only fetches problems with type = 'MT_단원_태그'
+ * Fetch tagged problems with filters for a specific subject
  */
-export async function fetchEconomyProblems(
+export async function fetchTaggedProblems(
   supabase: SupabaseClient,
-  filters: EconomyFilters
-): Promise<EconomyProblem[]> {
+  subject: string,
+  filters: TaggedFilters
+): Promise<TaggedProblem[]> {
   try {
+    const tagType = getTagType(subject);
+
     const {
       selectedChapterIds,
       selectedGrades,
@@ -205,28 +241,30 @@ export async function fetchEconomyProblems(
 
     // If no chapters selected, return empty result immediately
     if (safeChapterIds.length === 0) {
-      console.log('[Economy Debug] No chapters selected, returning empty result');
       return [];
     }
+
+    // Check if the subject itself is selected (top-level wrapper)
+    // If so, fetch all problems for this subject without chapter filter
+    const isSubjectSelected = safeChapterIds.includes(subject);
 
     // Fetch problem_tags
     let tagsQuery = supabase
       .from('problem_tags')
       .select('problem_id, tag_ids, tag_labels')
-      .eq('type', 'MT_단원_태그');
+      .eq('type', tagType);
 
-    // Filter by selected chapters (tag_ids overlap)
-    tagsQuery = tagsQuery.overlaps('tag_ids', safeChapterIds);
+    // Filter by selected chapters (tag_ids overlap) - only if subject itself is not selected
+    if (!isSubjectSelected) {
+      tagsQuery = tagsQuery.overlaps('tag_ids', safeChapterIds);
+    }
 
     const { data: tagsData, error: tagsError } = await tagsQuery;
 
     if (tagsError) {
       console.error('Error fetching problem tags:', tagsError);
-      console.error('Error details:', JSON.stringify(tagsError, null, 2));
       throw tagsError;
     }
-
-    console.log(`[Economy Debug] Fetched ${tagsData?.length || 0} problems with MT_단원_태그`);
 
     if (!tagsData || tagsData.length === 0) {
       return [];
@@ -261,10 +299,9 @@ export async function fetchEconomyProblems(
       score: number | null;
     }
     const allAccuracyData: AccuracyData[] = [];
-    batchResults.forEach((result, index) => {
+    batchResults.forEach((result) => {
       if (result.error) {
-        console.error(`Error fetching accuracy data for batch ${index}:`, result.error);
-        console.error('Error details:', JSON.stringify(result.error, null, 2));
+        console.error('Error fetching accuracy data:', result.error);
       } else if (result.data) {
         allAccuracyData.push(...result.data);
       }
@@ -289,11 +326,10 @@ export async function fetchEconomyProblems(
       tag_ids: string[];
       accuracy_rate: AccuracyData | null;
     }
-    const problems: EconomyProblem[] = data
+    const problems: TaggedProblem[] = data
       .map((item: DataItem) => {
         const parsed = parseProblemId(item.problem_id);
         if (!parsed) {
-          console.warn(`[Economy Debug] Failed to parse problem_id: ${item.problem_id}`);
           return null;
         }
 
@@ -308,11 +344,9 @@ export async function fetchEconomyProblems(
           correct_answer: accuracyData?.correct_answer,
           score: accuracyData?.score,
           ...parsed
-        } as EconomyProblem;
+        } as TaggedProblem;
       })
-      .filter((item): item is EconomyProblem => item !== null) as EconomyProblem[];
-
-    console.log(`[Economy Debug] After parsing: ${problems.length} problems`);
+      .filter((item): item is TaggedProblem => item !== null) as TaggedProblem[];
 
     const filteredProblems = problems
       .filter((item) => {
@@ -374,35 +408,9 @@ export async function fetchEconomyProblems(
         return true;
       });
 
-    // Count filtered out by each criteria
-    const gradeFiltered = problems.filter(p => safeGrades.length > 0 && !safeGrades.includes(p.grade));
-    const yearFiltered = problems.filter(p => safeYears.length > 0 && !safeYears.includes(parseInt(p.year, 10)));
-    const monthFiltered = problems.filter(p => safeMonths.length > 0 && !safeMonths.includes(p.month));
-    const examTypeFiltered = problems.filter(p => safeExamTypes.length > 0 && !safeExamTypes.includes(p.exam_type));
-    const difficultyFiltered = problems.filter(p => safeDifficulties.length > 0 && p.difficulty && !safeDifficulties.includes(p.difficulty));
-
-    console.log(`[Economy Debug] Filtered out counts:`, {
-      byGrade: gradeFiltered.length,
-      byYear: yearFiltered.length,
-      byMonth: monthFiltered.length,
-      byExamType: examTypeFiltered.length,
-      byDifficulty: difficultyFiltered.length
-    });
-
-    console.log(`[Economy Debug] After filtering: ${filteredProblems.length} problems`);
-    console.log(`[Economy Debug] Filters applied:`, {
-      selectedChapterIds: safeChapterIds.length,
-      selectedGrades: safeGrades,
-      selectedYears: safeYears,
-      selectedMonths: safeMonths,
-      selectedExamTypes: safeExamTypes,
-      selectedDifficulties: safeDifficulties,
-      correctRateRange
-    });
-
     return filteredProblems;
   } catch (error) {
-    console.error('Error in fetchEconomyProblems:', error);
+    console.error(`Error in fetchTaggedProblems for ${subject}:`, error);
     throw error;
   }
 }

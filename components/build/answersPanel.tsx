@@ -140,12 +140,16 @@ export default function AnswersPanel({ filteredProblems }: AnswersPanelProps) {
                     if (parent) {
                       const errorDiv = document.createElement('div');
                       errorDiv.className = 'flex items-center justify-center p-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded';
-                      errorDiv.innerHTML = `
-                        <div class="text-center text-gray-500 text-sm">
-                          <div>답안 이미지를 불러올 수 없습니다</div>
-                          <div class="text-xs mt-1">ID: ${problem.id}</div>
-                        </div>
-                      `;
+                      const innerDiv = document.createElement('div');
+                      innerDiv.className = 'text-center text-gray-500 text-sm';
+                      const msgDiv = document.createElement('div');
+                      msgDiv.textContent = '답안 이미지를 불러올 수 없습니다';
+                      const idDiv = document.createElement('div');
+                      idDiv.className = 'text-xs mt-1';
+                      idDiv.textContent = `ID: ${problem.id}`;
+                      innerDiv.appendChild(msgDiv);
+                      innerDiv.appendChild(idDiv);
+                      errorDiv.appendChild(innerDiv);
                       parent.appendChild(errorDiv);
                     }
                   }}
@@ -159,8 +163,8 @@ export default function AnswersPanel({ filteredProblems }: AnswersPanelProps) {
         <div className="flex flex-col gap-4">
           {answerColumns[1].map((problem) => (
             <div key={`col2-${problem.id}`} className="w-full">
-              <Image 
-                src={getAnswerImageUrl(problem.id)} 
+              <Image
+                src={getAnswerImageUrl(problem.id)}
                 alt={problem.answer_filename || 'Answer'}
                 width={400}
                 height={300}
@@ -172,12 +176,16 @@ export default function AnswersPanel({ filteredProblems }: AnswersPanelProps) {
                   if (parent) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'flex items-center justify-center p-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded';
-                    errorDiv.innerHTML = `
-                      <div class="text-center text-gray-500 text-sm">
-                        <div>답안 이미지를 불러올 수 없습니다</div>
-                        <div class="text-xs mt-1">ID: ${problem.id}</div>
-                      </div>
-                    `;
+                    const innerDiv = document.createElement('div');
+                    innerDiv.className = 'text-center text-gray-500 text-sm';
+                    const msgDiv = document.createElement('div');
+                    msgDiv.textContent = '답안 이미지를 불러올 수 없습니다';
+                    const idDiv = document.createElement('div');
+                    idDiv.className = 'text-xs mt-1';
+                    idDiv.textContent = `ID: ${problem.id}`;
+                    innerDiv.appendChild(msgDiv);
+                    innerDiv.appendChild(idDiv);
+                    errorDiv.appendChild(innerDiv);
                     parent.appendChild(errorDiv);
                   }
                 }}
@@ -190,8 +198,8 @@ export default function AnswersPanel({ filteredProblems }: AnswersPanelProps) {
         <div className="flex flex-col gap-4">
           {answerColumns[2].map((problem) => (
             <div key={`col3-${problem.id}`} className="w-full">
-              <Image 
-                src={getAnswerImageUrl(problem.id)} 
+              <Image
+                src={getAnswerImageUrl(problem.id)}
                 alt={problem.answer_filename || 'Answer'}
                 width={400}
                 height={300}
@@ -203,12 +211,16 @@ export default function AnswersPanel({ filteredProblems }: AnswersPanelProps) {
                   if (parent) {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'flex items-center justify-center p-4 bg-gray-50 border-2 border-dashed border-gray-300 rounded';
-                    errorDiv.innerHTML = `
-                      <div class="text-center text-gray-500 text-sm">
-                        <div>답안 이미지를 불러올 수 없습니다</div>
-                        <div class="text-xs mt-1">ID: ${problem.id}</div>
-                      </div>
-                    `;
+                    const innerDiv = document.createElement('div');
+                    innerDiv.className = 'text-center text-gray-500 text-sm';
+                    const msgDiv = document.createElement('div');
+                    msgDiv.textContent = '답안 이미지를 불러올 수 없습니다';
+                    const idDiv = document.createElement('div');
+                    idDiv.className = 'text-xs mt-1';
+                    idDiv.textContent = `ID: ${problem.id}`;
+                    innerDiv.appendChild(msgDiv);
+                    innerDiv.appendChild(idDiv);
+                    errorDiv.appendChild(innerDiv);
                     parent.appendChild(errorDiv);
                   }
                 }}

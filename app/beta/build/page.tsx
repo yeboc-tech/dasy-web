@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -23,6 +24,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 
 export default function BetaBuildPage() {
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {selectedChapters, setSelectedChapters, problemCount, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears} = useWorksheetStore();
   const { user } = useAuth();
@@ -241,9 +243,8 @@ export default function BetaBuildPage() {
         contentTree
       });
 
-      window.location.href = `/w/${id}`;
-    } catch (error) {
-      console.error('Error creating worksheet:', error);
+      router.push(`/w/${id}`);
+    } catch {
       alert('워크시트 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };

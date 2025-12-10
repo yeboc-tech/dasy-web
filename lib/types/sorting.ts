@@ -46,7 +46,7 @@ export const ECONOMY_PRESET_RULES: Record<Exclude<SortPreset, '커스텀'>, Sort
 };
 
 // Helper to determine which preset matches current rules
-export const getMatchingPreset = (rules: SortRule[], isEconomyMode: boolean): SortPreset => {
+export const getMatchingPreset = (rules: SortRule[], isTaggedMode: boolean): SortPreset => {
   // Check for 무작위 (random marker)
   if (rules.length === 1 && rules[0].field === 'random') {
     return '무작위';
@@ -55,7 +55,7 @@ export const getMatchingPreset = (rules: SortRule[], isEconomyMode: boolean): So
   // Empty rules = 커스텀 (keep original order, no preset matches)
   if (rules.length === 0) return '커스텀';
 
-  if (isEconomyMode) {
+  if (isTaggedMode) {
     // 경제: 연습 = chapter + correct_rate
     if (
       rules.length === 2 &&

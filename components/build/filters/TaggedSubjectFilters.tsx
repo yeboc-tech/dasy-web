@@ -7,17 +7,26 @@ import { AuthButton as Button } from '@/components/ui/auth-button';
 import { AuthSlider as Slider } from '@/components/ui/auth-slider';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
-import { useEconomyChapters } from '@/lib/hooks/useEconomyChapters';
+import { useTaggedChapters } from '@/lib/hooks/useTaggedChapters';
 import type { ChapterTreeItem } from '@/lib/types';
 import { Loader } from 'lucide-react';
 import {
-  getCorrectRateRangeFromEconomyDifficulties,
-  getEconomyDifficultiesFromCorrectRateRange,
-  doesCorrectRateMatchEconomyDifficulties,
-  doEconomyDifficultiesMatchCorrectRate
-} from '@/lib/utils/economyDifficultySync';
+  getCorrectRateRangeFromTaggedDifficulties,
+  getTaggedDifficultiesFromCorrectRateRange,
+  doesCorrectRateMatchTaggedDifficulties,
+  doTaggedDifficultiesMatchCorrectRate
+} from '@/lib/utils/taggedDifficultySync';
 
-interface EconomyFiltersProps {
+// Constants for filter options
+const START_YEAR = 2012;
+const CURRENT_YEAR = new Date().getFullYear();
+const ALL_YEARS = Array.from({ length: CURRENT_YEAR - START_YEAR + 1 }, (_, i) => START_YEAR + i);
+const ALL_MONTHS = ['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+const ALL_EXAM_TYPES = ['학평', '모평', '수능'];
+const ALL_DIFFICULTY_LEVELS = ['최상', '상', '중상', '중', '중하', '하'];
+
+interface TaggedSubjectFiltersProps {
+  subject: string; // '경제', '사회문화', '생활과윤리'
   dialogFilters?: {
     selectedChapters: string[];
     setSelectedChapters: (value: string[]) => void;
@@ -38,7 +47,7 @@ interface EconomyFiltersProps {
   };
 }
 
-export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
+export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedSubjectFiltersProps) {
   // Use dialogFilters if provided, otherwise use Zustand store
   const storeFilters = useWorksheetStore();
 
@@ -59,7 +68,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   const selectedExamTypes = dialogFilters?.selectedExamTypes ?? storeFilters.selectedExamTypes;
   const setSelectedExamTypes = dialogFilters?.setSelectedExamTypes ?? storeFilters.setSelectedExamTypes;
 
-  const { chapters: economyChapters, loading, error } = useEconomyChapters();
+  const { chapters: subjectChapters, loading, error } = useTaggedChapters(subject);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
   const [problemCountInput, setProblemCountInput] = useState<string>(problemCount.toString());
@@ -74,15 +83,13 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
     setProblemCountInput(problemCount.toString());
   }, [problemCount]);
 
-  // On mount, ensure all 6 economy difficulty levels are selected
+  // On mount, ensure all 6 difficulty levels are selected
   useEffect(() => {
-    const economyLevels = ['최상', '상', '중상', '중', '중하', '하'];
-
     // Check if all 6 levels are present
-    const hasAll6Levels = economyLevels.every(level => selectedDifficulties.includes(level));
+    const hasAll6Levels = ALL_DIFFICULTY_LEVELS.every(level => selectedDifficulties.includes(level));
 
     if (!hasAll6Levels) {
-      setSelectedDifficulties(economyLevels);
+      setSelectedDifficulties(ALL_DIFFICULTY_LEVELS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only on mount
@@ -96,12 +103,12 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
     }
 
     // Check if correct rate already matches selected difficulties
-    if (doesCorrectRateMatchEconomyDifficulties(correctRateRange as [number, number], selectedDifficulties)) {
+    if (doesCorrectRateMatchTaggedDifficulties(correctRateRange as [number, number], selectedDifficulties)) {
       return;
     }
 
     // Update correct rate range to match selected difficulties
-    const newRange = getCorrectRateRangeFromEconomyDifficulties(selectedDifficulties);
+    const newRange = getCorrectRateRangeFromTaggedDifficulties(selectedDifficulties);
     updateSourceRef.current = 'difficulty';
     setCorrectRateRange(newRange);
   }, [selectedDifficulties]); // Only depend on selectedDifficulties
@@ -115,22 +122,36 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
     }
 
     // Check if difficulties already match correct rate range
-    if (doEconomyDifficultiesMatchCorrectRate(selectedDifficulties, correctRateRange as [number, number])) {
+    if (doTaggedDifficultiesMatchCorrectRate(selectedDifficulties, correctRateRange as [number, number])) {
       return;
     }
 
     // Update difficulties to match correct rate range
-    const newDifficulties = getEconomyDifficultiesFromCorrectRateRange(correctRateRange as [number, number]);
+    const newDifficulties = getTaggedDifficultiesFromCorrectRateRange(correctRateRange as [number, number]);
     updateSourceRef.current = 'correctRate';
     setSelectedDifficulties(newDifficulties);
   }, [correctRateRange]); // Only depend on correctRateRange
 
-  // Auto-select 경제 root chapter and all children when first loaded
-  React.useEffect(() => {
-    if (economyChapters && economyChapters.length > 0 && !hasSetDefaultSelection) {
-      const rootChapter = economyChapters[0]; // Should be "경제"
+  // Reset default selection flag when subject changes
+  const prevSubjectRef = useRef(subject);
+  useEffect(() => {
+    if (prevSubjectRef.current !== subject) {
+      setHasSetDefaultSelection(false);
+      prevSubjectRef.current = subject;
+    }
+  }, [subject]);
 
-      if (rootChapter) {
+  // Auto-select root chapter and all children when first loaded or subject changes
+  React.useEffect(() => {
+    // Don't run while loading - wait for correct data
+    if (loading) return;
+
+    if (subjectChapters && subjectChapters.length > 0 && !hasSetDefaultSelection) {
+      const rootChapter = subjectChapters[0]; // Root chapter for the subject (e.g., '경제', '사회문화')
+
+      // Verify that the loaded chapters match the current subject
+      // The root chapter ID should be the subject name itself
+      if (rootChapter && rootChapter.id === subject) {
         // Get all child IDs recursively
         const getAllChildIds = (item: ChapterTreeItem): string[] => {
           const childIds: string[] = [];
@@ -145,13 +166,13 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
 
         const allChildIds = getAllChildIds(rootChapter);
         const itemsToAdd = [rootChapter.id, ...allChildIds];
-        const newSelectedChapters = [...selectedChapters, ...itemsToAdd.filter(id => !selectedChapters.includes(id))];
 
-        setSelectedChapters(newSelectedChapters);
+        // Replace selectedChapters entirely when switching subjects
+        setSelectedChapters(itemsToAdd);
         setHasSetDefaultSelection(true);
       }
     }
-  }, [economyChapters, hasSetDefaultSelection, setSelectedChapters, selectedChapters]);
+  }, [subjectChapters, hasSetDefaultSelection, setSelectedChapters, loading, subject]);
 
   // Show loading state
   if (loading) {
@@ -166,16 +187,16 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   if (error) {
     return (
       <div className="flex-1 p-4 pt-0 min-h-0 flex items-center justify-center">
-        <div className="text-sm text-red-500">경제 단원 로드 실패: {error}</div>
+        <div className="text-sm text-red-500">{subject} 단원 로드 실패: {error}</div>
       </div>
     );
   }
 
   // Show empty state
-  if (!economyChapters || economyChapters.length === 0) {
+  if (!subjectChapters || subjectChapters.length === 0) {
     return (
       <div className="flex-1 p-4 pt-0 min-h-0 flex items-center justify-center">
-        <div className="text-sm text-gray-500">경제 단원 정보가 없습니다.</div>
+        <div className="text-sm text-gray-500">{subject} 단원 정보가 없습니다.</div>
       </div>
     );
   }
@@ -215,9 +236,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   };
 
   const handleYearToggle = (year: number) => {
-    const allYears = Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i);
-
-    if (selectedYears.length === allYears.length) {
+    if (selectedYears.length === ALL_YEARS.length) {
       setSelectedYears([year]);
     } else {
       const newSelectedYears = selectedYears.includes(year)
@@ -233,7 +252,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   };
 
   const handleGradeToggle = (grade: string) => {
-    const allGrades = ['고1', '고2', '고3'];
+    const allGrades = ['고1', '고2', '고3']; // Keep local since not used elsewhere
 
     if (selectedGrades.length === allGrades.length) {
       setSelectedGrades([grade]);
@@ -251,9 +270,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   };
 
   const handleMonthToggle = (month: string) => {
-    const allMonths = ['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
-
-    if (selectedMonths.length === allMonths.length) {
+    if (selectedMonths.length === ALL_MONTHS.length) {
       setSelectedMonths([month]);
     } else {
       const newSelectedMonths = selectedMonths.includes(month)
@@ -269,9 +286,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
   };
 
   const handleExamTypeToggle = (examType: string) => {
-    const allExamTypes = ['학평', '모평', '수능'];
-
-    if (selectedExamTypes.length === allExamTypes.length) {
+    if (selectedExamTypes.length === ALL_EXAM_TYPES.length) {
       setSelectedExamTypes([examType]);
     } else {
       const newSelectedExamTypes = selectedExamTypes.includes(examType)
@@ -315,7 +330,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
           return null;
         };
 
-        const parent = findParent(economyChapters, itemId);
+        const parent = findParent(subjectChapters, itemId);
         if (parent) {
           const anySiblingUnchecked = parent.children!.some(
             sibling => !newSelectedChapters.includes(sibling.id)
@@ -429,7 +444,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
             </AccordionTrigger>
             <AccordionContent>
               <div className="tree-container flex flex-col gap-2">
-                {economyChapters.map(item => (
+                {subjectChapters.map(item => (
                   <React.Fragment key={item.id}>{renderTreeItem(item)}</React.Fragment>
                 ))}
               </div>
@@ -465,19 +480,19 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => {
-                    setSelectedExamTypes(['학평', '모평', '수능']);
+                    setSelectedExamTypes(ALL_EXAM_TYPES);
                   }}
                   variant="outline"
-                  className={selectedExamTypes.length === 3 ? "border-black text-black bg-gray-100" : ""}
+                  className={selectedExamTypes.length === ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}
                 >
                   모두
                 </Button>
-                {['학평', '모평', '수능'].map((examType) => (
+                {ALL_EXAM_TYPES.map((examType) => (
                   <Button
                     key={examType}
                     onClick={() => handleExamTypeToggle(examType)}
                     variant="outline"
-                    className={selectedExamTypes.includes(examType) && selectedExamTypes.length < 3 ? "border-black text-black bg-gray-100" : ""}
+                    className={selectedExamTypes.includes(examType) && selectedExamTypes.length < ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}
                   >
                     {examType}
                   </Button>
@@ -495,20 +510,19 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => {
-                    const allYears = Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i);
-                    setSelectedYears(allYears);
+                    setSelectedYears(ALL_YEARS);
                   }}
                   variant="outline"
-                  className={selectedYears.length === 14 ? "border-black text-black bg-gray-100" : ""}
+                  className={selectedYears.length === ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}
                 >
                   모두
                 </Button>
-                {Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i).map((year) => (
+                {ALL_YEARS.map((year) => (
                   <Button
                     key={year}
                     onClick={() => handleYearToggle(year)}
                     variant="outline"
-                    className={selectedYears.includes(year) && selectedYears.length < 14 ? "border-black text-black bg-gray-100" : ""}
+                    className={selectedYears.includes(year) && selectedYears.length < ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}
                   >
                     {year}
                   </Button>
@@ -526,19 +540,19 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => {
-                    setSelectedMonths(['03', '04', '05', '06', '07', '08', '09', '10', '11', '12']);
+                    setSelectedMonths(ALL_MONTHS);
                   }}
                   variant="outline"
-                  className={selectedMonths.length === 10 ? "border-black text-black bg-gray-100" : ""}
+                  className={selectedMonths.length === ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}
                 >
                   모두
                 </Button>
-                {['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((month) => (
+                {ALL_MONTHS.map((month) => (
                   <Button
                     key={month}
                     onClick={() => handleMonthToggle(month)}
                     variant="outline"
-                    className={selectedMonths.includes(month) && selectedMonths.length < 10 ? "border-black text-black bg-gray-100" : ""}
+                    className={selectedMonths.includes(month) && selectedMonths.length < ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}
                   >
                     {parseInt(month)}월
                   </Button>
@@ -547,7 +561,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
             </AccordionContent>
           </AccordionItem>
 
-          {/* 난이도 Section - 6 levels for economy */}
+          {/* 난이도 Section - 6 levels for tagged subjects */}
           <AccordionItem value="difficulty" className="border-none">
             <AccordionTrigger className="hover:no-underline">
               <span>난이도</span>
@@ -556,18 +570,18 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
               <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => {
-                    setSelectedDifficulties(['최상', '상', '중상', '중', '중하', '하']);
+                    setSelectedDifficulties(ALL_DIFFICULTY_LEVELS);
                   }}
                   variant="outline"
-                  className={selectedDifficulties.length === 6 ? "border-black text-black bg-gray-100" : ""}
+                  className={selectedDifficulties.length === ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}
                 >
                   모두
                 </Button>
-                {['최상', '상', '중상', '중', '중하', '하'].map((level) => (
+                {ALL_DIFFICULTY_LEVELS.map((level) => (
                   <Button
                     key={level}
                     onClick={() => {
-                      if (selectedDifficulties.length === 6) {
+                      if (selectedDifficulties.length === ALL_DIFFICULTY_LEVELS.length) {
                         setSelectedDifficulties([level]);
                       } else {
                         const newDifficulties = selectedDifficulties.includes(level)
@@ -582,7 +596,7 @@ export default function EconomyFilters({ dialogFilters }: EconomyFiltersProps) {
                       }
                     }}
                     variant="outline"
-                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < 6 ? "border-black text-black bg-gray-100" : ""}
+                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}
                   >
                     {level}
                   </Button>

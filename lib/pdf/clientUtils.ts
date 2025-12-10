@@ -496,19 +496,37 @@ function getHeaderHeight(): number {
 // Calculate available height per page for problems
 function getAvailablePageHeight(): number {
   const pageHeight = 842; // A4 height in points
-  const topMargin = 60;
+  const topMargin = 60; // Original value - accounts for page content positioning
   const bottomMargin = 30;
   const footerHeight = 30; // Space for footer
-  
+
   return pageHeight - topMargin - bottomMargin - footerHeight; // ~722 points
+}
+
+// Calculate available height per page for answers (more aggressive packing)
+function getAvailableAnswerPageHeight(): number {
+  const pageHeight = 842; // A4 height in points
+  const topMargin = 25; // Tighter top margin for answers
+  const bottomMargin = 25; // Tighter bottom margin
+  const footerHeight = 12; // Minimal footer space
+
+  return pageHeight - topMargin - bottomMargin - footerHeight; // ~780 points
 }
 
 // Calculate available height for first page (with header)
 function getFirstPageAvailableHeight(): number {
   const baseHeight = getAvailablePageHeight();
   const headerHeight = getHeaderHeight();
-  
-  return baseHeight - headerHeight; // ~576 points
+
+  return baseHeight - headerHeight; // ~616 points
+}
+
+// Calculate available height for first answer page (with header, tighter packing)
+function getFirstAnswerPageAvailableHeight(): number {
+  const baseHeight = getAvailableAnswerPageHeight();
+  const headerHeight = getHeaderHeight();
+
+  return baseHeight - headerHeight; // ~621 points
 }
 
 // Calculate the height of metadata badges for a problem (assuming 3 lines max)
@@ -566,6 +584,41 @@ function fillColumn(
   return {
     columnProblems,
     remaining: problems.slice(i)
+  };
+}
+
+// Fill a column with answers until height limit is reached (optimized for answer layout)
+function fillAnswerColumn(
+  answers: Array<{ image: string; height: number; index: number }>,
+  maxHeight: number
+): { columnProblems: Array<{ image: string; height: number; index: number }>; remaining: Array<{ image: string; height: number; index: number }> } {
+  const columnProblems = [];
+  let currentHeight = 0;
+  let i = 0;
+
+  while (i < answers.length) {
+    const answer = answers[i];
+    // Tight spacing for answers
+    const numberingHeight = 11; // fontSize 10 + minimal margin
+    const minGap = 5; // Minimal gap between answers
+
+    // Base height without gap
+    const baseHeight = answer.height + numberingHeight;
+
+    // Check if adding this answer would exceed height limit
+    if (currentHeight + baseHeight > maxHeight && columnProblems.length > 0) {
+      break;
+    }
+
+    columnProblems.push(answer);
+    // Add height with gap
+    currentHeight += baseHeight + minGap;
+    i++;
+  }
+
+  return {
+    columnProblems,
+    remaining: answers.slice(i)
   };
 }
 
@@ -729,7 +782,7 @@ function createColumnContent(columnProblems: Array<{ image: string; height: numb
 // Answer images should NOT use justify-between spacing, just start from top with minimal gaps
 function createAnswerColumnContent(columnProblems: Array<{ image: string; height: number; index: number }>) {
   if (columnProblems.length === 0) return [];
-  
+
   // For answers, use consistent small margin between images (no justify-between)
   return columnProblems.map((problem, index) => ({
     stack: [
@@ -739,7 +792,7 @@ function createAnswerColumnContent(columnProblems: Array<{ image: string; height
         bold: true,
         alignment: 'left',
         font: 'CrimsonTextSemiBold',
-        margin: [0, 0, 0, 3]
+        margin: [0, 0, 0, 1] // Minimal margin between number and image
       },
       {
         image: problem.image,
@@ -749,7 +802,7 @@ function createAnswerColumnContent(columnProblems: Array<{ image: string; height
       }
     ],
     unbreakable: true,
-    margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, 15] // Fixed 15px gap
+    margin: index === columnProblems.length - 1 ? [0, 0, 0, 0] : [0, 0, 0, 5] // Minimal gap matching fillAnswerColumn
   }));
 }
 
@@ -932,10 +985,10 @@ export async function createAnswerPagesClient(
 
   // Calculate image heights for answers (skip if pre-calculated)
   const answerHeights = preCalculatedHeights || await getAllImageHeights(base64AnswerImages, 165);
-  
-  // Get available page height
-  const maxPageHeight = getAvailablePageHeight();
-  const firstPageHeight = getFirstPageAvailableHeight();
+
+  // Get available page height for answers (uses tighter packing)
+  const maxPageHeight = getAvailableAnswerPageHeight();
+  const firstPageHeight = getFirstAnswerPageAvailableHeight();
   
   // Create answer objects with heights
   let remainingAnswers = base64AnswerImages.map((image, index) => ({
@@ -950,33 +1003,33 @@ export async function createAnswerPagesClient(
   // Fill pages with 3 columns
   while (remainingAnswers.length > 0) {
     const pageColumns = [];
-    
+
     // Use reduced height for first page (has header), normal height for subsequent pages
     const currentPageHeight = isFirstPage ? firstPageHeight : maxPageHeight;
-    
+
     // Column 1: Special content on first page
     if (isFirstPage) {
       // Fill column 1 without grid (hidden for now)
-      const column1Result = fillColumn(remainingAnswers, currentPageHeight);
+      const column1Result = fillAnswerColumn(remainingAnswers, currentPageHeight);
       const column1Content = createAnswerColumnContent(column1Result.columnProblems);
-      
+
       remainingAnswers = column1Result.remaining;
-      
+
       if (column1Content.length > 0) {
         pageColumns.push({
           width: 165,
           stack: column1Content
         });
       }
-      
+
       isFirstPage = false;
     } else {
       // Regular column 1 for subsequent pages
-      const column1Result = fillColumn(remainingAnswers, currentPageHeight);
+      const column1Result = fillAnswerColumn(remainingAnswers, currentPageHeight);
       const column1Content = createAnswerColumnContent(column1Result.columnProblems);
-      
+
       remainingAnswers = column1Result.remaining;
-      
+
       if (column1Content.length > 0) {
         pageColumns.push({
           width: 165,
@@ -984,26 +1037,26 @@ export async function createAnswerPagesClient(
         });
       }
     }
-    
+
     // Column 2
-    const column2Result = fillColumn(remainingAnswers, currentPageHeight);
+    const column2Result = fillAnswerColumn(remainingAnswers, currentPageHeight);
     const column2Content = createAnswerColumnContent(column2Result.columnProblems);
-    
+
     remainingAnswers = column2Result.remaining;
-    
+
     if (column2Content.length > 0) {
       pageColumns.push({
         width: 165,
         stack: column2Content
       });
     }
-    
+
     // Column 3
-    const column3Result = fillColumn(remainingAnswers, currentPageHeight);
+    const column3Result = fillAnswerColumn(remainingAnswers, currentPageHeight);
     const column3Content = createAnswerColumnContent(column3Result.columnProblems);
-    
+
     remainingAnswers = column3Result.remaining;
-    
+
     if (column3Content.length > 0) {
       pageColumns.push({
         width: 165,

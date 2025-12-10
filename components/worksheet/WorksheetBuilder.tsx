@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import ProblemsPanel from '@/components/build/problemsPanel';
-import EconomyProblemsPanel from '@/components/build/EconomyProblemsPanel';
+import TaggedProblemsPanel from '@/components/build/TaggedProblemsPanel';
 import FilterPanel from '@/components/build/filterPanel';
 import WorksheetMetadataPanel from '@/components/build/WorksheetMetadataPanel';
 import { Button } from '@/components/ui/button';
@@ -20,11 +21,12 @@ import { useChapters } from '@/lib/hooks/useChapters';
 import { useProblems } from '@/lib/hooks/useProblems';
 import { useWorksheetStore } from '@/lib/zustand/worksheetStore';
 import { ProblemFilter } from '@/lib/utils/problemFiltering';
-import { getEconomyProblems } from '@/lib/supabase/services/clientServices';
+import { getTaggedProblems } from '@/lib/supabase/services/clientServices';
+import { getSubjectFromProblemId } from '@/lib/supabase/services/taggedWorksheetService';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 import { AuthenticationBlocker } from '@/components/auth/authentication-blocker';
-import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
+import type { ProblemMetadata, TaggedProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
 import { TONGHAP_PRESET_RULES, ECONOMY_PRESET_RULES } from '@/lib/types/sorting';
@@ -46,6 +48,7 @@ interface WorksheetBuilderProps {
 }
 
 export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuilderProps) {
+  const router = useRouter();
   const {
     selectedChapters,
     setSelectedChapters,
@@ -112,26 +115,43 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     callback();
   };
 
-  // Check if in economy mode
-  const isEconomyMode = selectedMainSubjects.includes('economy');
+  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리)
+  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리'];
+  const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
 
   // Set default sorting to 연습 preset for new worksheets
-  const [hasInitializedSorting, setHasInitializedSorting] = useState(false);
+  // Track the last mode for which sorting was initialized
+  const [lastInitializedMode, setLastInitializedMode] = useState<boolean | null>(null);
   useEffect(() => {
-    // Only set default sorting for new worksheets (no worksheetId) and if not already initialized
-    if (!worksheetId && !hasInitializedSorting) {
-      const defaultRules = isEconomyMode ? ECONOMY_PRESET_RULES['연습'] : TONGHAP_PRESET_RULES['연습'];
-      setSortRules(defaultRules);
-      setHasInitializedSorting(true);
+    // For new worksheets (no worksheetId), update sort rules when mode changes
+    if (!worksheetId) {
+      // First initialization OR mode changed
+      if (lastInitializedMode === null || lastInitializedMode !== isTaggedMode) {
+        const defaultRules = isTaggedMode ? ECONOMY_PRESET_RULES['연습'] : TONGHAP_PRESET_RULES['연습'];
+        setSortRules(defaultRules);
+        setLastInitializedMode(isTaggedMode);
+      }
     }
-  }, [worksheetId, isEconomyMode, hasInitializedSorting]);
+  }, [worksheetId, isTaggedMode, lastInitializedMode]);
 
   // Determine locked subject based on existing worksheet problems
-  const lockedSubject = worksheetProblems.length === 0
-    ? null
-    : worksheetProblems.some(p => p.id.startsWith('경제_'))
-      ? 'economy'
-      : 'tonghapsahoe';
+  // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리)
+  // Returns the specific subject name to lock, or 'tonghapsahoe' for 통합사회
+  const lockedSubject: '경제' | '사회문화' | '생활과윤리' | 'tonghapsahoe' | null = (() => {
+    if (worksheetProblems.length === 0) return null;
+
+    // Check if any problem is from a tagged subject
+    for (const problem of worksheetProblems) {
+      const subject = getSubjectFromProblemId(problem.id);
+      if (subject) {
+        // Return the specific tagged subject (경제, 사회문화, or 생활과윤리)
+        return subject as '경제' | '사회문화' | '생활과윤리';
+      }
+    }
+
+    // If no tagged subjects found, it's 통합사회
+    return 'tonghapsahoe';
+  })();
 
   // Track recently added problem IDs for visual distinction
   const [recentlyAddedProblemIds, setRecentlyAddedProblemIds] = useState<Set<string>>(new Set());
@@ -175,15 +195,17 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         setWorksheetCreatedAt(worksheetMeta.created_at);
 
         // Detect if it's an economy worksheet by checking problem ID format
-        const { isEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
-        const isEconomy = isEconomyWorksheet(worksheetMeta.selected_problem_ids);
+        const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
+        const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
 
         // Fetch the full worksheet data with problems
         let data;
-        if (isEconomy) {
-          const { getEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
-          data = await getEconomyWorksheet(supabase, worksheetId);
-          setSelectedMainSubjects(['economy']);
+        if (isTagged) {
+          const { getTaggedWorksheet, getSubjectFromProblemId } = await import('@/lib/supabase/services/taggedWorksheetService');
+          data = await getTaggedWorksheet(supabase, worksheetId);
+          // Detect subject from first problem ID
+          const detectedSubject = getSubjectFromProblemId(worksheetMeta.selected_problem_ids[0]) || '경제';
+          setSelectedMainSubjects([detectedSubject]);
         } else {
           const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
           data = await getWorksheet(supabase, worksheetId);
@@ -199,7 +221,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         if (data?.worksheet?.sorting) {
           setSortRules(data.worksheet.sorting);
         }
-        setHasInitializedSorting(true);  // Skip re-sorting on load
+        setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
 
         // Fetch edited contents for preview
         const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
@@ -207,7 +229,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         const answerIds = data?.problems
           ?.filter((p: ProblemMetadata) => p.answer_filename)
           ?.map((p: ProblemMetadata) => {
-            if (p.id.startsWith('경제_')) {
+            // For tagged subject problems, answer ID replaces _문제 with _해설
+            if (getSubjectFromProblemId(p.id) !== null) {
               return p.id.replace('_문제', '_해설');
             }
             return p.id;
@@ -267,7 +290,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     let cancelled = false;
 
     const fetchEditedContent = async () => {
-      if (!isEconomyMode) {
+      if (!isTaggedMode) {
         setEditedContentsMap(new Map());
         return;
       }
@@ -295,11 +318,11 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     return () => {
       cancelled = true;
     };
-  }, [isEconomyMode, worksheetProblems, addProblemsPool]);
+  }, [isTaggedMode, worksheetProblems, addProblemsPool]);
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
-    if (isEconomyMode) return;
+    if (isTaggedMode) return;
     if (contentTree && contentTree.length > 0 && !hasSetDefaultSelection) {
       const tonghapsahoe2Id = '7ec63358-5e6b-49be-89a4-8b5639f3f9c0';
       const tonghapsahoe2Item = contentTree.find(item => item.id === tonghapsahoe2Id);
@@ -324,15 +347,18 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         setHasSetDefaultSelection(true);
       }
     }
-  }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters, isEconomyMode]);
+  }, [contentTree, hasSetDefaultSelection, setSelectedChapters, selectedChapters, isTaggedMode]);
 
   // Filter problems for dialog when any filter changes
   useEffect(() => {
     if (aiMode) return;
 
-    if (isEconomyMode) {
-      const fetchDialogEconomyProblems = async () => {
+    if (isTaggedMode) {
+      const fetchDialogTaggedProblems = async () => {
         try {
+          // Get current selected tagged subject
+          const currentSubject = selectedMainSubjects.find(s => TAGGED_SUBJECTS.includes(s)) || '경제';
+
           const filters = {
             selectedChapterIds: addProblemsSelectedChapters || [],
             selectedGrades: addProblemsSelectedGrades || ['고3'],
@@ -343,9 +369,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             correctRateRange: addProblemsCorrectRateRange as [number, number]
           };
 
-          const economyData = await getEconomyProblems(filters);
+          const taggedData = await getTaggedProblems(currentSubject, filters);
 
-          const convertedProblems: ProblemMetadata[] = economyData.map((problem) => ({
+          const convertedProblems: ProblemMetadata[] = taggedData.map((problem) => ({
             id: problem.problem_id,
             problem_filename: `${problem.problem_id}.png`,
             answer_filename: problem.problem_id.replace('_문제', '_해설') + '.png',
@@ -353,8 +379,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             chapter_id: problem.tag_ids[problem.tag_ids.length - 1] || null,
             difficulty: problem.difficulty || '중',
             problem_type: `${problem.exam_type} ${problem.year}년 ${parseInt(problem.month)}월`,
-            tags: problem.tag_labels,
-            related_subjects: ['경제'],
+            tags: [currentSubject, ...problem.tag_labels],
+            related_subjects: [currentSubject],
             correct_rate: problem.accuracy_rate,
             exam_year: parseInt(problem.year),
             created_at: new Date().toISOString(),
@@ -375,12 +401,12 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
           setAddProblemsPool(limitedProblems);
         } catch (error) {
-          console.error('Error fetching economy problems for dialog:', error);
+          console.error('Error fetching tagged problems for dialog:', error);
           setAddProblemsPool([]);
         }
       };
 
-      fetchDialogEconomyProblems();
+      fetchDialogTaggedProblems();
       return;
     }
 
@@ -399,7 +425,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
     setAddProblemsPool(filtered);
-  }, [aiMode, isEconomyMode, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths]);
+  }, [aiMode, isTaggedMode, selectedMainSubjects, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths]);
 
   // Helper function to sort problems and update worksheetProblems
   const sortAndSetProblems = (problems: ProblemMetadata[], rules: SortRule[]) => {
@@ -408,13 +434,13 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       return;
     }
 
-    if (!isEconomyMode && !contentTree) {
+    if (!isTaggedMode && !contentTree) {
       setWorksheetProblems(problems);
       return;
     }
 
     const sorted = applySortRules(problems, rules, {
-      isEconomyMode,
+      isTaggedMode,
       contentTree
     });
 
@@ -452,8 +478,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       // If worksheetId exists, update; otherwise create new
       if (worksheetId) {
         // Update existing worksheet
-        if (isEconomyMode) {
-          const { updateEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+        if (isTaggedMode) {
+          const { updateTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
 
           const economyFilters = {
             selectedChapters,
@@ -466,7 +492,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             problemCount
           };
 
-          await updateEconomyWorksheet(supabase, worksheetId, {
+          await updateTaggedWorksheet(supabase, worksheetId, {
             title: worksheetTitle,
             author: worksheetAuthor,
             filters: economyFilters,
@@ -503,8 +529,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         // Create new worksheet
         let newWorksheetId: string;
 
-        if (isEconomyMode) {
-          const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+        if (isTaggedMode) {
+          const { createTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
 
           const economyFilters = {
             selectedChapters,
@@ -517,7 +543,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             problemCount
           };
 
-          const { id } = await createEconomyWorksheet(supabase, {
+          const { id } = await createTaggedWorksheet(supabase, {
             title: worksheetTitle,
             author: worksheetAuthor,
             userId: user?.id,
@@ -554,10 +580,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         }
 
         // Navigate to the new worksheet page
-        window.location.href = `/w/${newWorksheetId}`;
+        router.push(`/w/${newWorksheetId}`);
       }
-    } catch (error) {
-      console.error('Error saving worksheet:', error);
+    } catch {
       alert('워크시트 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
@@ -572,8 +597,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
       let newWorksheetId: string;
 
-      if (isEconomyMode) {
-        const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+      if (isTaggedMode) {
+        const { createTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
 
         const economyFilters = {
           selectedChapters,
@@ -586,7 +611,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           problemCount
         };
 
-        const { id } = await createEconomyWorksheet(supabase, {
+        const { id } = await createTaggedWorksheet(supabase, {
           title: worksheetTitle,
           author: worksheetAuthor,
           userId: user?.id,
@@ -623,9 +648,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       }
 
       // Navigate to the new worksheet page
-      window.location.href = `/w/${newWorksheetId}`;
-    } catch (error) {
-      console.error('Error copying worksheet:', error);
+      router.push(`/w/${newWorksheetId}`);
+    } catch {
       alert('학습지 복사 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
@@ -769,7 +793,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       });
 
       const answerImageUrls = worksheetProblems.map(p => {
-        const answerId = p.id.startsWith('경제_') ? p.id.replace('_문제', '_해설') : p.id;
+        // For tagged subject problems, answer ID replaces _문제 with _해설
+        const isTaggedSubject = getSubjectFromProblemId(p.id) !== null;
+        const answerId = isTaggedSubject ? p.id.replace('_문제', '_해설') : p.id;
         const editedUrl = editedContentsMap?.get(answerId);
         return editedUrl || getAnswerImageUrl(p.id);
       });
@@ -809,7 +835,19 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       const problemHeights = problemImages.map(img => img.height);
       const answerHeights = answerImages.map(img => img.height);
 
-      const subject = worksheetProblems[0]?.id.startsWith('경제_') ? '경제' : '통합사회';
+      // Detect subject from first problem ID - for tagged subjects (경제, 사회문화, 생활과윤리) or default to 통합사회
+      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
+      const subject = detectedSubject || '통합사회';
+
+      // Prepare problem metadata for PDF badges
+      const problemMetadataForPdf = worksheetProblems.map(problem => ({
+        tags: problem.tags,
+        difficulty: problem.difficulty,
+        problem_type: problem.problem_type,
+        related_subjects: problem.related_subjects,
+        correct_rate: problem.correct_rate,
+        exam_year: problem.exam_year,
+      }));
 
       const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
         problemImageUrls,
@@ -820,7 +858,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         worksheetAuthor || '출제자',
         worksheetCreatedAt,
         subject,
-        undefined,
+        problemMetadataForPdf,
         problemHeights,
         answerHeights
       );
@@ -962,7 +1000,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                 // Re-sort worksheetProblems with new rules
                 sortAndSetProblems(worksheetProblems, rules);
               }}
-              isEconomyMode={isEconomyMode}
+              isTaggedMode={isTaggedMode}
               errors={validationErrors}
               readOnly={!isOwner}
             />
@@ -972,8 +1010,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
           <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
             <div className="h-full overflow-y-auto">
-              {isEconomyMode ? (
-                <EconomyProblemsPanel
+              {isTaggedMode ? (
+                <TaggedProblemsPanel
                   filteredProblems={worksheetProblems}
                   problemsLoading={economyLoading || chaptersLoading}
                   problemsError={problemsError}
@@ -1014,7 +1052,12 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-lg font-semibold text-[var(--foreground)]">문제 추가</h1>
+            <div className="flex items-end gap-2">
+              <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">문제 추가</h1>
+              <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
+                {addProblemsPool.length}문제
+              </span>
+            </div>
           </div>
           <CustomButton
             variant="primary"
@@ -1074,8 +1117,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
           <ResizablePanel defaultSize={40} minSize={25} maxSize={70}>
             <div className="h-full overflow-y-auto">
-              {isEconomyMode ? (
-                <EconomyProblemsPanel
+              {isTaggedMode ? (
+                <TaggedProblemsPanel
                   filteredProblems={addProblemsPool}
                   problemsLoading={economyLoading || chaptersLoading}
                   problemsError={problemsError}
@@ -1278,8 +1321,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             )}
             <div className="relative flex-1 flex flex-col">
               <div className="flex-1 overflow-hidden">
-                {isEconomyMode ? (
-                  <EconomyProblemsPanel
+                {isTaggedMode ? (
+                  <TaggedProblemsPanel
                     filteredProblems={addProblemsPool}
                     problemsLoading={economyLoading || chaptersLoading}
                     problemsError={problemsError}

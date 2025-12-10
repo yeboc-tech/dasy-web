@@ -2,8 +2,8 @@
 
 import { createClient } from '@/lib/supabase/client';
 import { fetchChapters, fetchSubjects, fetchChapterTree } from './services';
-import { fetchMTChapterTree, fetchEconomyProblems } from './economyServices';
-import type { Chapter, Subject, ChapterTreeItem, EconomyProblem } from '@/lib/types';
+import { fetchTaggedChapterTree, fetchTaggedProblems } from './taggedServices';
+import type { Chapter, Subject, ChapterTreeItem, TaggedProblem } from '@/lib/types';
 
 const CDN_BASE_URL = 'https://cdn.y3c.kr/tongkidari/edited-contents';
 
@@ -187,25 +187,28 @@ export async function getChaptersBySubject(subjectName: string): Promise<Chapter
 }
 
 /**
- * Client-side function to fetch MT chapter tree (for 경제 mode)
+ * Client-side function to fetch tagged chapter tree for a subject
  */
-export async function getMTChapterTree(): Promise<ChapterTreeItem[]> {
+export async function getTaggedChapterTree(subject: string): Promise<ChapterTreeItem[]> {
   const supabase = createClient();
-  return fetchMTChapterTree(supabase);
+  return fetchTaggedChapterTree(supabase, subject);
 }
 
 /**
- * Client-side function to fetch economy problems with filters
+ * Client-side function to fetch tagged problems with filters
  */
-export async function getEconomyProblems(filters: {
-  selectedChapterIds: string[];
-  selectedGrades: string[];
-  selectedYears: number[];
-  selectedMonths: string[];
-  selectedExamTypes: string[];
-  selectedDifficulties: string[];
-  correctRateRange: [number, number];
-}): Promise<EconomyProblem[]> {
+export async function getTaggedProblems(
+  subject: string,
+  filters: {
+    selectedChapterIds: string[];
+    selectedGrades: string[];
+    selectedYears: number[];
+    selectedMonths: string[];
+    selectedExamTypes: string[];
+    selectedDifficulties: string[];
+    correctRateRange: [number, number];
+  }
+): Promise<TaggedProblem[]> {
   const supabase = createClient();
-  return fetchEconomyProblems(supabase, filters);
+  return fetchTaggedProblems(supabase, subject, filters);
 }

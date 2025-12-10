@@ -137,7 +137,7 @@ interface WorksheetMetadataPanelProps {
   setAuthor: (value: string) => void;
   sortRules: SortRule[];
   setSortRules: (rules: SortRule[]) => void;
-  isEconomyMode: boolean;
+  isTaggedMode: boolean;
   errors?: {
     title?: string;
     author?: string;
@@ -152,7 +152,7 @@ export default function WorksheetMetadataPanel({
   setAuthor,
   sortRules,
   setSortRules,
-  isEconomyMode,
+  isTaggedMode,
   errors,
   readOnly = false,
 }: WorksheetMetadataPanelProps) {
@@ -175,7 +175,7 @@ export default function WorksheetMetadataPanel({
   }, [(sortRules || []).length]);
 
   // Derive active preset from current rules
-  const activePreset = getMatchingPreset(sortRules || [], isEconomyMode);
+  const activePreset = getMatchingPreset(sortRules || [], isTaggedMode);
 
   // dnd-kit sensors
   const sensors = useSensors(
@@ -209,8 +209,8 @@ export default function WorksheetMetadataPanel({
   };
 
   const handlePresetClick = (preset: SortPreset) => {
-    const presetRules = isEconomyMode ? ECONOMY_PRESET_RULES : TONGHAP_PRESET_RULES;
-    const modeFieldsList = (isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
+    const presetRules = isTaggedMode ? ECONOMY_PRESET_RULES : TONGHAP_PRESET_RULES;
+    const modeFieldsList = (isTaggedMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
 
     if (preset === '무작위') {
       // Set random marker for shuffle
@@ -235,7 +235,7 @@ export default function WorksheetMetadataPanel({
   };
 
   // Get mode-specific fields and filter out already used ones (and 'random' which is internal-only)
-  const modeFields = (isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
+  const modeFields = (isTaggedMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
   const usedFields = (sortRules || []).map(r => r.field).filter(f => f !== 'random');
   const availableFields = modeFields.filter(field => !usedFields.includes(field));
 
