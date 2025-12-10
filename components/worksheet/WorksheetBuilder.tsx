@@ -285,7 +285,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     }
   }, [viewMode, addProblemsSelectedChapters.length, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears, problemCount, selectedGrades, selectedMonths, selectedExamTypes]);
 
-  // Fetch edited content when problems change (ONLY for 경제 problems)
+  // Fetch edited content when problems change (ONLY for tagged subjects)
   useEffect(() => {
     let cancelled = false;
 
@@ -305,7 +305,12 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       setEditedContentsMap(null);
 
       const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-      const allResourceIds = Array.from(new Set(allProblems.map(p => p.id)));
+
+      // Collect both problem IDs and answer IDs for tagged subjects
+      const problemIds = allProblems.map(p => p.id);
+      const answerIds = allProblems.map(p => p.id.replace('_문제', '_해설'));
+      const allResourceIds = Array.from(new Set([...problemIds, ...answerIds]));
+
       const fetchedEditedContents = await getEditedContents(allResourceIds);
 
       if (cancelled) return;
