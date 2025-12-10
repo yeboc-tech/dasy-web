@@ -8,10 +8,14 @@ import { Loader } from 'lucide-react';
 import TonghapsahoeFilters from './filters/TonghapsahoeFilters';
 import TaggedSubjectFilters from './filters/TaggedSubjectFilters';
 
-// Tagged subjects configuration
+// Tagged subjects configuration (active subjects only)
 const TAGGED_SUBJECTS = [
   { id: '경제', label: '경제' },
   { id: '사회문화', label: '사회문화' },
+] as const;
+
+// Disabled tagged subjects (coming soon)
+const DISABLED_TAGGED_SUBJECTS = [
   { id: '생활과윤리', label: '생활과윤리' },
 ] as const;
 
@@ -136,7 +140,7 @@ export default function FilterPanel({
               </Button>
             );
           })()}
-          {/* Tagged subjects (경제, 사회문화, 생활과윤리) */}
+          {/* Tagged subjects (경제, 사회문화) */}
           {TAGGED_SUBJECTS.map(subject => {
             // Disabled if lockedSubject is tonghapsahoe OR a different tagged subject
             const isDisabled = lockedSubject === 'tonghapsahoe' ||
@@ -157,6 +161,19 @@ export default function FilterPanel({
               </Button>
             );
           })}
+          {/* Disabled tagged subjects (coming soon) */}
+          {DISABLED_TAGGED_SUBJECTS.map(subject => (
+            <div key={subject.id} className="cursor-not-allowed">
+              <DisabledButton
+                onClick={() => {}}
+                variant="outline"
+                disabled={true}
+                className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+              >
+                {subject.label}
+              </DisabledButton>
+            </div>
+          ))}
         </div>
       </div>
 
