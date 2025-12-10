@@ -1047,7 +1047,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setViewMode('worksheet')}
+              onClick={() => requireAuth(() => setViewMode('worksheet'))}
               className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -1062,7 +1062,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           <CustomButton
             variant="primary"
             size="sm"
-            onClick={() => {
+            onClick={() => requireAuth(() => {
               const newProblems = addProblemsPool.filter(
                 problem => !worksheetProblems.some(existing => existing.id === problem.id)
               );
@@ -1071,7 +1071,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               sortAndSetProblems(allProblems, sortRules);
               setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
               setViewMode('worksheet');
-            }}
+            })}
             disabled={addProblemsPool.length === 0}
           >
             추가
