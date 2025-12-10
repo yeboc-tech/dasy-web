@@ -965,7 +965,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             <CustomButton
               variant="outline"
               size="sm"
-              onClick={() => requireAuth(handleGeneratePdf)}
+              onClick={handleGeneratePdf}
               disabled={worksheetProblems.length === 0}
             >
               PDF 생성
