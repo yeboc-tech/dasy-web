@@ -27,6 +27,7 @@ import { AuthenticationBlocker } from '@/components/auth/authentication-blocker'
 import type { ProblemMetadata, EconomyProblem } from '@/lib/types/problems';
 import type { ChapterTreeItem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
+import { TONGHAP_PRESET_RULES, ECONOMY_PRESET_RULES } from '@/lib/types/sorting';
 import { applySortRules } from '@/lib/utils/sorting';
 
 // Convert answer number to circled number character
@@ -41,9 +42,10 @@ function getCircledNumber(answer: string | number | undefined): string {
 
 interface WorksheetBuilderProps {
   worksheetId?: string;
+  autoPdf?: boolean;
 }
 
-export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps) {
+export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuilderProps) {
   const {
     selectedChapters,
     setSelectedChapters,
@@ -61,18 +63,19 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
   const [worksheetLoading, setWorksheetLoading] = useState(!!worksheetId);
   const [worksheetCreatedAt, setWorksheetCreatedAt] = useState<string | undefined>(undefined);
   const [hasSetDefaultSelection, setHasSetDefaultSelection] = useState(false);
-  const [filteredProblems, setFilteredProblems] = useState<ProblemMetadata[]>([]);
-  const [dialogProblems, setDialogProblems] = useState<ProblemMetadata[]>([]);
+  // Main worksheet problems - single source of truth for preview, save, PDF
+  const [worksheetProblems, setWorksheetProblems] = useState<ProblemMetadata[]>([]);
+  // Problems available in "문제 추가" screen (independent from worksheet)
+  const [addProblemsPool, setAddProblemsPool] = useState<ProblemMetadata[]>([]);
   const [economyLoading, setEconomyLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
-  const [sortedFilteredProblems, setSortedFilteredProblems] = useState<ProblemMetadata[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
-  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>('addProblems');
-  const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>({ stage: '', percent: 0 });
+  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>(autoPdf ? 'pdfGeneration' : 'addProblems');
+  const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>(autoPdf ? { stage: '준비 중...', percent: 0 } : { stage: '', percent: 0 });
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfElapsedTime, setPdfElapsedTime] = useState(0);
@@ -81,18 +84,19 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
   const [worksheetAuthor, setWorksheetAuthor] = useState('');
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
+  const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
 
-  // Separate filter states for "문제 추가" view
-  const [dialogSelectedChapters, setDialogSelectedChapters] = useState<string[]>([]);
-  const [dialogSelectedDifficulties, setDialogSelectedDifficulties] = useState<string[]>([]);
-  const [dialogSelectedProblemTypes, setDialogSelectedProblemTypes] = useState<string[]>([]);
-  const [dialogSelectedSubjects, setDialogSelectedSubjects] = useState<string[]>([]);
-  const [dialogCorrectRateRange, setDialogCorrectRateRange] = useState<[number, number]>([0, 100]);
-  const [dialogSelectedYears, setDialogSelectedYears] = useState<number[]>([]);
-  const [dialogSelectedGrades, setDialogSelectedGrades] = useState<string[]>([]);
-  const [dialogSelectedMonths, setDialogSelectedMonths] = useState<string[]>([]);
-  const [dialogSelectedExamTypes, setDialogSelectedExamTypes] = useState<string[]>([]);
-  const [dialogProblemCount, setDialogProblemCount] = useState<number>(-1);
+  // Filter states for "문제 추가" screen
+  const [addProblemsSelectedChapters, setAddProblemsSelectedChapters] = useState<string[]>([]);
+  const [addProblemsSelectedDifficulties, setAddProblemsSelectedDifficulties] = useState<string[]>([]);
+  const [addProblemsSelectedProblemTypes, setAddProblemsSelectedProblemTypes] = useState<string[]>([]);
+  const [addProblemsSelectedSubjects, setAddProblemsSelectedSubjects] = useState<string[]>([]);
+  const [addProblemsCorrectRateRange, setAddProblemsCorrectRateRange] = useState<[number, number]>([0, 100]);
+  const [addProblemsSelectedYears, setAddProblemsSelectedYears] = useState<number[]>([]);
+  const [addProblemsSelectedGrades, setAddProblemsSelectedGrades] = useState<string[]>([]);
+  const [addProblemsSelectedMonths, setAddProblemsSelectedMonths] = useState<string[]>([]);
+  const [addProblemsSelectedExamTypes, setAddProblemsSelectedExamTypes] = useState<string[]>([]);
+  const [addProblemsProblemCount, setAddProblemsProblemCount] = useState<number>(-1);
 
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
@@ -111,10 +115,21 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
   // Check if in economy mode
   const isEconomyMode = selectedMainSubjects.includes('economy');
 
+  // Set default sorting to 연습 preset for new worksheets
+  const [hasInitializedSorting, setHasInitializedSorting] = useState(false);
+  useEffect(() => {
+    // Only set default sorting for new worksheets (no worksheetId) and if not already initialized
+    if (!worksheetId && !hasInitializedSorting) {
+      const defaultRules = isEconomyMode ? ECONOMY_PRESET_RULES['연습'] : TONGHAP_PRESET_RULES['연습'];
+      setSortRules(defaultRules);
+      setHasInitializedSorting(true);
+    }
+  }, [worksheetId, isEconomyMode, hasInitializedSorting]);
+
   // Determine locked subject based on existing worksheet problems
-  const lockedSubject = filteredProblems.length === 0
+  const lockedSubject = worksheetProblems.length === 0
     ? null
-    : filteredProblems.some(p => p.id.startsWith('경제_'))
+    : worksheetProblems.some(p => p.id.startsWith('경제_'))
       ? 'economy'
       : 'tonghapsahoe';
 
@@ -138,7 +153,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
         // Fetch the worksheet to check if it's economy or regular
         const { data: worksheetMeta, error: metaError } = await supabase
           .from('worksheets')
-          .select('selected_problem_ids, filters, title, author, is_public, created_at')
+          .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by')
           .eq('id', worksheetId)
           .single();
 
@@ -147,6 +162,11 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
           setWorksheetLoading(false);
           return;
         }
+
+        // Check ownership
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const worksheetOwnerId = worksheetMeta.created_by;
+        setIsOwner(currentUser?.id === worksheetOwnerId);
 
         // Set worksheet metadata
         setWorksheetTitle(worksheetMeta.title || '');
@@ -170,16 +190,16 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
           setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
         }
 
-        // Load the problems into the worksheet
+        // Load the problems into the worksheet (already in saved order)
         if (data?.problems) {
-          setFilteredProblems(data.problems);
-          setSortedFilteredProblems(data.problems);
+          setWorksheetProblems(data.problems);  // Use saved order, don't re-sort
         }
 
-        // Load sorting preferences
+        // Load sorting preferences (but mark as initialized to skip re-sorting)
         if (data?.worksheet?.sorting) {
           setSortRules(data.worksheet.sorting);
         }
+        setHasInitializedSorting(true);  // Skip re-sorting on load
 
         // Fetch edited contents for preview
         const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
@@ -196,8 +216,10 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
         const fetchedEditedContents = await getEditedContents(allResourceIds);
         setEditedContentsMap(fetchedEditedContents);
 
-        // Start in worksheet view when editing existing worksheet
-        setViewMode('worksheet');
+        // Start in worksheet view when editing existing worksheet (unless autoPdf)
+        if (!autoPdf) {
+          setViewMode('worksheet');
+        }
 
       } catch (error) {
         console.error('Error loading worksheet:', error);
@@ -209,21 +231,36 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     loadWorksheet();
   }, [worksheetId]);
 
+  // Track if autoPdf has been triggered to prevent re-triggering
+  const autoPdfTriggeredRef = useRef(false);
+
+  // Auto-trigger PDF generation when autoPdf is true and worksheet is loaded
+  useEffect(() => {
+    if (autoPdf && !worksheetLoading && worksheetProblems.length > 0 && !autoPdfTriggeredRef.current) {
+      autoPdfTriggeredRef.current = true;
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        handleGeneratePdf();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPdf, worksheetLoading, worksheetProblems.length]);
+
   // Initialize dialog filters with current worksheet filters when switching to add problems view
   useEffect(() => {
-    if (viewMode === 'addProblems' && dialogSelectedChapters.length === 0) {
-      setDialogSelectedChapters(selectedChapters);
-      setDialogSelectedDifficulties(selectedDifficulties);
-      setDialogSelectedProblemTypes(selectedProblemTypes);
-      setDialogSelectedSubjects(selectedSubjects);
-      setDialogCorrectRateRange(correctRateRange);
-      setDialogSelectedYears(selectedYears);
-      setDialogProblemCount(problemCount);
-      setDialogSelectedGrades(selectedGrades);
-      setDialogSelectedMonths(selectedMonths);
-      setDialogSelectedExamTypes(selectedExamTypes);
+    if (viewMode === 'addProblems' && addProblemsSelectedChapters.length === 0) {
+      setAddProblemsSelectedChapters(selectedChapters);
+      setAddProblemsSelectedDifficulties(selectedDifficulties);
+      setAddProblemsSelectedProblemTypes(selectedProblemTypes);
+      setAddProblemsSelectedSubjects(selectedSubjects);
+      setAddProblemsCorrectRateRange(correctRateRange);
+      setAddProblemsSelectedYears(selectedYears);
+      setAddProblemsProblemCount(problemCount);
+      setAddProblemsSelectedGrades(selectedGrades);
+      setAddProblemsSelectedMonths(selectedMonths);
+      setAddProblemsSelectedExamTypes(selectedExamTypes);
     }
-  }, [viewMode, dialogSelectedChapters.length, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears, problemCount, selectedGrades, selectedMonths, selectedExamTypes]);
+  }, [viewMode, addProblemsSelectedChapters.length, selectedChapters, selectedDifficulties, selectedProblemTypes, selectedSubjects, correctRateRange, selectedYears, problemCount, selectedGrades, selectedMonths, selectedExamTypes]);
 
   // Fetch edited content when problems change (ONLY for 경제 problems)
   useEffect(() => {
@@ -235,7 +272,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
         return;
       }
 
-      const allProblems = [...filteredProblems, ...dialogProblems];
+      const allProblems = [...worksheetProblems, ...addProblemsPool];
 
       if (allProblems.length === 0) {
         setEditedContentsMap(null);
@@ -258,7 +295,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     return () => {
       cancelled = true;
     };
-  }, [isEconomyMode, filteredProblems, dialogProblems]);
+  }, [isEconomyMode, worksheetProblems, addProblemsPool]);
 
   // Simulate clicking 통합사회 2 checkbox when content tree loads (only once)
   useEffect(() => {
@@ -297,13 +334,13 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
       const fetchDialogEconomyProblems = async () => {
         try {
           const filters = {
-            selectedChapterIds: dialogSelectedChapters || [],
-            selectedGrades: dialogSelectedGrades || ['고3'],
-            selectedYears: dialogSelectedYears || Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i),
-            selectedMonths: dialogSelectedMonths || ['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
-            selectedExamTypes: dialogSelectedExamTypes || ['학평', '모평', '수능'],
-            selectedDifficulties: dialogSelectedDifficulties || ['최상', '상', '중상', '중', '중하', '하'],
-            correctRateRange: dialogCorrectRateRange as [number, number]
+            selectedChapterIds: addProblemsSelectedChapters || [],
+            selectedGrades: addProblemsSelectedGrades || ['고3'],
+            selectedYears: addProblemsSelectedYears || Array.from({ length: 2025 - 2012 + 1 }, (_, i) => 2012 + i),
+            selectedMonths: addProblemsSelectedMonths || ['03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
+            selectedExamTypes: addProblemsSelectedExamTypes || ['학평', '모평', '수능'],
+            selectedDifficulties: addProblemsSelectedDifficulties || ['최상', '상', '중상', '중', '중하', '하'],
+            correctRateRange: addProblemsCorrectRateRange as [number, number]
           };
 
           const economyData = await getEconomyProblems(filters);
@@ -329,17 +366,17 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
           );
 
           let limitedProblems: ProblemMetadata[];
-          if (dialogProblemCount === -1) {
+          if (addProblemsProblemCount === -1) {
             limitedProblems = uniqueProblems;
           } else {
             const shuffled = [...uniqueProblems].sort(() => Math.random() - 0.5);
-            limitedProblems = shuffled.slice(0, Math.min(dialogProblemCount, shuffled.length));
+            limitedProblems = shuffled.slice(0, Math.min(addProblemsProblemCount, shuffled.length));
           }
 
-          setDialogProblems(limitedProblems);
+          setAddProblemsPool(limitedProblems);
         } catch (error) {
           console.error('Error fetching economy problems for dialog:', error);
-          setDialogProblems([]);
+          setAddProblemsPool([]);
         }
       };
 
@@ -350,51 +387,51 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     if (!problems || problems.length === 0) return;
 
     const filters = {
-      selectedChapters: dialogSelectedChapters,
-      selectedDifficulties: dialogSelectedDifficulties,
-      selectedProblemTypes: dialogSelectedProblemTypes,
-      selectedSubjects: dialogSelectedSubjects,
-      problemCount: dialogProblemCount,
+      selectedChapters: addProblemsSelectedChapters,
+      selectedDifficulties: addProblemsSelectedDifficulties,
+      selectedProblemTypes: addProblemsSelectedProblemTypes,
+      selectedSubjects: addProblemsSelectedSubjects,
+      problemCount: addProblemsProblemCount,
       contentTree,
-      correctRateRange: dialogCorrectRateRange,
-      selectedYears: dialogSelectedYears
+      correctRateRange: addProblemsCorrectRateRange,
+      selectedYears: addProblemsSelectedYears
     };
 
     const filtered = ProblemFilter.filterProblems(problems, filters);
-    setDialogProblems(filtered);
-  }, [aiMode, isEconomyMode, problems, dialogSelectedChapters, dialogSelectedDifficulties, dialogSelectedProblemTypes, dialogSelectedSubjects, dialogProblemCount, contentTree, dialogCorrectRateRange, dialogSelectedYears, dialogSelectedGrades, dialogSelectedExamTypes, dialogSelectedMonths]);
+    setAddProblemsPool(filtered);
+  }, [aiMode, isEconomyMode, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths]);
 
-  // Sort main page problems based on sort rules
-  useEffect(() => {
-    if (!filteredProblems || filteredProblems.length === 0) {
-      setSortedFilteredProblems([]);
+  // Helper function to sort problems and update worksheetProblems
+  const sortAndSetProblems = (problems: ProblemMetadata[], rules: SortRule[]) => {
+    if (problems.length === 0) {
+      setWorksheetProblems([]);
       return;
     }
 
     if (!isEconomyMode && !contentTree) {
-      setSortedFilteredProblems([]);
+      setWorksheetProblems(problems);
       return;
     }
 
-    const sorted = applySortRules(filteredProblems, sortRules, {
+    const sorted = applySortRules(problems, rules, {
       isEconomyMode,
       contentTree
     });
 
-    setSortedFilteredProblems(sorted);
-  }, [filteredProblems, sortRules, contentTree, isEconomyMode]);
-
+    setWorksheetProblems(sorted);
+  };
 
   const handleMainSubjectToggle = (subject: string) => {
     setSelectedMainSubjects([subject]);
   };
 
   const handleDeleteProblem = (problemId: string) => {
-    setFilteredProblems(prev => prev.filter(p => p.id !== problemId));
+    // Just remove the problem, don't re-sort (keeps remaining in same order)
+    setWorksheetProblems(prev => prev.filter(p => p.id !== problemId));
   };
 
   const handleSaveWorksheet = async () => {
-    if (sortedFilteredProblems.length === 0) return;
+    if (worksheetProblems.length === 0) return;
 
     const errors: { title?: string; author?: string } = {};
     if (!worksheetTitle.trim()) {
@@ -433,7 +470,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             title: worksheetTitle,
             author: worksheetAuthor,
             filters: economyFilters,
-            problems: sortedFilteredProblems,
+            problems: worksheetProblems,
             sorting: sortRules
           });
         } else {
@@ -453,7 +490,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             title: worksheetTitle,
             author: worksheetAuthor,
             filters,
-            problems: sortedFilteredProblems,
+            problems: worksheetProblems,
             sorting: sortRules
           });
         }
@@ -485,7 +522,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             author: worksheetAuthor,
             userId: user?.id,
             filters: economyFilters,
-            problems: sortedFilteredProblems,
+            problems: worksheetProblems,
             sorting: sortRules
           });
 
@@ -508,7 +545,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             author: worksheetAuthor,
             userId: user?.id,
             filters,
-            problems: sortedFilteredProblems,
+            problems: worksheetProblems,
             contentTree,
             sorting: sortRules
           });
@@ -525,6 +562,74 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     }
   };
 
+  // Copy worksheet to user's own worksheets (for non-owners viewing public worksheets)
+  const handleCopyToMyWorksheets = async () => {
+    if (worksheetProblems.length === 0) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      let newWorksheetId: string;
+
+      if (isEconomyMode) {
+        const { createEconomyWorksheet } = await import('@/lib/supabase/services/economyWorksheetService');
+
+        const economyFilters = {
+          selectedChapters,
+          selectedDifficulties,
+          selectedGrades,
+          selectedYears,
+          selectedMonths,
+          selectedExamTypes,
+          correctRateRange,
+          problemCount
+        };
+
+        const { id } = await createEconomyWorksheet(supabase, {
+          title: worksheetTitle,
+          author: worksheetAuthor,
+          userId: user?.id,
+          filters: economyFilters,
+          problems: worksheetProblems,
+          sorting: sortRules
+        });
+
+        newWorksheetId = id;
+      } else {
+        const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+
+        const filters = {
+          selectedChapters,
+          selectedDifficulties,
+          selectedProblemTypes,
+          selectedSubjects,
+          problemCount,
+          correctRateRange,
+          selectedYears
+        };
+
+        const { id } = await createWorksheet(supabase, {
+          title: worksheetTitle,
+          author: worksheetAuthor,
+          userId: user?.id,
+          filters,
+          problems: worksheetProblems,
+          contentTree,
+          sorting: sortRules
+        });
+
+        newWorksheetId = id;
+      }
+
+      // Navigate to the new worksheet page
+      window.location.href = `/w/${newWorksheetId}`;
+    } catch (error) {
+      console.error('Error copying worksheet:', error);
+      alert('학습지 복사 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
+
   // Open quick answers in a new window
   const openQuickAnswers = () => {
     const title = worksheetTitle || '학습지명';
@@ -532,12 +637,12 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     const date = worksheetCreatedAt
       ? new Date(worksheetCreatedAt).toLocaleDateString('ko-KR')
       : new Date().toLocaleDateString('ko-KR');
-    const count = sortedFilteredProblems.length;
+    const count = worksheetProblems.length;
 
     const rows = Array.from({ length: Math.ceil(count / 10) }, (_, rowIndex) => {
       const cells = Array.from({ length: 10 }, (_, colIndex) => {
         const problemIndex = rowIndex * 10 + colIndex;
-        const problem = sortedFilteredProblems[problemIndex];
+        const problem = worksheetProblems[problemIndex];
         if (!problem) {
           return '<td class="cell"></td>';
         }
@@ -640,7 +745,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
   };
 
   const handleGeneratePdf = async () => {
-    if (sortedFilteredProblems.length === 0) return;
+    if (worksheetProblems.length === 0) return;
 
     setPdfProgress({ stage: '준비 중...', percent: 0 });
     setPdfUrl(null);
@@ -658,12 +763,12 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
     try {
       setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
 
-      const problemImageUrls = sortedFilteredProblems.map(p => {
+      const problemImageUrls = worksheetProblems.map(p => {
         const editedUrl = editedContentsMap?.get(p.id);
         return editedUrl || getProblemImageUrl(p.id);
       });
 
-      const answerImageUrls = sortedFilteredProblems.map(p => {
+      const answerImageUrls = worksheetProblems.map(p => {
         const answerId = p.id.startsWith('경제_') ? p.id.replace('_문제', '_해설') : p.id;
         const editedUrl = editedContentsMap?.get(answerId);
         return editedUrl || getAnswerImageUrl(p.id);
@@ -704,7 +809,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
       const problemHeights = problemImages.map(img => img.height);
       const answerHeights = answerImages.map(img => img.height);
 
-      const subject = sortedFilteredProblems[0]?.id.startsWith('경제_') ? '경제' : '통합사회';
+      const subject = worksheetProblems[0]?.id.startsWith('경제_') ? '경제' : '통합사회';
 
       const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
         problemImageUrls,
@@ -760,7 +865,7 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
       const { processUserMessage } = await import('@/lib/ai/agent');
 
       const response = await processUserMessage(userMessage, chatMessages, (problems) => {
-        setDialogProblems(problems);
+        setAddProblemsPool(problems);
       });
 
       setChatMessages(prev => [...prev, {
@@ -801,32 +906,34 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
               {worksheetId ? (savedTitle || '학습지명') : '새 학습지'}
             </h1>
             <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
-              {sortedFilteredProblems.length}문제
+              {worksheetProblems.length}문제
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <CustomButton
-              variant="outline"
-              size="sm"
-              onClick={() => requireAuth(() => setViewMode('addProblems'))}
-            >
-              문제 추가
-            </CustomButton>
+            {isOwner && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => requireAuth(() => setViewMode('addProblems'))}
+              >
+                문제 추가
+              </CustomButton>
+            )}
             <CustomButton
               variant="outline"
               size="sm"
               onClick={() => requireAuth(handleGeneratePdf)}
-              disabled={sortedFilteredProblems.length === 0}
+              disabled={worksheetProblems.length === 0}
             >
               PDF 생성
             </CustomButton>
             <CustomButton
               variant="primary"
               size="sm"
-              onClick={() => requireAuth(handleSaveWorksheet)}
-              disabled={sortedFilteredProblems.length === 0}
+              onClick={() => requireAuth(isOwner ? handleSaveWorksheet : handleCopyToMyWorksheets)}
+              disabled={worksheetProblems.length === 0}
             >
-              저장
+              {isOwner ? '저장' : '내 학습지에 저장'}
             </CustomButton>
           </div>
         </div>
@@ -850,9 +957,14 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
                 }
               }}
               sortRules={sortRules}
-              setSortRules={setSortRules}
+              setSortRules={(rules) => {
+                setSortRules(rules);
+                // Re-sort worksheetProblems with new rules
+                sortAndSetProblems(worksheetProblems, rules);
+              }}
               isEconomyMode={isEconomyMode}
               errors={validationErrors}
+              readOnly={!isOwner}
             />
           </ResizablePanel>
 
@@ -862,21 +974,21 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             <div className="h-full overflow-y-auto">
               {isEconomyMode ? (
                 <EconomyProblemsPanel
-                  filteredProblems={sortedFilteredProblems}
+                  filteredProblems={worksheetProblems}
                   problemsLoading={economyLoading || chaptersLoading}
                   problemsError={problemsError}
-                  onDeleteProblem={handleDeleteProblem}
+                  onDeleteProblem={isOwner ? handleDeleteProblem : undefined}
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
                 />
               ) : (
                 <ProblemsPanel
-                  filteredProblems={sortedFilteredProblems}
+                  filteredProblems={worksheetProblems}
                   problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                   problemsError={problemsError}
                   contentTree={contentTree}
-                  onDeleteProblem={handleDeleteProblem}
+                  onDeleteProblem={isOwner ? handleDeleteProblem : undefined}
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
@@ -908,14 +1020,16 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             variant="primary"
             size="sm"
             onClick={() => {
-              const newProblems = dialogProblems.filter(
-                problem => !filteredProblems.some(existing => existing.id === problem.id)
+              const newProblems = addProblemsPool.filter(
+                problem => !worksheetProblems.some(existing => existing.id === problem.id)
               );
-              setFilteredProblems(prev => [...prev, ...newProblems]);
+              // Add new problems and apply sorting
+              const allProblems = [...worksheetProblems, ...newProblems];
+              sortAndSetProblems(allProblems, sortRules);
               setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
               setViewMode('worksheet');
             }}
-            disabled={dialogProblems.length === 0}
+            disabled={addProblemsPool.length === 0}
           >
             추가
           </CustomButton>
@@ -932,26 +1046,26 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
               error={chaptersError}
               lockedSubject={lockedSubject}
               dialogFilters={{
-                selectedChapters: dialogSelectedChapters,
-                setSelectedChapters: setDialogSelectedChapters,
-                selectedDifficulties: dialogSelectedDifficulties,
-                setSelectedDifficulties: setDialogSelectedDifficulties,
-                selectedProblemTypes: dialogSelectedProblemTypes,
-                setSelectedProblemTypes: setDialogSelectedProblemTypes,
-                selectedSubjects: dialogSelectedSubjects,
-                setSelectedSubjects: setDialogSelectedSubjects,
-                correctRateRange: dialogCorrectRateRange,
-                setCorrectRateRange: setDialogCorrectRateRange,
-                selectedYears: dialogSelectedYears,
-                setSelectedYears: setDialogSelectedYears,
-                problemCount: dialogProblemCount,
-                setProblemCount: setDialogProblemCount,
-                selectedGrades: dialogSelectedGrades,
-                setSelectedGrades: setDialogSelectedGrades,
-                selectedMonths: dialogSelectedMonths,
-                setSelectedMonths: setDialogSelectedMonths,
-                selectedExamTypes: dialogSelectedExamTypes,
-                setSelectedExamTypes: setDialogSelectedExamTypes,
+                selectedChapters: addProblemsSelectedChapters,
+                setSelectedChapters: setAddProblemsSelectedChapters,
+                selectedDifficulties: addProblemsSelectedDifficulties,
+                setSelectedDifficulties: setAddProblemsSelectedDifficulties,
+                selectedProblemTypes: addProblemsSelectedProblemTypes,
+                setSelectedProblemTypes: setAddProblemsSelectedProblemTypes,
+                selectedSubjects: addProblemsSelectedSubjects,
+                setSelectedSubjects: setAddProblemsSelectedSubjects,
+                correctRateRange: addProblemsCorrectRateRange,
+                setCorrectRateRange: setAddProblemsCorrectRateRange,
+                selectedYears: addProblemsSelectedYears,
+                setSelectedYears: setAddProblemsSelectedYears,
+                problemCount: addProblemsProblemCount,
+                setProblemCount: setAddProblemsProblemCount,
+                selectedGrades: addProblemsSelectedGrades,
+                setSelectedGrades: setAddProblemsSelectedGrades,
+                selectedMonths: addProblemsSelectedMonths,
+                setSelectedMonths: setAddProblemsSelectedMonths,
+                selectedExamTypes: addProblemsSelectedExamTypes,
+                setSelectedExamTypes: setAddProblemsSelectedExamTypes,
               }}
             />
           </ResizablePanel>
@@ -962,19 +1076,19 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
             <div className="h-full overflow-y-auto">
               {isEconomyMode ? (
                 <EconomyProblemsPanel
-                  filteredProblems={dialogProblems}
+                  filteredProblems={addProblemsPool}
                   problemsLoading={economyLoading || chaptersLoading}
                   problemsError={problemsError}
-                  onDeleteProblem={(problemId) => setDialogProblems(prev => prev.filter(p => p.id !== problemId))}
+                  onDeleteProblem={(problemId) => setAddProblemsPool(prev => prev.filter(p => p.id !== problemId))}
                   editedContentsMap={editedContentsMap}
                 />
               ) : (
                 <ProblemsPanel
-                  filteredProblems={dialogProblems}
+                  filteredProblems={addProblemsPool}
                   problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                   problemsError={problemsError}
                   contentTree={contentTree}
-                  onDeleteProblem={(problemId) => setDialogProblems(prev => prev.filter(p => p.id !== problemId))}
+                  onDeleteProblem={(problemId) => setAddProblemsPool(prev => prev.filter(p => p.id !== problemId))}
                   editedContentsMap={editedContentsMap}
                 />
               )}
@@ -991,25 +1105,27 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
       >
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                if (pdfElapsedTimerRef.current) {
-                  clearInterval(pdfElapsedTimerRef.current);
-                  pdfElapsedTimerRef.current = null;
-                }
-                if (pdfUrl) {
-                  URL.revokeObjectURL(pdfUrl);
-                }
-                setPdfUrl(null);
-                setPdfError(null);
-                setPdfProgress({ stage: '', percent: 0 });
-                setPdfElapsedTime(0);
-                setViewMode('worksheet');
-              }}
-              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+            {!autoPdf && (
+              <button
+                onClick={() => {
+                  if (pdfElapsedTimerRef.current) {
+                    clearInterval(pdfElapsedTimerRef.current);
+                    pdfElapsedTimerRef.current = null;
+                  }
+                  if (pdfUrl) {
+                    URL.revokeObjectURL(pdfUrl);
+                  }
+                  setPdfUrl(null);
+                  setPdfError(null);
+                  setPdfProgress({ stage: '', percent: 0 });
+                  setPdfElapsedTime(0);
+                  setViewMode('worksheet');
+                }}
+                className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
             <h1 className="text-lg font-semibold text-[var(--foreground)]">
               PDF 생성
             </h1>
@@ -1164,22 +1280,22 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
               <div className="flex-1 overflow-hidden">
                 {isEconomyMode ? (
                   <EconomyProblemsPanel
-                    filteredProblems={dialogProblems}
+                    filteredProblems={addProblemsPool}
                     problemsLoading={economyLoading || chaptersLoading}
                     problemsError={problemsError}
                     onDeleteProblem={(problemId) => {
-                      setDialogProblems(prev => prev.filter(p => p.id !== problemId));
+                      setAddProblemsPool(prev => prev.filter(p => p.id !== problemId));
                     }}
                     editedContentsMap={editedContentsMap}
                   />
                 ) : (
                   <ProblemsPanel
-                    filteredProblems={dialogProblems}
+                    filteredProblems={addProblemsPool}
                     problemsLoading={problemsLoading || chaptersLoading || !hasSetDefaultSelection}
                     problemsError={problemsError}
                     contentTree={contentTree}
                     onDeleteProblem={(problemId) => {
-                      setDialogProblems(prev => prev.filter(p => p.id !== problemId));
+                      setAddProblemsPool(prev => prev.filter(p => p.id !== problemId));
                     }}
                     editedContentsMap={editedContentsMap}
                   />
@@ -1188,16 +1304,18 @@ export default function WorksheetBuilder({ worksheetId }: WorksheetBuilderProps)
 
               <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
                 <div className="text-xs text-gray-600">
-                  {dialogProblems.length}문제
+                  {addProblemsPool.length}문제
                 </div>
                 <Button
-                  disabled={dialogProblems.length === 0}
+                  disabled={addProblemsPool.length === 0}
                   className="h-9 px-4 text-white bg-black hover:bg-gray-800 rounded-none"
                   onClick={() => {
-                    const newProblems = dialogProblems.filter(
-                      problem => !filteredProblems.some(existing => existing.id === problem.id)
+                    const newProblems = addProblemsPool.filter(
+                      problem => !worksheetProblems.some(existing => existing.id === problem.id)
                     );
-                    setFilteredProblems(prev => [...prev, ...newProblems]);
+                    // Add new problems and apply sorting
+                    const allProblems = [...worksheetProblems, ...newProblems];
+                    sortAndSetProblems(allProblems, sortRules);
                     setIsDialogOpen(false);
                   }}
                 >

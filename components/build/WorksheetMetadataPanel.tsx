@@ -95,9 +95,9 @@ function SortableItem({ id, rule, index, availableFieldsForDropdown, onFieldChan
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            {availableFieldsForDropdown.map((field) => (
+            {availableFieldsForDropdown.filter(f => f !== 'random').map((field) => (
               <SelectItem key={field} value={field} className="cursor-pointer hover:bg-gray-100">
-                {SORT_FIELD_LABELS[field]}
+                {SORT_FIELD_LABELS[field as Exclude<SortField, 'random'>]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -142,6 +142,7 @@ interface WorksheetMetadataPanelProps {
     title?: string;
     author?: string;
   };
+  readOnly?: boolean;
 }
 
 export default function WorksheetMetadataPanel({
@@ -153,6 +154,7 @@ export default function WorksheetMetadataPanel({
   setSortRules,
   isEconomyMode,
   errors,
+  readOnly = false,
 }: WorksheetMetadataPanelProps) {
   // Internal IDs for drag-and-drop stability (derived from sortRules prop)
   const [internalIds, setInternalIds] = useState<Map<number, string>>(new Map());
@@ -208,9 +210,11 @@ export default function WorksheetMetadataPanel({
 
   const handlePresetClick = (preset: SortPreset) => {
     const presetRules = isEconomyMode ? ECONOMY_PRESET_RULES : TONGHAP_PRESET_RULES;
+    const modeFieldsList = (isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
 
-    if (preset === '실전') {
-      setSortRules([]);
+    if (preset === '무작위') {
+      // Set random marker for shuffle
+      setSortRules(presetRules['무작위']);
       setInternalIds(new Map());
     } else if (preset === '연습') {
       const newRules = presetRules['연습'];
@@ -220,13 +224,19 @@ export default function WorksheetMetadataPanel({
         newIds.set(i, `preset-rule-${i}-${Date.now()}`);
       });
       setInternalIds(newIds);
+    } else if (preset === '커스텀') {
+      // 커스텀: set to one item (first available field)
+      const newRule: SortRule = { field: modeFieldsList[0], direction: 'asc' };
+      setSortRules([newRule]);
+      const newIds = new Map<number, string>();
+      newIds.set(0, `custom-rule-${Date.now()}`);
+      setInternalIds(newIds);
     }
-    // 커스텀: keep current rules
   };
 
-  // Get mode-specific fields and filter out already used ones
-  const modeFields = isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS;
-  const usedFields = (sortRules || []).map(r => r.field);
+  // Get mode-specific fields and filter out already used ones (and 'random' which is internal-only)
+  const modeFields = (isEconomyMode ? ECONOMY_SORT_FIELDS : TONGHAP_SORT_FIELDS).filter(f => f !== 'random');
+  const usedFields = (sortRules || []).map(r => r.field).filter(f => f !== 'random');
   const availableFields = modeFields.filter(field => !usedFields.includes(field));
 
   const handleAddRule = () => {
@@ -280,7 +290,8 @@ export default function WorksheetMetadataPanel({
                 placeholder="학습지 제목을 입력하세요"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className={`focus-visible:ring-0 ${errors?.title ? 'border-red-500' : 'border-black'}`}
+                className={`focus-visible:ring-0 ${errors?.title ? 'border-red-500' : 'border-black'} ${readOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                disabled={readOnly}
               />
               {errors?.title && (
                 <p className="text-red-500 text-sm mt-1">{errors.title}</p>
@@ -298,7 +309,8 @@ export default function WorksheetMetadataPanel({
                 placeholder="출제자 이름을 입력하세요"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                className={`focus-visible:ring-0 ${errors?.author ? 'border-red-500' : 'border-black'}`}
+                className={`focus-visible:ring-0 ${errors?.author ? 'border-red-500' : 'border-black'} ${readOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                disabled={readOnly}
               />
               {errors?.author && (
                 <p className="text-red-500 text-sm mt-1">{errors.author}</p>
@@ -319,69 +331,116 @@ export default function WorksheetMetadataPanel({
               <span>정렬</span>
             </AccordionTrigger>
             <AccordionContent>
-              <div className="flex flex-col gap-3">
-                {/* Preset buttons */}
-                <div className="flex gap-2 flex-wrap">
-                  {(['실전', '연습', '커스텀'] as SortPreset[]).map((preset) => (
-                    <Button
-                      key={preset}
-                      onClick={() => handlePresetClick(preset)}
-                      variant="outline"
-                      className={activePreset === preset ? 'border-black text-black bg-gray-100' : ''}
-                    >
-                      {preset}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Sort rules list */}
+              {readOnly ? (
+                /* Read-only view for non-owners */
                 <div className="flex flex-col gap-2">
-                  {sortRulesWithIds.length === 0 ? (
-                    /* Random indicator when no rules */
-                    <div className="flex items-center gap-2 px-2 h-[50px] border border-dashed border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                      <Shuffle className="w-4 h-4" />
-                      <span className="text-sm">랜덤 순서로 출력됩니다</span>
-                    </div>
-                  ) : (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext items={sortRulesWithIds.map(r => r.id)} strategy={verticalListSortingStrategy}>
-                        {sortRulesWithIds.map((rule, index) => {
-                          // Available fields for this dropdown: current field + unused fields from mode
-                          const otherUsedFields = usedFields.filter(f => f !== rule.field);
-                          const availableForThisRow = modeFields.filter(f => !otherUsedFields.includes(f));
-                          return (
-                            <SortableItem
-                              key={rule.id}
-                              id={rule.id}
-                              rule={rule}
-                              index={index}
-                              availableFieldsForDropdown={availableForThisRow}
-                              onFieldChange={handleFieldChange}
-                              onDirectionChange={handleDirectionChange}
-                              onRemove={handleRemoveRule}
-                            />
-                          );
-                        })}
-                      </SortableContext>
-                    </DndContext>
-                  )}
-
-                  {/* Add rule button - hidden when all fields are used */}
-                  {availableFields.length > 0 && (
-                    <button
-                      onClick={handleAddRule}
-                      className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span className="text-sm">정렬 추가</span>
-                    </button>
-                  )}
+                  <div className="text-sm text-gray-500">
+                    {activePreset === '무작위' ? '무작위' :
+                     activePreset === '연습' ? '연습' :
+                     sortRulesWithIds.map(rule =>
+                       `${SORT_FIELD_LABELS[rule.field as Exclude<SortField, 'random'>]} (${rule.direction === 'asc' ? '오름차순' : '내림차순'})`
+                     ).join(' → ')}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Preset buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    {(['무작위', '연습', '커스텀'] as SortPreset[]).map((preset) => (
+                      <Button
+                        key={preset}
+                        onClick={() => handlePresetClick(preset)}
+                        variant="outline"
+                        className={activePreset === preset ? 'border-black text-black bg-gray-100' : ''}
+                      >
+                        {preset}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Sort rules list */}
+                  <div className="flex flex-col gap-2">
+                    {sortRulesWithIds.length === 1 && sortRulesWithIds[0].field === 'random' ? (
+                      /* Random element for 무작위 mode - matches SortableItem style */
+                      <div className="flex items-center justify-between gap-2 p-2 border border-gray-200 rounded-md bg-white">
+                        {/* Left side: Drag handle (disabled) + Field display */}
+                        <div className="flex items-center gap-2">
+                          {/* Disabled drag handle */}
+                          <div className="p-0.5 text-gray-300 flex-shrink-0">
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                          {/* Disabled select showing 무작위 */}
+                          <div className="w-[140px] h-8 px-3 flex items-center border border-gray-200 rounded-md bg-gray-50 text-gray-500 text-sm">
+                            무작위
+                          </div>
+                        </div>
+                        {/* Right side: Remove button */}
+                        <button
+                          onClick={() => {
+                            // Remove random and add first available field
+                            const newRule: SortRule = { field: modeFields[0], direction: 'asc' };
+                            setSortRules([newRule]);
+                            const newIds = new Map<number, string>();
+                            newIds.set(0, `rule-${Date.now()}`);
+                            setInternalIds(newIds);
+                          }}
+                          className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0 cursor-pointer"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext items={sortRulesWithIds.map(r => r.id)} strategy={verticalListSortingStrategy}>
+                          {sortRulesWithIds.map((rule, index) => {
+                            // Available fields for this dropdown: current field + unused fields from mode
+                            const otherUsedFields = usedFields.filter(f => f !== rule.field);
+                            const availableForThisRow = modeFields.filter(f => !otherUsedFields.includes(f));
+                            return (
+                              <SortableItem
+                                key={rule.id}
+                                id={rule.id}
+                                rule={rule}
+                                index={index}
+                                availableFieldsForDropdown={availableForThisRow}
+                                onFieldChange={handleFieldChange}
+                                onDirectionChange={handleDirectionChange}
+                                onRemove={handleRemoveRule}
+                              />
+                            );
+                          })}
+                        </SortableContext>
+                      </DndContext>
+                    )}
+
+                    {/* Add rule button - hidden when all fields are used */}
+                    {(availableFields.length > 0 || activePreset === '무작위') && (
+                      <button
+                        onClick={() => {
+                          if (activePreset === '무작위') {
+                            // Remove random marker and add first field
+                            const newRule: SortRule = { field: modeFields[0], direction: 'asc' };
+                            setSortRules([newRule]);
+                            const newIds = new Map<number, string>();
+                            newIds.set(0, `rule-${Date.now()}`);
+                            setInternalIds(newIds);
+                          } else {
+                            handleAddRule();
+                          }
+                        }}
+                        className="flex items-center gap-2 p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span className="text-sm">정렬 추가</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>

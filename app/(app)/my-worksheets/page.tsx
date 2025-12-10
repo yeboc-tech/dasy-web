@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { WorksheetItem, createMyWorksheetsColumns } from '@/components/worksheets/columns';
 import { WorksheetsDataTable } from '@/components/worksheets/WorksheetsDataTable';
 import { Search, Loader } from 'lucide-react';
@@ -33,6 +34,7 @@ export default function MyWorksheetsPage() {
   });
   const [deleting, setDeleting] = useState(false);
   const { user } = useAuth();
+  const router = useRouter();
 
   const observerTarget = useRef<HTMLDivElement>(null);
   const currentPage = useRef(0);
@@ -136,6 +138,10 @@ export default function MyWorksheetsPage() {
     setDeleteDialog({ open: true, id, title });
   }, []);
 
+  const handlePdfGenerate = useCallback((id: string) => {
+    router.push(`/w/${id}?pdf=true`);
+  }, [router]);
+
   const handleShareClick = useCallback(async (id: string, title: string, isCurrentlyPublic: boolean) => {
     try {
       const { createClient } = await import('@/lib/supabase/client');
@@ -186,8 +192,8 @@ export default function MyWorksheetsPage() {
   }, [user?.id, deleteDialog.id]);
 
   const columns = useMemo(
-    () => createMyWorksheetsColumns(handleDeleteClick, handleShareClick),
-    [handleDeleteClick, handleShareClick]
+    () => createMyWorksheetsColumns(handleDeleteClick, handleShareClick, handlePdfGenerate),
+    [handleDeleteClick, handleShareClick, handlePdfGenerate]
   );
 
   return (

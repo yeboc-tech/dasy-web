@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { WorksheetItem, publicWorksheetsColumns } from '@/components/worksheets/columns';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { WorksheetItem, createPublicWorksheetsColumns } from '@/components/worksheets/columns';
 import { WorksheetsDataTable } from '@/components/worksheets/WorksheetsDataTable';
 import { Loader, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,16 @@ export default function WorksheetsPage() {
   const currentPage = useRef(0);
   const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
+  const router = useRouter();
+
+  const handlePdfGenerate = useCallback((id: string) => {
+    router.push(`/w/${id}?pdf=true`);
+  }, [router]);
+
+  const columns = useMemo(
+    () => createPublicWorksheetsColumns(handlePdfGenerate),
+    [handlePdfGenerate]
+  );
 
   const fetchWorksheets = useCallback(async (page: number, search: string = '') => {
     try {
@@ -149,7 +160,7 @@ export default function WorksheetsPage() {
         ) : (
           <>
             <WorksheetsDataTable
-              columns={publicWorksheetsColumns}
+              columns={columns}
               data={worksheets}
               emptyMessage="아직 공개된 학습지가 없습니다."
             />

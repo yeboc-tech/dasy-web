@@ -1,6 +1,8 @@
 // Sorting types for worksheet problems
 
-export type SortField = 'chapter' | 'tags' | 'correct_rate' | 'exam_year' | 'problem_type' | 'related_subjects';
+// 'random' is a special internal field for shuffle mode (무작위)
+// It should NOT appear in UI dropdowns - only used as a marker in DB
+export type SortField = 'chapter' | 'tags' | 'correct_rate' | 'exam_year' | 'problem_type' | 'related_subjects' | 'random';
 export type SortDirection = 'asc' | 'desc';
 
 export interface SortRule {
@@ -8,9 +10,10 @@ export interface SortRule {
   direction: SortDirection;
 }
 
-export type SortPreset = '실전' | '연습' | '커스텀';
+export type SortPreset = '무작위' | '연습' | '커스텀';
 
-export const SORT_FIELD_LABELS: Record<SortField, string> = {
+// Labels for UI display (excludes 'random' since it's not user-selectable)
+export const SORT_FIELD_LABELS: Record<Exclude<SortField, 'random'>, string> = {
   chapter: '단원',
   tags: '태그',
   correct_rate: '정답률',
@@ -25,7 +28,7 @@ export const ECONOMY_SORT_FIELDS: SortField[] = ['chapter', 'correct_rate', 'exa
 
 // Preset rules for 통합사회
 export const TONGHAP_PRESET_RULES: Record<Exclude<SortPreset, '커스텀'>, SortRule[]> = {
-  '실전': [],
+  '무작위': [{ field: 'random', direction: 'asc' }],  // Special marker for shuffle
   '연습': [
     { field: 'chapter', direction: 'asc' },
     { field: 'tags', direction: 'asc' },
@@ -35,7 +38,7 @@ export const TONGHAP_PRESET_RULES: Record<Exclude<SortPreset, '커스텀'>, Sort
 
 // Preset rules for 경제 (no tags field)
 export const ECONOMY_PRESET_RULES: Record<Exclude<SortPreset, '커스텀'>, SortRule[]> = {
-  '실전': [],
+  '무작위': [{ field: 'random', direction: 'asc' }],  // Special marker for shuffle
   '연습': [
     { field: 'chapter', direction: 'asc' },
     { field: 'correct_rate', direction: 'desc' }
@@ -44,7 +47,13 @@ export const ECONOMY_PRESET_RULES: Record<Exclude<SortPreset, '커스텀'>, Sort
 
 // Helper to determine which preset matches current rules
 export const getMatchingPreset = (rules: SortRule[], isEconomyMode: boolean): SortPreset => {
-  if (rules.length === 0) return '실전';
+  // Check for 무작위 (random marker)
+  if (rules.length === 1 && rules[0].field === 'random') {
+    return '무작위';
+  }
+
+  // Empty rules = 커스텀 (keep original order, no preset matches)
+  if (rules.length === 0) return '커스텀';
 
   if (isEconomyMode) {
     // 경제: 연습 = chapter + correct_rate

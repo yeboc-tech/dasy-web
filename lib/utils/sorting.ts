@@ -275,7 +275,10 @@ export interface ApplySortRulesOptions {
  * Main sorting function - applies sort rules to problems list
  *
  * @param problems - Array of problems to sort
- * @param rules - Array of sort rules (empty = random/실전 mode)
+ * @param rules - Array of sort rules
+ *   - Empty array [] = keep original order (no sorting)
+ *   - [{ field: 'random' }] = shuffle (무작위 mode)
+ *   - Other rules = sort by those rules
  * @param options - Mode and contentTree for 통합사회
  * @returns Sorted copy of problems array
  */
@@ -288,8 +291,13 @@ export function applySortRules(
     return [];
   }
 
-  // Empty rules = random order (실전 mode)
+  // Empty rules = keep original order (no sorting)
   if (rules.length === 0) {
+    return [...problems];
+  }
+
+  // Check for random marker (무작위 mode)
+  if (rules.length === 1 && rules[0].field === 'random') {
     return shuffle(problems);
   }
 
