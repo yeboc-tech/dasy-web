@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthActions } from '@/lib/hooks/use-auth'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 const resetPasswordSchema = z.object({
   password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
@@ -25,6 +26,7 @@ export function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { updatePassword } = useAuthActions()
+  const { user, loading } = useAuth()
   const router = useRouter()
 
   const {
@@ -49,12 +51,41 @@ export function ResetPasswordForm() {
     }
   }
 
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6 items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // If no authenticated session, show error message
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">세션이 만료되었습니다</h1>
+          <p className="text-sm text-muted-foreground">
+            비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다.<br />
+            다시 비밀번호 재설정을 요청해주세요.
+          </p>
+        </div>
+        <div className="text-center">
+          <Link href="/auth/forgot-password" className="font-medium text-primary hover:underline">
+            비밀번호 재설정 요청
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">새 비밀번호 설정</h1>
         <p className="text-sm text-muted-foreground">
-          새로운 비밀번호를 입력해주세요
+          <span className="font-medium">{user.email}</span> 계정의 새로운 비밀번호를 입력해주세요
         </p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
