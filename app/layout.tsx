@@ -17,14 +17,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://dasy-web.vercel.app'),
+  metadataBase: new URL('https://tong.kidari.ai'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "KIDARI - 통합사회 학습지 제작 도구",
     description: "통합사회 기출문제로 맞춤형 학습지를 제작하세요. AI 기반 문제 선별과 PDF 생성으로 효율적인 학습을 지원합니다.",
-    url: "https://dasy-web.vercel.app",
+    url: "https://tong.kidari.ai",
     siteName: "KIDARI",
     locale: "ko_KR",
     type: "website",
@@ -45,17 +45,37 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'google-site-verification',
-  },
 };
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'KIDARI',
+  description: '통합사회 기출문제로 맞춤형 학습지를 제작하세요. AI 기반 문제 선별과 PDF 생성으로 효율적인 학습을 지원합니다.',
+  url: 'https://tong.kidari.ai',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'KRW',
+  },
+  creator: {
+    '@type': 'Organization',
+    name: 'Minlab',
+  },
+}
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   return (
     <html lang="ko">
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <script src="/fonts/vfs_fonts.js" async></script>
         {isProduction && (
           <Script id="google-tag-manager">
