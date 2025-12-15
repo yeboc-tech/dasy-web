@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Globe, Lock, MoreHorizontal, Trash2, FileSearch } from "lucide-react"
+import { Globe, Lock, MoreHorizontal, Trash2, FileSearch, ClipboardList } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ export interface WorksheetItem {
   created_at: string
   selected_problem_ids: string[]
   is_public?: boolean
+  solve_count?: number // For 풀이 column
 }
 
 // Columns for 공유 학습지 (public worksheets)
@@ -80,7 +81,8 @@ export const publicWorksheetsColumns: ColumnDef<WorksheetItem>[] = createPublicW
 export const createMyWorksheetsColumns = (
   onDelete: (id: string, title: string) => void,
   onShare: (id: string, title: string, isPublic: boolean) => void,
-  onPdfGenerate: (id: string) => void
+  onPdfGenerate: (id: string) => void,
+  onSolvesClick?: (id: string, title: string) => void
 ): ColumnDef<WorksheetItem>[] => [
   {
     accessorKey: "title",
@@ -128,6 +130,33 @@ export const createMyWorksheetsColumns = (
     meta: { width: '120px', minWidth: '120px' },
     cell: ({ row }) => {
       return new Date(row.getValue("created_at")).toLocaleDateString("ko-KR")
+    },
+  },
+  {
+    id: "solves",
+    header: "풀이",
+    meta: { width: '80px', minWidth: '80px' },
+    cell: ({ row }) => {
+      const solveCount = row.original.solve_count || 0
+      if (solveCount === 0 || !onSolvesClick) {
+        return <div className="text-gray-400 text-sm">-</div>
+      }
+      return (
+        <div className="flex items-center justify-start">
+          <button
+            className="relative h-8 w-8 flex items-center justify-center rounded-md text-gray-500 bg-[var(--gray-100)] hover:bg-[var(--gray-200)] hover:text-gray-700 transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation()
+              onSolvesClick(row.original.id, row.original.title)
+            }}
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center rounded-full bg-[#FF00A1] text-white text-[11px] font-medium leading-none">
+              {solveCount}
+            </span>
+          </button>
+        </div>
+      )
     },
   },
   {

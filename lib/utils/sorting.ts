@@ -299,6 +299,11 @@ export function applySortRules(
     return [...problems];
   }
 
+  // Check for manual marker (수동 mode) - keep original order, enables drag & drop
+  if (rules.length === 1 && rules[0].field === 'manual') {
+    return [...problems];
+  }
+
   // Check for random marker (무작위 mode)
   if (rules.length === 1 && rules[0].field === 'random') {
     return shuffle(problems);

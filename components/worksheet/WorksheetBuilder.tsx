@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import ProblemsPanel from '@/components/build/problemsPanel';
 import TaggedProblemsPanel from '@/components/build/TaggedProblemsPanel';
@@ -12,9 +12,20 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { CornerDownLeft, ChevronLeft, Loader } from 'lucide-react';
+import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
 import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import PDFViewer from '@/components/pdf/PDFViewer';
+import { OMRSheet } from '@/components/solve/OMRSheet';
+import dynamic from 'next/dynamic';
+
+const SimplePDFViewer = dynamic(() => import('@/components/solve/SimplePDFViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <Loader className="animate-spin w-4 h-4 text-gray-600" />
+    </div>
+  )
+});
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 import { CustomButton } from '@/components/custom-button';
 import { useChapters } from '@/lib/hooks/useChapters';
@@ -31,6 +42,9 @@ import type { ChapterTreeItem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
 import { TONGHAP_PRESET_RULES, ECONOMY_PRESET_RULES } from '@/lib/types/sorting';
 import { applySortRules } from '@/lib/utils/sorting';
+import { saveSolve, getWrongProblemIds, type ProblemResult } from '@/lib/supabase/services/solveService';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 
 // Convert answer number to circled number character
 function getCircledNumber(answer: string | number | undefined): string {
@@ -77,7 +91,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [chatInput, setChatInput] = useState('');
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
-  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>(autoPdf ? 'pdfGeneration' : 'addProblems');
+  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration' | 'solve'>(autoPdf ? 'pdfGeneration' : 'addProblems');
   const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>(autoPdf ? { stage: '준비 중...', percent: 0 } : { stage: '', percent: 0 });
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -88,6 +102,14 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
   const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
+
+  // Solve mode states
+  const [solveAnswers, setSolveAnswers] = useState<{[problemNumber: number]: number}>({});
+  const [solveGradingResults, setSolveGradingResults] = useState<{[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} | null>(null);
+  const [solvePdfUrl, setSolvePdfUrl] = useState<string | null>(null);
+  const [solvePdfLoading, setSolvePdfLoading] = useState(false);
+  const [solveResultDialogOpen, setSolveResultDialogOpen] = useState(false);
+  const [solveScore, setSolveScore] = useState<{ score: number; maxScore: number; correctCount: number; totalProblems: number } | null>(null);
 
   // Filter states for "문제 추가" screen
   const [addProblemsSelectedChapters, setAddProblemsSelectedChapters] = useState<string[]>([]);
@@ -100,11 +122,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [addProblemsSelectedMonths, setAddProblemsSelectedMonths] = useState<string[]>([]);
   const [addProblemsSelectedExamTypes, setAddProblemsSelectedExamTypes] = useState<string[]>([]);
   const [addProblemsProblemCount, setAddProblemsProblemCount] = useState<number>(-1);
+  const [showOnlyWrongProblems, setShowOnlyWrongProblems] = useState(false);
+  const [wrongProblemIds, setWrongProblemIds] = useState<Set<string>>(new Set());
+  const [wrongProblemsLoading, setWrongProblemsLoading] = useState(false);
 
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
   const { user } = useAuth();
   const { showAuthBlocker, triggerAuthBlocker, dismissAuthBlocker } = useAuthBlocker();
+
+  // Check if in manual sort mode (수동) - enables drag & drop
+  const isManualSortMode = sortRules.length === 1 && sortRules[0].field === 'manual';
+
+  // Handle manual reorder from drag & drop
+  const handleManualReorder = (reorderedProblems: ProblemMetadata[]) => {
+    setWorksheetProblems(reorderedProblems);
+  };
 
   // Wrapper function to require auth before executing callback
   const requireAuth = (callback: () => void) => {
@@ -118,6 +151,36 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   // Check if in tagged subject mode (경제, 사회문화, 생활과윤리)
   const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리'];
   const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
+
+  // Get current tagged subject (if in tagged mode)
+  const currentTaggedSubject = selectedMainSubjects.find(s => TAGGED_SUBJECTS.includes(s));
+
+  // Filter wrong problem IDs to only include those relevant to current mode
+  const relevantWrongProblemIds = useMemo(() => {
+    if (wrongProblemIds.size === 0) return new Set<string>();
+
+    if (isTaggedMode && currentTaggedSubject) {
+      // In tagged mode: only include IDs that start with the current subject
+      const filtered = new Set<string>();
+      for (const id of wrongProblemIds) {
+        if (id.startsWith(currentTaggedSubject + '_')) {
+          filtered.add(id);
+        }
+      }
+      return filtered;
+    } else {
+      // In 통합사회 mode: only include UUIDs (not tagged format)
+      // Tagged IDs contain Korean characters, UUIDs don't
+      const filtered = new Set<string>();
+      for (const id of wrongProblemIds) {
+        // UUID format check: doesn't start with Korean subject names
+        if (!TAGGED_SUBJECTS.some(subject => id.startsWith(subject + '_'))) {
+          filtered.add(id);
+        }
+      }
+      return filtered;
+    }
+  }, [wrongProblemIds, isTaggedMode, currentTaggedSubject]);
 
   // Set default sorting to 연습 preset for new worksheets
   // Track the last mode for which sorting was initialized
@@ -133,6 +196,34 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       }
     }
   }, [worksheetId, isTaggedMode, lastInitializedMode]);
+
+  // Fetch wrong problem IDs only when checkbox is checked
+  useEffect(() => {
+    if (!user?.id || !showOnlyWrongProblems) {
+      // Clear wrong IDs when unchecked
+      if (!showOnlyWrongProblems) {
+        setWrongProblemIds(new Set());
+        setWrongProblemsLoading(false);
+      }
+      return;
+    }
+
+    const fetchWrongProblems = async () => {
+      setWrongProblemsLoading(true);
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const ids = await getWrongProblemIds(supabase, user.id);
+        setWrongProblemIds(new Set(ids));
+      } catch (error) {
+        console.error('Error fetching wrong problem IDs:', error);
+      } finally {
+        setWrongProblemsLoading(false);
+      }
+    };
+
+    fetchWrongProblems();
+  }, [user?.id, showOnlyWrongProblems]);
 
   // Determine locked subject based on existing worksheet problems
   // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리)
@@ -156,101 +247,102 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   // Track recently added problem IDs for visual distinction
   const [recentlyAddedProblemIds, setRecentlyAddedProblemIds] = useState<Set<string>>(new Set());
 
-  // Load existing worksheet data if worksheetId is provided
-  useEffect(() => {
+  // Load/refresh worksheet data function
+  const loadWorksheet = async () => {
     if (!worksheetId) {
       setWorksheetLoading(false);
       return;
     }
 
-    const loadWorksheet = async () => {
-      try {
-        setWorksheetLoading(true);
+    try {
+      setWorksheetLoading(true);
 
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
 
-        // Fetch the worksheet to check if it's economy or regular
-        const { data: worksheetMeta, error: metaError } = await supabase
-          .from('worksheets')
-          .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by')
-          .eq('id', worksheetId)
-          .single();
+      // Fetch the worksheet to check if it's economy or regular
+      const { data: worksheetMeta, error: metaError } = await supabase
+        .from('worksheets')
+        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by')
+        .eq('id', worksheetId)
+        .single();
 
-        if (metaError) {
-          console.error('Worksheet not found:', metaError);
-          setWorksheetLoading(false);
-          return;
-        }
-
-        // Check ownership
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        const worksheetOwnerId = worksheetMeta.created_by;
-        setIsOwner(currentUser?.id === worksheetOwnerId);
-
-        // Set worksheet metadata
-        setWorksheetTitle(worksheetMeta.title || '');
-        setWorksheetAuthor(worksheetMeta.author || '');
-        setSavedTitle(worksheetMeta.title || null);
-        setWorksheetCreatedAt(worksheetMeta.created_at);
-
-        // Detect if it's an economy worksheet by checking problem ID format
-        const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
-        const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
-
-        // Fetch the full worksheet data with problems
-        let data;
-        if (isTagged) {
-          const { getTaggedWorksheet, getSubjectFromProblemId } = await import('@/lib/supabase/services/taggedWorksheetService');
-          data = await getTaggedWorksheet(supabase, worksheetId);
-          // Detect subject from first problem ID
-          const detectedSubject = getSubjectFromProblemId(worksheetMeta.selected_problem_ids[0]) || '경제';
-          setSelectedMainSubjects([detectedSubject]);
-        } else {
-          const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
-          data = await getWorksheet(supabase, worksheetId);
-          setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
-        }
-
-        // Load the problems into the worksheet (already in saved order)
-        if (data?.problems) {
-          setWorksheetProblems(data.problems);  // Use saved order, don't re-sort
-        }
-
-        // Load sorting preferences (but mark as initialized to skip re-sorting)
-        if (data?.worksheet?.sorting) {
-          setSortRules(data.worksheet.sorting);
-        }
-        setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
-
-        // Fetch edited contents for preview
-        const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-        const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
-        const answerIds = data?.problems
-          ?.filter((p: ProblemMetadata) => p.answer_filename)
-          ?.map((p: ProblemMetadata) => {
-            // For tagged subject problems, answer ID replaces _문제 with _해설
-            if (getSubjectFromProblemId(p.id) !== null) {
-              return p.id.replace('_문제', '_해설');
-            }
-            return p.id;
-          }) || [];
-        const allResourceIds = [...problemIds, ...answerIds];
-        const fetchedEditedContents = await getEditedContents(allResourceIds);
-        setEditedContentsMap(fetchedEditedContents);
-
-        // Start in worksheet view when editing existing worksheet (unless autoPdf)
-        if (!autoPdf) {
-          setViewMode('worksheet');
-        }
-
-      } catch (error) {
-        console.error('Error loading worksheet:', error);
-      } finally {
+      if (metaError) {
+        console.error('Worksheet not found:', metaError);
         setWorksheetLoading(false);
+        return;
       }
-    };
 
+      // Check ownership
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const worksheetOwnerId = worksheetMeta.created_by;
+      setIsOwner(currentUser?.id === worksheetOwnerId);
+
+      // Set worksheet metadata
+      setWorksheetTitle(worksheetMeta.title || '');
+      setWorksheetAuthor(worksheetMeta.author || '');
+      setSavedTitle(worksheetMeta.title || null);
+      setWorksheetCreatedAt(worksheetMeta.created_at);
+
+      // Detect if it's an economy worksheet by checking problem ID format
+      const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
+      const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
+
+      // Fetch the full worksheet data with problems
+      let data;
+      if (isTagged) {
+        const { getTaggedWorksheet, getSubjectFromProblemId } = await import('@/lib/supabase/services/taggedWorksheetService');
+        data = await getTaggedWorksheet(supabase, worksheetId);
+        // Detect subject from first problem ID
+        const detectedSubject = getSubjectFromProblemId(worksheetMeta.selected_problem_ids[0]) || '경제';
+        setSelectedMainSubjects([detectedSubject]);
+      } else {
+        const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
+        data = await getWorksheet(supabase, worksheetId);
+        setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
+      }
+
+      // Load the problems into the worksheet (already in saved order)
+      if (data?.problems) {
+        setWorksheetProblems(data.problems);  // Use saved order, don't re-sort
+      }
+
+      // Load sorting preferences (but mark as initialized to skip re-sorting)
+      if (data?.worksheet?.sorting) {
+        setSortRules(data.worksheet.sorting);
+      }
+      setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
+
+      // Fetch edited contents for preview
+      const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+      const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
+      const answerIds = data?.problems
+        ?.filter((p: ProblemMetadata) => p.answer_filename)
+        ?.map((p: ProblemMetadata) => {
+          // For tagged subject problems, answer ID replaces _문제 with _해설
+          if (getSubjectFromProblemId(p.id) !== null) {
+            return p.id.replace('_문제', '_해설');
+          }
+          return p.id;
+        }) || [];
+      const allResourceIds = [...problemIds, ...answerIds];
+      const fetchedEditedContents = await getEditedContents(allResourceIds);
+      setEditedContentsMap(fetchedEditedContents);
+
+      // Start in worksheet view when editing existing worksheet (unless autoPdf)
+      if (!autoPdf) {
+        setViewMode('worksheet');
+      }
+
+    } catch (error) {
+      console.error('Error loading worksheet:', error);
+    } finally {
+      setWorksheetLoading(false);
+    }
+  };
+
+  // Load existing worksheet data if worksheetId is provided
+  useEffect(() => {
     loadWorksheet();
   }, [worksheetId]);
 
@@ -404,6 +496,21 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             limitedProblems = shuffled.slice(0, Math.min(addProblemsProblemCount, shuffled.length));
           }
 
+          // Apply wrong problems filter if enabled (for tagged mode)
+          if (showOnlyWrongProblems) {
+            // If still loading, show empty list
+            if (wrongProblemsLoading) {
+              setAddProblemsPool([]);
+              return;
+            }
+            // If loaded but no wrong problems for current mode, show empty
+            if (relevantWrongProblemIds.size === 0) {
+              setAddProblemsPool([]);
+              return;
+            }
+            limitedProblems = limitedProblems.filter(problem => relevantWrongProblemIds.has(problem.id));
+          }
+
           setAddProblemsPool(limitedProblems);
         } catch (error) {
           console.error('Error fetching tagged problems for dialog:', error);
@@ -428,9 +535,25 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       selectedYears: addProblemsSelectedYears
     };
 
-    const filtered = ProblemFilter.filterProblems(problems, filters);
+    let filtered = ProblemFilter.filterProblems(problems, filters);
+
+    // Apply wrong problems filter if enabled
+    if (showOnlyWrongProblems) {
+      // If still loading, show empty list
+      if (wrongProblemsLoading) {
+        setAddProblemsPool([]);
+        return;
+      }
+      // If loaded but no wrong problems for current mode, show empty
+      if (relevantWrongProblemIds.size === 0) {
+        setAddProblemsPool([]);
+        return;
+      }
+      filtered = filtered.filter(problem => relevantWrongProblemIds.has(problem.id));
+    }
+
     setAddProblemsPool(filtered);
-  }, [aiMode, isTaggedMode, selectedMainSubjects, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths]);
+  }, [aiMode, isTaggedMode, selectedMainSubjects, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths, showOnlyWrongProblems, wrongProblemsLoading, relevantWrongProblemIds]);
 
   // Helper function to sort problems and update worksheetProblems
   const sortAndSetProblems = (problems: ProblemMetadata[], rules: SortRule[]) => {
@@ -773,6 +896,139 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     }
   };
 
+  // Solve mode handlers
+  const handleEnterSolveMode = () => {
+    if (worksheetProblems.length === 0) return;
+
+    // Reset solve state (but keep the pre-generated PDF)
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setViewMode('solve');
+
+    // solvePdfUrl is already generated in handleGeneratePdf, no need to regenerate
+  };
+
+  const handleSolveAnswerChange = (problemNumber: number, answer: number) => {
+    setSolveAnswers(prev => ({
+      ...prev,
+      [problemNumber]: answer
+    }));
+  };
+
+  const handleAutoGrade = async () => {
+    if (!worksheetProblems.length || !user) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // Fetch correct answers and scores from accuracy_rate table
+      const problemIds = worksheetProblems.map(p => p.id);
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, score')
+        .in('problem_id', problemIds);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+        toast.error('채점 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // Create a map of problem ID to correct answer and score
+      const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+      accuracyData?.forEach(item => {
+        accuracyMap.set(item.problem_id, {
+          correctAnswer: parseInt(item.correct_answer),
+          score: item.score || 2
+        });
+      });
+
+      // Grade each answer
+      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const problemResults: Record<string, ProblemResult> = {};
+      let totalScore = 0;
+      let maxScore = 0;
+      let correctCount = 0;
+
+      worksheetProblems.forEach((problem, index) => {
+        const problemNumber = index + 1;
+        const userAnswer = solveAnswers[problemNumber] || 0;
+        const accuracyInfo = accuracyMap.get(problem.id);
+
+        if (accuracyInfo) {
+          const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+          const score = accuracyInfo.score;
+
+          if (isCorrect) {
+            correctCount++;
+            totalScore += score;
+          }
+          maxScore += score;
+
+          results[problemNumber] = {
+            isCorrect,
+            correctAnswer: accuracyInfo.correctAnswer,
+            score
+          };
+
+          problemResults[problem.id] = {
+            user_answer: userAnswer,
+            correct_answer: accuracyInfo.correctAnswer,
+            is_correct: isCorrect,
+            score
+          };
+        }
+      });
+
+      setSolveGradingResults(results);
+      setSolveScore({
+        score: totalScore,
+        maxScore,
+        correctCount,
+        totalProblems: worksheetProblems.length
+      });
+
+      // Save to database
+      if (worksheetId) {
+        await saveSolve(supabase, {
+          worksheetId,
+          userId: user.id,
+          score: totalScore,
+          maxScore,
+          correctCount,
+          totalProblems: worksheetProblems.length,
+          results: problemResults
+        });
+      }
+
+      // Show result dialog
+      setSolveResultDialogOpen(true);
+
+    } catch (error) {
+      console.error('Error during auto-grading:', error);
+      toast.error('채점 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleExitSolveMode = () => {
+    // Don't revoke solvePdfUrl - it's pre-generated and can be reused
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setViewMode('pdfGeneration');
+  };
+
+  const handleResetSolve = () => {
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+  };
+
   const handleGeneratePdf = async () => {
     if (worksheetProblems.length === 0) return;
 
@@ -878,6 +1134,28 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
+
+      // For tagged subjects, also pre-generate solve PDF (problems only)
+      if (isTaggedMode) {
+        setPdfProgress({ stage: '풀이용 PDF 생성 중...', percent: 90 });
+        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+          problemImageUrls,
+          base64ProblemImages,
+          [], // No answer images for solve mode
+          [],
+          worksheetTitle || '학습지명',
+          worksheetAuthor || '출제자',
+          worksheetCreatedAt,
+          subject,
+          problemMetadataForPdf,
+          problemHeights,
+          []
+        );
+        const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
+        const solveUrl = URL.createObjectURL(solveBlob);
+        setSolvePdfUrl(solveUrl);
+      }
+
       setPdfProgress({ stage: '완료!', percent: 100 });
 
       if (pdfElapsedTimerRef.current) {
@@ -953,6 +1231,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {worksheetId && isOwner && (
+              <button
+                onClick={loadWorksheet}
+                disabled={worksheetLoading}
+                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                title="저장된 상태로 되돌리기"
+              >
+                <RefreshCw className={`w-4 h-4 text-gray-500 ${worksheetLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
             {isOwner && (
               <CustomButton
                 variant="outline"
@@ -1024,6 +1312,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
+                  isManualSortMode={isManualSortMode}
+                  onReorder={handleManualReorder}
                 />
               ) : (
                 <ProblemsPanel
@@ -1035,6 +1325,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
+                  isManualSortMode={isManualSortMode}
+                  onReorder={handleManualReorder}
                 />
               )}
             </div>
@@ -1064,23 +1356,36 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               </span>
             </div>
           </div>
-          <CustomButton
-            variant="primary"
-            size="sm"
-            onClick={() => requireAuth(() => {
-              const newProblems = addProblemsPool.filter(
-                problem => !worksheetProblems.some(existing => existing.id === problem.id)
-              );
-              // Add new problems and apply sorting
-              const allProblems = [...worksheetProblems, ...newProblems];
-              sortAndSetProblems(allProblems, sortRules);
-              setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
-              setViewMode('worksheet');
-            })}
-            disabled={addProblemsPool.length === 0}
-          >
-            추가
-          </CustomButton>
+          <div className="flex items-center gap-4">
+            {/* 오답만 checkbox - always show when user is logged in */}
+            {user && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={showOnlyWrongProblems}
+                  onCheckedChange={(checked) => setShowOnlyWrongProblems(checked === true)}
+                  className="data-[state=checked]:bg-[#FF00A1] data-[state=checked]:border-[#FF00A1] data-[state=checked]:text-white"
+                />
+                <span className="text-sm text-gray-600">오답만</span>
+              </label>
+            )}
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={() => requireAuth(() => {
+                const newProblems = addProblemsPool.filter(
+                  problem => !worksheetProblems.some(existing => existing.id === problem.id)
+                );
+                // Add new problems and apply sorting
+                const allProblems = [...worksheetProblems, ...newProblems];
+                sortAndSetProblems(allProblems, sortRules);
+                setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
+                setViewMode('worksheet');
+              })}
+              disabled={addProblemsPool.length === 0}
+            >
+              추가
+            </CustomButton>
+          </div>
         </div>
 
         {/* Panels - Add Problems */}
@@ -1163,7 +1468,11 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   if (pdfUrl) {
                     URL.revokeObjectURL(pdfUrl);
                   }
+                  if (solvePdfUrl) {
+                    URL.revokeObjectURL(solvePdfUrl);
+                  }
                   setPdfUrl(null);
+                  setSolvePdfUrl(null);
                   setPdfError(null);
                   setPdfProgress({ stage: '', percent: 0 });
                   setPdfElapsedTime(0);
@@ -1187,6 +1496,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             >
               빠른 정답
             </CustomButton>
+            {isTaggedMode && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                disabled={!pdfUrl}
+                onClick={() => requireAuth(handleEnterSolveMode)}
+              >
+                풀기
+              </CustomButton>
+            )}
           </div>
         </div>
 
@@ -1226,6 +1545,139 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </div>
           </div>
         )}
+      </div>
+
+      {/* Solve View - with fade transition */}
+      <div
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
+          viewMode === 'solve' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        }`}
+      >
+        {/* Top Bar - Solve */}
+        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExitSolveMode}
+              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
+              풀기
+            </h1>
+            <span className="text-xs text-[var(--gray-500)]">
+              {worksheetProblems.length}문제
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {solveGradingResults ? (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={handleResetSolve}
+              >
+                다시 풀기
+              </CustomButton>
+            ) : (
+              <>
+                <CustomButton
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoGrade}
+                >
+                  자동 채점
+                </CustomButton>
+                <CustomButton
+                  variant="primary"
+                  size="sm"
+                  onClick={handleAutoGrade}
+                >
+                  저장
+                </CustomButton>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Solve Content - OMR left, PDF right */}
+        <div className="flex-1 flex overflow-hidden bg-gray-100">
+          {/* OMR Sheet - Left Side with padding */}
+          <div className="w-52 shrink-0 p-4 pr-0 overflow-hidden flex flex-col">
+            <OMRSheet
+              problemCount={worksheetProblems.length}
+              answers={solveAnswers}
+              onAnswerChange={handleSolveAnswerChange}
+              gradingResults={solveGradingResults}
+            />
+          </div>
+
+          {/* PDF Viewer - Right Side */}
+          <div className="flex-1 overflow-hidden">
+            {solvePdfLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader className="animate-spin w-4 h-4" />
+                  <span className="text-xs text-gray-500">PDF 생성 중...</span>
+                </div>
+              </div>
+            ) : solvePdfUrl ? (
+              <SimplePDFViewer
+                pdfUrl={solvePdfUrl}
+                onError={(error) => console.error('PDF error:', error)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <span className="text-gray-500">PDF를 불러올 수 없습니다.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Score Result Dialog */}
+        <Dialog open={solveResultDialogOpen} onOpenChange={setSolveResultDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogTitle className="text-center text-lg font-semibold">
+              채점 결과
+            </DialogTitle>
+            {solveScore && (
+              <div className="py-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-[#FF00A1] mb-2">
+                    {solveScore.score}/{solveScore.maxScore}점
+                  </div>
+                  <div className="text-gray-600">
+                    {solveScore.correctCount}/{solveScore.totalProblems}문제 정답
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#FF00A1] transition-all duration-500"
+                    style={{ width: `${(solveScore.score / solveScore.maxScore) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSolveResultDialogOpen(false);
+                  handleResetSolve();
+                }}
+              >
+                다시 풀기
+              </CustomButton>
+              <CustomButton
+                variant="primary"
+                size="sm"
+                onClick={() => setSolveResultDialogOpen(false)}
+              >
+                확인
+              </CustomButton>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Dialog with filtering and AI functionality */}
@@ -1350,9 +1802,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                 )}
               </div>
 
-              <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
-                <div className="text-xs text-gray-600">
-                  {addProblemsPool.length}문제
+              <div className="h-9 bg-white border-t border-gray-200 px-4 flex items-center justify-between shadow-lg overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-600">
+                    {addProblemsPool.length}문제
+                  </span>
+                  {/* 오답만 checkbox for mobile */}
+                  {user && (
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <Checkbox
+                        checked={showOnlyWrongProblems}
+                        onCheckedChange={(checked) => setShowOnlyWrongProblems(checked === true)}
+                        className="w-3.5 h-3.5 data-[state=checked]:bg-[#FF00A1] data-[state=checked]:border-[#FF00A1] data-[state=checked]:text-white"
+                      />
+                      <span className="text-xs text-gray-600">오답만</span>
+                    </label>
+                  )}
                 </div>
                 <Button
                   disabled={addProblemsPool.length === 0}
