@@ -13,6 +13,7 @@ export interface ProblemMetadata {
   exam_year?: number; // Year the problem appeared in exam (extracted from source)
   created_at: string;
   updated_at: string;
+  isMissing?: boolean; // True if problem doesn't exist in DB yet (fields may be empty)
 }
 
 // Tagged problem type (uses problem_tags + accuracy_rate tables)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import ProblemsPanel from '@/components/build/problemsPanel';
 import TaggedProblemsPanel from '@/components/build/TaggedProblemsPanel';
@@ -12,9 +12,20 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { CornerDownLeft, ChevronLeft, Loader } from 'lucide-react';
+import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
 import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import PDFViewer from '@/components/pdf/PDFViewer';
+import { OMRSheet } from '@/components/solve/OMRSheet';
+import dynamic from 'next/dynamic';
+
+const SimplePDFViewer = dynamic(() => import('@/components/solve/SimplePDFViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <Loader className="animate-spin w-4 h-4 text-gray-600" />
+    </div>
+  )
+});
 import { getProblemImageUrl, getAnswerImageUrl } from '@/lib/utils/s3Utils';
 import { CustomButton } from '@/components/custom-button';
 import { useChapters } from '@/lib/hooks/useChapters';
@@ -31,6 +42,9 @@ import type { ChapterTreeItem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
 import { TONGHAP_PRESET_RULES, ECONOMY_PRESET_RULES } from '@/lib/types/sorting';
 import { applySortRules } from '@/lib/utils/sorting';
+import { saveSolve, updateSolve, getWrongProblemIds, type ProblemResult } from '@/lib/supabase/services/solveService';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 
 // Convert answer number to circled number character
 function getCircledNumber(answer: string | number | undefined): string {
@@ -45,9 +59,10 @@ function getCircledNumber(answer: string | number | undefined): string {
 interface WorksheetBuilderProps {
   worksheetId?: string;
   autoPdf?: boolean;
+  solveId?: string;
 }
 
-export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuilderProps) {
+export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: WorksheetBuilderProps) {
   const router = useRouter();
   const {
     selectedChapters,
@@ -77,7 +92,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [chatInput, setChatInput] = useState('');
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
-  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration'>(autoPdf ? 'pdfGeneration' : 'addProblems');
+  const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration' | 'solve'>(autoPdf ? 'pdfGeneration' : 'addProblems');
   const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>(autoPdf ? { stage: '준비 중...', percent: 0 } : { stage: '', percent: 0 });
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -88,6 +103,20 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
   const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
+
+  // Thumbnail states (store path, not full URL)
+  const [thumbnailPath, setThumbnailPath] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+
+  // Solve mode states
+  const [solveAnswers, setSolveAnswers] = useState<{[problemNumber: number]: number}>({});
+  const [solveGradingResults, setSolveGradingResults] = useState<{[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} | null>(null);
+  const [solvePdfUrl, setSolvePdfUrl] = useState<string | null>(null);
+  const [solvePdfLoading, setSolvePdfLoading] = useState(false);
+  const [solveResultDialogOpen, setSolveResultDialogOpen] = useState(false);
+  const [solveScore, setSolveScore] = useState<{ score: number; maxScore: number; correctCount: number; totalProblems: number } | null>(null);
+  const [currentEditingSolveId, setCurrentEditingSolveId] = useState<string | null>(null); // Track solve being edited
+  const [problemsWithoutAnswers, setProblemsWithoutAnswers] = useState<Set<number>>(new Set()); // Problems missing answer data
 
   // Filter states for "문제 추가" screen
   const [addProblemsSelectedChapters, setAddProblemsSelectedChapters] = useState<string[]>([]);
@@ -100,11 +129,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [addProblemsSelectedMonths, setAddProblemsSelectedMonths] = useState<string[]>([]);
   const [addProblemsSelectedExamTypes, setAddProblemsSelectedExamTypes] = useState<string[]>([]);
   const [addProblemsProblemCount, setAddProblemsProblemCount] = useState<number>(-1);
+  const [showOnlyWrongProblems, setShowOnlyWrongProblems] = useState(false);
+  const [wrongProblemIds, setWrongProblemIds] = useState<Set<string>>(new Set());
+  const [wrongProblemsLoading, setWrongProblemsLoading] = useState(false);
 
   const { chapters: contentTree, loading: chaptersLoading, error: chaptersError } = useChapters();
   const { problems, loading: problemsLoading, error: problemsError } = useProblems();
   const { user } = useAuth();
   const { showAuthBlocker, triggerAuthBlocker, dismissAuthBlocker } = useAuthBlocker();
+
+  // Check if in manual sort mode (수동) - enables drag & drop
+  const isManualSortMode = sortRules.length === 1 && sortRules[0].field === 'manual';
+
+  // Handle manual reorder from drag & drop
+  const handleManualReorder = (reorderedProblems: ProblemMetadata[]) => {
+    setWorksheetProblems(reorderedProblems);
+  };
 
   // Wrapper function to require auth before executing callback
   const requireAuth = (callback: () => void) => {
@@ -115,9 +155,39 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     callback();
   };
 
-  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리)
-  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리'];
+  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 세계지리, 한국지리)
+  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '세계지리', '한국지리'];
   const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
+
+  // Get current tagged subject (if in tagged mode)
+  const currentTaggedSubject = selectedMainSubjects.find(s => TAGGED_SUBJECTS.includes(s));
+
+  // Filter wrong problem IDs to only include those relevant to current mode
+  const relevantWrongProblemIds = useMemo(() => {
+    if (wrongProblemIds.size === 0) return new Set<string>();
+
+    if (isTaggedMode && currentTaggedSubject) {
+      // In tagged mode: only include IDs that start with the current subject
+      const filtered = new Set<string>();
+      for (const id of wrongProblemIds) {
+        if (id.startsWith(currentTaggedSubject + '_')) {
+          filtered.add(id);
+        }
+      }
+      return filtered;
+    } else {
+      // In 통합사회 mode: only include UUIDs (not tagged format)
+      // Tagged IDs contain Korean characters, UUIDs don't
+      const filtered = new Set<string>();
+      for (const id of wrongProblemIds) {
+        // UUID format check: doesn't start with Korean subject names
+        if (!TAGGED_SUBJECTS.some(subject => id.startsWith(subject + '_'))) {
+          filtered.add(id);
+        }
+      }
+      return filtered;
+    }
+  }, [wrongProblemIds, isTaggedMode, currentTaggedSubject]);
 
   // Set default sorting to 연습 preset for new worksheets
   // Track the last mode for which sorting was initialized
@@ -133,6 +203,34 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       }
     }
   }, [worksheetId, isTaggedMode, lastInitializedMode]);
+
+  // Fetch wrong problem IDs only when checkbox is checked
+  useEffect(() => {
+    if (!user?.id || !showOnlyWrongProblems) {
+      // Clear wrong IDs when unchecked
+      if (!showOnlyWrongProblems) {
+        setWrongProblemIds(new Set());
+        setWrongProblemsLoading(false);
+      }
+      return;
+    }
+
+    const fetchWrongProblems = async () => {
+      setWrongProblemsLoading(true);
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const ids = await getWrongProblemIds(supabase, user.id);
+        setWrongProblemIds(new Set(ids));
+      } catch (error) {
+        console.error('Error fetching wrong problem IDs:', error);
+      } finally {
+        setWrongProblemsLoading(false);
+      }
+    };
+
+    fetchWrongProblems();
+  }, [user?.id, showOnlyWrongProblems]);
 
   // Determine locked subject based on existing worksheet problems
   // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리)
@@ -156,101 +254,104 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   // Track recently added problem IDs for visual distinction
   const [recentlyAddedProblemIds, setRecentlyAddedProblemIds] = useState<Set<string>>(new Set());
 
-  // Load existing worksheet data if worksheetId is provided
-  useEffect(() => {
+  // Load/refresh worksheet data function
+  const loadWorksheet = async () => {
     if (!worksheetId) {
       setWorksheetLoading(false);
       return;
     }
 
-    const loadWorksheet = async () => {
-      try {
-        setWorksheetLoading(true);
+    try {
+      setWorksheetLoading(true);
 
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
 
-        // Fetch the worksheet to check if it's economy or regular
-        const { data: worksheetMeta, error: metaError } = await supabase
-          .from('worksheets')
-          .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by')
-          .eq('id', worksheetId)
-          .single();
+      // Fetch the worksheet to check if it's economy or regular
+      const { data: worksheetMeta, error: metaError } = await supabase
+        .from('worksheets')
+        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path')
+        .eq('id', worksheetId)
+        .single();
 
-        if (metaError) {
-          console.error('Worksheet not found:', metaError);
-          setWorksheetLoading(false);
-          return;
-        }
-
-        // Check ownership
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        const worksheetOwnerId = worksheetMeta.created_by;
-        setIsOwner(currentUser?.id === worksheetOwnerId);
-
-        // Set worksheet metadata
-        setWorksheetTitle(worksheetMeta.title || '');
-        setWorksheetAuthor(worksheetMeta.author || '');
-        setSavedTitle(worksheetMeta.title || null);
-        setWorksheetCreatedAt(worksheetMeta.created_at);
-
-        // Detect if it's an economy worksheet by checking problem ID format
-        const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
-        const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
-
-        // Fetch the full worksheet data with problems
-        let data;
-        if (isTagged) {
-          const { getTaggedWorksheet, getSubjectFromProblemId } = await import('@/lib/supabase/services/taggedWorksheetService');
-          data = await getTaggedWorksheet(supabase, worksheetId);
-          // Detect subject from first problem ID
-          const detectedSubject = getSubjectFromProblemId(worksheetMeta.selected_problem_ids[0]) || '경제';
-          setSelectedMainSubjects([detectedSubject]);
-        } else {
-          const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
-          data = await getWorksheet(supabase, worksheetId);
-          setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
-        }
-
-        // Load the problems into the worksheet (already in saved order)
-        if (data?.problems) {
-          setWorksheetProblems(data.problems);  // Use saved order, don't re-sort
-        }
-
-        // Load sorting preferences (but mark as initialized to skip re-sorting)
-        if (data?.worksheet?.sorting) {
-          setSortRules(data.worksheet.sorting);
-        }
-        setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
-
-        // Fetch edited contents for preview
-        const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-        const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
-        const answerIds = data?.problems
-          ?.filter((p: ProblemMetadata) => p.answer_filename)
-          ?.map((p: ProblemMetadata) => {
-            // For tagged subject problems, answer ID replaces _문제 with _해설
-            if (getSubjectFromProblemId(p.id) !== null) {
-              return p.id.replace('_문제', '_해설');
-            }
-            return p.id;
-          }) || [];
-        const allResourceIds = [...problemIds, ...answerIds];
-        const fetchedEditedContents = await getEditedContents(allResourceIds);
-        setEditedContentsMap(fetchedEditedContents);
-
-        // Start in worksheet view when editing existing worksheet (unless autoPdf)
-        if (!autoPdf) {
-          setViewMode('worksheet');
-        }
-
-      } catch (error) {
-        console.error('Error loading worksheet:', error);
-      } finally {
+      if (metaError) {
+        console.error('Worksheet not found:', metaError);
         setWorksheetLoading(false);
+        return;
       }
-    };
 
+      // Check ownership
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const worksheetOwnerId = worksheetMeta.created_by;
+      setIsOwner(currentUser?.id === worksheetOwnerId);
+
+      // Set worksheet metadata
+      setWorksheetTitle(worksheetMeta.title || '');
+      setWorksheetAuthor(worksheetMeta.author || '');
+      setSavedTitle(worksheetMeta.title || null);
+      setWorksheetCreatedAt(worksheetMeta.created_at);
+      setThumbnailPath(worksheetMeta.thumbnail_path || null);
+
+      // Detect if it's an economy worksheet by checking problem ID format
+      const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
+      const isTagged = isTaggedWorksheet(worksheetMeta.selected_problem_ids);
+
+      // Fetch the full worksheet data with problems
+      let data;
+      if (isTagged) {
+        const { getTaggedWorksheet, getSubjectFromProblemId } = await import('@/lib/supabase/services/taggedWorksheetService');
+        data = await getTaggedWorksheet(supabase, worksheetId);
+        // Detect subject from first problem ID
+        const detectedSubject = getSubjectFromProblemId(worksheetMeta.selected_problem_ids[0]) || '경제';
+        setSelectedMainSubjects([detectedSubject]);
+      } else {
+        const { getWorksheet } = await import('@/lib/supabase/services/worksheetService');
+        data = await getWorksheet(supabase, worksheetId);
+        setSelectedMainSubjects(['7ec63358-5e6b-49be-89a4-8b5639f3f9c0']);
+      }
+
+      // Load the problems into the worksheet (already in saved order)
+      if (data?.problems) {
+        setWorksheetProblems(data.problems);  // Use saved order, don't re-sort
+      }
+
+      // Load sorting preferences (but mark as initialized to skip re-sorting)
+      if (data?.worksheet?.sorting) {
+        setSortRules(data.worksheet.sorting);
+      }
+      setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
+
+      // Fetch edited contents for preview
+      const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+      const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
+      const answerIds = data?.problems
+        ?.filter((p: ProblemMetadata) => p.answer_filename)
+        ?.map((p: ProblemMetadata) => {
+          // For tagged subject problems, answer ID replaces _문제 with _해설
+          if (getSubjectFromProblemId(p.id) !== null) {
+            return p.id.replace('_문제', '_해설');
+          }
+          return p.id;
+        }) || [];
+      const allResourceIds = [...problemIds, ...answerIds];
+      const fetchedEditedContents = await getEditedContents(allResourceIds);
+      setEditedContentsMap(fetchedEditedContents);
+
+      // Start in worksheet view when editing existing worksheet (unless autoPdf or solveId)
+      // When solveId is provided, let the solve loading effect handle viewMode
+      if (!autoPdf && !solveId) {
+        setViewMode('worksheet');
+      }
+
+    } catch (error) {
+      console.error('Error loading worksheet:', error);
+    } finally {
+      setWorksheetLoading(false);
+    }
+  };
+
+  // Load existing worksheet data if worksheetId is provided
+  useEffect(() => {
     loadWorksheet();
   }, [worksheetId]);
 
@@ -268,6 +369,176 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       return () => clearTimeout(timer);
     }
   }, [autoPdf, worksheetLoading, worksheetProblems.length]);
+
+  // Load solve data when solveId is provided (from clicking solve history)
+  const solveLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!solveId || worksheetLoading || worksheetProblems.length === 0 || solveLoadedRef.current) return;
+
+    const loadSolveData = async () => {
+      try {
+        solveLoadedRef.current = true;
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+
+        // Fetch the solve record
+        const { data: solveData, error } = await supabase
+          .from('solves')
+          .select('*')
+          .eq('id', solveId)
+          .single();
+
+        if (error || !solveData) {
+          console.error('Error loading solve data:', error);
+          return;
+        }
+
+        // Check if worksheet has been modified (problems added/removed)
+        // Use total_problems count as primary check (works with old solves)
+        // Then verify IDs match for newer solves that have complete results
+        const solveProblemIds = new Set(Object.keys(solveData.results));
+        const worksheetProblemIds = new Set(worksheetProblems.map(p => p.id));
+
+        // First check: count mismatch (works for all solves)
+        const countMismatch = solveData.total_problems !== worksheetProblems.length;
+
+        // Second check: ID mismatch (only if solve has complete results)
+        // Solve is "complete" if results count matches total_problems
+        const solveHasCompleteResults = solveProblemIds.size === solveData.total_problems;
+        const idMismatch = solveHasCompleteResults && (
+          solveProblemIds.size !== worksheetProblemIds.size ||
+          [...solveProblemIds].some(id => !worksheetProblemIds.has(id))
+        );
+
+        if (countMismatch || idMismatch) {
+          toast.error('학습지가 수정되어 이 풀이를 볼 수 없습니다.');
+          setViewMode('worksheet');
+          return;
+        }
+
+        // Convert solve results to OMR answers format (answers only, no grading)
+        const answers: {[problemNumber: number]: number} = {};
+
+        worksheetProblems.forEach((problem, index) => {
+          const problemResult = solveData.results[problem.id];
+          if (problemResult) {
+            const problemNumber = index + 1;
+            answers[problemNumber] = problemResult.user_answer;
+          }
+        });
+
+        setSolveAnswers(answers);
+        // Don't auto-grade - just show user's answers, they can click 자동 채점
+        setSolveGradingResults(null);
+        setCurrentEditingSolveId(solveId); // Track that we're editing this solve
+
+        // Check which problems have answers (use worksheetProblems.answer field directly)
+        const missingAnswers = new Set<number>();
+        worksheetProblems.forEach((problem, index) => {
+          if (!problem.answer) {
+            missingAnswers.add(index + 1); // 1-indexed problem number
+          }
+        });
+        setProblemsWithoutAnswers(missingAnswers);
+
+        setViewMode('solve');
+
+        // Generate the solve PDF (inline since handleEnterSolveMode resets state)
+        setSolvePdfLoading(true);
+        setPdfProgress({ stage: '준비 중...', percent: 0 });
+        setPdfElapsedTime(0);
+
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+        }
+        pdfElapsedTimerRef.current = setInterval(() => {
+          setPdfElapsedTime(prev => prev + 1);
+        }, 1000);
+
+        setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
+
+        const problemImageUrls = worksheetProblems.map(p => {
+          const editedUrl = editedContentsMap?.get(p.id);
+          return editedUrl || getProblemImageUrl(p.id);
+        });
+
+        // Load problem images
+        const problemImages: ImageWithDimensions[] = [];
+        for (let i = 0; i < problemImageUrls.length; i++) {
+          const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
+          setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+
+          try {
+            const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
+            problemImages.push(imgData);
+          } catch (err) {
+            console.error(`Failed to load problem image ${i}:`, err);
+            problemImages.push({ base64: '', width: 0, height: 0 });
+          }
+        }
+
+        const base64ProblemImages = problemImages.map(img => img.base64);
+        const problemHeights = problemImages.map(img => img.height);
+
+        // Detect subject
+        const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
+        const subject = detectedSubject || '통합사회';
+
+        // Prepare problem metadata for PDF badges
+        const problemMetadataForPdf = worksheetProblems.map(problem => ({
+          tags: problem.tags,
+          difficulty: problem.difficulty,
+          problem_type: problem.problem_type,
+          related_subjects: problem.related_subjects,
+          correct_rate: problem.correct_rate,
+          exam_year: problem.exam_year,
+        }));
+
+        setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+
+        // Generate solve PDF (problems only, no answers)
+        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+          problemImageUrls,
+          base64ProblemImages,
+          [], // No answer images for solve mode
+          [],
+          worksheetTitle || '학습지명',
+          worksheetAuthor || '출제자',
+          worksheetCreatedAt,
+          subject,
+          problemMetadataForPdf,
+          problemHeights,
+          []
+        );
+
+        setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+
+        const solveBlob = await generatePdfWithWorker(solveDocDefinition, (progress) => {
+          if (progress.stage === 'complete') {
+            setPdfProgress({ stage: '완료!', percent: 100 });
+          }
+        });
+        const solveUrl = URL.createObjectURL(solveBlob);
+        setSolvePdfUrl(solveUrl);
+        setPdfProgress({ stage: '완료!', percent: 100 });
+        setSolvePdfLoading(false);
+
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+          pdfElapsedTimerRef.current = null;
+        }
+      } catch (error) {
+        console.error('Error loading solve data:', error);
+        setSolvePdfLoading(false);
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+          pdfElapsedTimerRef.current = null;
+        }
+      }
+    };
+
+    loadSolveData();
+  }, [solveId, worksheetLoading, worksheetProblems, editedContentsMap, worksheetTitle, worksheetAuthor, worksheetCreatedAt]);
 
   // Initialize dialog filters with current worksheet filters when switching to add problems view
   useEffect(() => {
@@ -404,6 +675,21 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             limitedProblems = shuffled.slice(0, Math.min(addProblemsProblemCount, shuffled.length));
           }
 
+          // Apply wrong problems filter if enabled (for tagged mode)
+          if (showOnlyWrongProblems) {
+            // If still loading, show empty list
+            if (wrongProblemsLoading) {
+              setAddProblemsPool([]);
+              return;
+            }
+            // If loaded but no wrong problems for current mode, show empty
+            if (relevantWrongProblemIds.size === 0) {
+              setAddProblemsPool([]);
+              return;
+            }
+            limitedProblems = limitedProblems.filter(problem => relevantWrongProblemIds.has(problem.id));
+          }
+
           setAddProblemsPool(limitedProblems);
         } catch (error) {
           console.error('Error fetching tagged problems for dialog:', error);
@@ -428,9 +714,25 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       selectedYears: addProblemsSelectedYears
     };
 
-    const filtered = ProblemFilter.filterProblems(problems, filters);
+    let filtered = ProblemFilter.filterProblems(problems, filters);
+
+    // Apply wrong problems filter if enabled
+    if (showOnlyWrongProblems) {
+      // If still loading, show empty list
+      if (wrongProblemsLoading) {
+        setAddProblemsPool([]);
+        return;
+      }
+      // If loaded but no wrong problems for current mode, show empty
+      if (relevantWrongProblemIds.size === 0) {
+        setAddProblemsPool([]);
+        return;
+      }
+      filtered = filtered.filter(problem => relevantWrongProblemIds.has(problem.id));
+    }
+
     setAddProblemsPool(filtered);
-  }, [aiMode, isTaggedMode, selectedMainSubjects, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths]);
+  }, [aiMode, isTaggedMode, selectedMainSubjects, problems, addProblemsSelectedChapters, addProblemsSelectedDifficulties, addProblemsSelectedProblemTypes, addProblemsSelectedSubjects, addProblemsProblemCount, contentTree, addProblemsCorrectRateRange, addProblemsSelectedYears, addProblemsSelectedGrades, addProblemsSelectedExamTypes, addProblemsSelectedMonths, showOnlyWrongProblems, wrongProblemsLoading, relevantWrongProblemIds]);
 
   // Helper function to sort problems and update worksheetProblems
   const sortAndSetProblems = (problems: ProblemMetadata[], rules: SortRule[]) => {
@@ -459,6 +761,32 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const handleDeleteProblem = (problemId: string) => {
     // Just remove the problem, don't re-sort (keeps remaining in same order)
     setWorksheetProblems(prev => prev.filter(p => p.id !== problemId));
+  };
+
+  // Helper function to upload thumbnail (returns path, not full URL)
+  const uploadThumbnail = async (wsId: string): Promise<string | null> => {
+    if (!thumbnailFile) return thumbnailPath; // Return existing path if no new file
+
+    try {
+      const formData = new FormData();
+      formData.append('file', thumbnailFile);
+
+      const response = await fetch(`/api/worksheets/${wsId}/thumbnail`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error('Failed to upload thumbnail');
+        return thumbnailPath; // Keep existing path on failure
+      }
+
+      const { thumbnailPath: newPath } = await response.json();
+      return newPath;
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      return thumbnailPath; // Keep existing path on error
+    }
   };
 
   const handleSaveWorksheet = async () => {
@@ -526,6 +854,20 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           });
         }
 
+        // Upload thumbnail if there's a new file
+        if (thumbnailFile) {
+          const newThumbnailPath = await uploadThumbnail(worksheetId);
+          if (newThumbnailPath) {
+            // Update thumbnail_path in database
+            await supabase
+              .from('worksheets')
+              .update({ thumbnail_path: newThumbnailPath })
+              .eq('id', worksheetId);
+            setThumbnailPath(newThumbnailPath);
+            setThumbnailFile(null);
+          }
+        }
+
         // Update saved title and show success message
         setSavedTitle(worksheetTitle);
         const { toast } = await import('sonner');
@@ -582,6 +924,18 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           });
 
           newWorksheetId = id;
+        }
+
+        // Upload thumbnail if there's a new file
+        if (thumbnailFile) {
+          const newThumbnailPath = await uploadThumbnail(newWorksheetId);
+          if (newThumbnailPath) {
+            // Update thumbnail_path in database
+            await supabase
+              .from('worksheets')
+              .update({ thumbnail_path: newThumbnailPath })
+              .eq('id', newWorksheetId);
+          }
         }
 
         // Navigate to the new worksheet page
@@ -773,6 +1127,459 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     }
   };
 
+  // Solve mode handlers
+  const handleEnterSolveMode = async () => {
+    if (worksheetProblems.length === 0) return;
+
+    // Reset solve state
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setCurrentEditingSolveId(null); // Starting fresh solve
+
+    // Check which problems have answers (use worksheetProblems.answer field directly)
+    const missingAnswers = new Set<number>();
+    worksheetProblems.forEach((problem, index) => {
+      if (!problem.answer) {
+        missingAnswers.add(index + 1); // 1-indexed problem number
+      }
+    });
+    setProblemsWithoutAnswers(missingAnswers);
+
+    // If solve PDF already exists, just switch to solve view
+    if (solvePdfUrl) {
+      setViewMode('solve');
+      return;
+    }
+
+    // Generate solve PDF (problems only, no answers)
+    setSolvePdfLoading(true);
+    setPdfProgress({ stage: '준비 중...', percent: 0 });
+    setPdfElapsedTime(0);
+    setViewMode('solve');
+
+    if (pdfElapsedTimerRef.current) {
+      clearInterval(pdfElapsedTimerRef.current);
+    }
+    pdfElapsedTimerRef.current = setInterval(() => {
+      setPdfElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    try {
+      setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
+
+      const problemImageUrls = worksheetProblems.map(p => {
+        const editedUrl = editedContentsMap?.get(p.id);
+        return editedUrl || getProblemImageUrl(p.id);
+      });
+
+      // Load problem images
+      const problemImages: ImageWithDimensions[] = [];
+      for (let i = 0; i < problemImageUrls.length; i++) {
+        const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
+        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+
+        try {
+          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
+          problemImages.push(imgData);
+        } catch (err) {
+          console.error(`Failed to load problem image ${i}:`, err);
+          problemImages.push({ base64: '', width: 0, height: 0 });
+        }
+      }
+
+      const base64ProblemImages = problemImages.map(img => img.base64);
+      const problemHeights = problemImages.map(img => img.height);
+
+      // Detect subject
+      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
+      const subject = detectedSubject || '통합사회';
+
+      // Prepare problem metadata for PDF badges
+      const problemMetadataForPdf = worksheetProblems.map(problem => ({
+        tags: problem.tags,
+        difficulty: problem.difficulty,
+        problem_type: problem.problem_type,
+        related_subjects: problem.related_subjects,
+        correct_rate: problem.correct_rate,
+        exam_year: problem.exam_year,
+      }));
+
+      setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+
+      // Generate solve PDF (problems only, no answers)
+      const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+        problemImageUrls,
+        base64ProblemImages,
+        [], // No answer images for solve mode
+        [],
+        worksheetTitle || '학습지명',
+        worksheetAuthor || '출제자',
+        worksheetCreatedAt,
+        subject,
+        problemMetadataForPdf,
+        problemHeights,
+        []
+      );
+
+      setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+
+      const solveBlob = await generatePdfWithWorker(solveDocDefinition, (progress) => {
+        if (progress.stage === 'complete') {
+          setPdfProgress({ stage: '완료!', percent: 100 });
+        }
+      });
+      const solveUrl = URL.createObjectURL(solveBlob);
+      setSolvePdfUrl(solveUrl);
+      setPdfProgress({ stage: '완료!', percent: 100 });
+    } catch (error) {
+      console.error('Error generating solve PDF:', error);
+      toast.error('PDF 생성 중 오류가 발생했습니다.');
+    } finally {
+      setSolvePdfLoading(false);
+      if (pdfElapsedTimerRef.current) {
+        clearInterval(pdfElapsedTimerRef.current);
+        pdfElapsedTimerRef.current = null;
+      }
+    }
+  };
+
+  const handleSolveAnswerChange = (problemNumber: number, answer: number) => {
+    setSolveAnswers(prev => ({
+      ...prev,
+      [problemNumber]: answer
+    }));
+  };
+
+  // Grade only - just show O/X on OMR (no save, no dialog)
+  const handleGradeOnly = async () => {
+    if (!worksheetProblems.length) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // Fetch correct answers from accuracy_rate table
+      const problemIds = worksheetProblems.map(p => p.id);
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, score')
+        .in('problem_id', problemIds);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+        toast.error('채점 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // Create a map of problem ID to correct answer
+      const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+      accuracyData?.forEach(item => {
+        accuracyMap.set(item.problem_id, {
+          correctAnswer: parseInt(item.correct_answer),
+          score: item.score || 2
+        });
+      });
+
+      // Grade each answer - only update OMR display
+      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+
+      worksheetProblems.forEach((problem, index) => {
+        const problemNumber = index + 1;
+        const userAnswer = solveAnswers[problemNumber] || 0;
+        const accuracyInfo = accuracyMap.get(problem.id);
+
+        if (accuracyInfo) {
+          const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+          results[problemNumber] = {
+            isCorrect,
+            correctAnswer: accuracyInfo.correctAnswer,
+            score: accuracyInfo.score
+          };
+        }
+      });
+
+      setSolveGradingResults(results);
+
+    } catch (error) {
+      console.error('Error during grading:', error);
+      toast.error('채점 중 오류가 발생했습니다.');
+    }
+  };
+
+  // Save and grade - grade, save to DB, show result dialog
+  const handleSaveAndGrade = async () => {
+    if (!worksheetProblems.length || !user || !worksheetId) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // Fetch correct answers and scores from accuracy_rate table
+      const problemIds = worksheetProblems.map(p => p.id);
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, score')
+        .in('problem_id', problemIds);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+        toast.error('채점 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // Create a map of problem ID to correct answer and score
+      const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+      accuracyData?.forEach(item => {
+        accuracyMap.set(item.problem_id, {
+          correctAnswer: parseInt(item.correct_answer),
+          score: item.score || 2
+        });
+      });
+
+      // Grade each answer
+      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const problemResults: Record<string, ProblemResult> = {};
+      let totalScore = 0;
+      let maxScore = 0;
+      let correctCount = 0;
+
+      worksheetProblems.forEach((problem, index) => {
+        const problemNumber = index + 1;
+        const userAnswer = solveAnswers[problemNumber] || 0;
+        const accuracyInfo = accuracyMap.get(problem.id);
+
+        if (accuracyInfo) {
+          const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+          const score = accuracyInfo.score;
+
+          if (isCorrect) {
+            correctCount++;
+            totalScore += score;
+          }
+          maxScore += score;
+
+          results[problemNumber] = {
+            isCorrect,
+            correctAnswer: accuracyInfo.correctAnswer,
+            score
+          };
+
+          problemResults[problem.id] = {
+            user_answer: userAnswer,
+            correct_answer: accuracyInfo.correctAnswer,
+            is_correct: isCorrect,
+            score
+          };
+        } else {
+          // Save problem without accuracy data (for worksheet modification detection)
+          problemResults[problem.id] = {
+            user_answer: userAnswer,
+            correct_answer: 0,
+            is_correct: false,
+            score: 0
+          };
+        }
+      });
+
+      setSolveGradingResults(results);
+      setSolveScore({
+        score: totalScore,
+        maxScore,
+        correctCount,
+        totalProblems: worksheetProblems.length
+      });
+
+      // Save or update in database
+      if (currentEditingSolveId) {
+        // Update existing solve
+        await updateSolve(supabase, {
+          solveId: currentEditingSolveId,
+          userId: user.id,
+          score: totalScore,
+          maxScore,
+          correctCount,
+          totalProblems: worksheetProblems.length,
+          results: problemResults
+        });
+        toast.success('풀이가 업데이트되었습니다.');
+      } else {
+        // Create new solve
+        const { id: newSolveId } = await saveSolve(supabase, {
+          worksheetId,
+          userId: user.id,
+          score: totalScore,
+          maxScore,
+          correctCount,
+          totalProblems: worksheetProblems.length,
+          results: problemResults
+        });
+        setCurrentEditingSolveId(newSolveId); // Now editing this new solve
+        toast.success('풀이가 저장되었습니다.');
+      }
+
+    } catch (error) {
+      console.error('Error during save and grading:', error);
+      toast.error('저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleExitSolveMode = () => {
+    // Don't revoke solvePdfUrl - it's pre-generated and can be reused
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setViewMode('worksheet');
+  };
+
+  const handleResetSolve = () => {
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+  };
+
+  // Start a new solve (for 새로 풀기 button) - clears current solve and starts fresh
+  const handleStartNewSolve = () => {
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setCurrentEditingSolveId(null); // Clear so next save creates new record
+  };
+
+  // Create a new worksheet with only wrong answers (오답 학습지 생성)
+  const handleCreateWrongAnswerWorksheet = async () => {
+    if (!worksheetProblems.length) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // If not graded yet, grade first
+      let currentResults = solveGradingResults;
+      if (!currentResults) {
+        // Fetch correct answers from accuracy_rate table
+        const problemIds = worksheetProblems.map(p => p.id);
+        const { data: accuracyData, error: accuracyError } = await supabase
+          .from('accuracy_rate')
+          .select('problem_id, correct_answer, score')
+          .in('problem_id', problemIds);
+
+        if (accuracyError) {
+          console.error('Error fetching accuracy data:', accuracyError);
+          toast.error('채점 중 오류가 발생했습니다.');
+          return;
+        }
+
+        // Create a map of problem ID to correct answer
+        const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+        accuracyData?.forEach(item => {
+          accuracyMap.set(item.problem_id, {
+            correctAnswer: parseInt(item.correct_answer),
+            score: item.score || 2
+          });
+        });
+
+        // Grade each answer
+        const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+        worksheetProblems.forEach((problem, index) => {
+          const problemNumber = index + 1;
+          const userAnswer = solveAnswers[problemNumber] || 0;
+          const accuracyInfo = accuracyMap.get(problem.id);
+
+          if (accuracyInfo) {
+            const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+            results[problemNumber] = {
+              isCorrect,
+              correctAnswer: accuracyInfo.correctAnswer,
+              score: accuracyInfo.score
+            };
+          }
+        });
+
+        setSolveGradingResults(results);
+        currentResults = results;
+      }
+
+      // Filter to only wrong answers
+      const wrongProblems = worksheetProblems.filter((_, index) => {
+        const problemNumber = index + 1;
+        const result = currentResults?.[problemNumber];
+        return result && !result.isCorrect;
+      });
+
+      if (wrongProblems.length === 0) {
+        toast.success('틀린 문제가 없습니다! 🎉');
+        return;
+      }
+
+      // Generate title
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+      const newTitle = worksheetTitle ? `오답 - ${worksheetTitle}` : `오답 학습지 ${dateStr}`;
+
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      // Create the worksheet first (without thumbnail)
+      const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+      const { id: newWorksheetId } = await createWorksheet(supabase, {
+        title: newTitle,
+        author: '키다리',
+        userId: currentUser?.id,
+        problems: wrongProblems,
+        sorting: []
+      });
+
+      // Copy thumbnail if exists
+      if (thumbnailPath) {
+        try {
+          // Download original thumbnail from CDN
+          const { getCdnUrl } = await import('@/lib/utils/s3Utils');
+          const thumbnailUrl = getCdnUrl(thumbnailPath);
+          const response = await fetch(thumbnailUrl);
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const fileExt = thumbnailPath.split('.').pop() || 'jpg';
+            const file = new File([blob], `thumbnail.${fileExt}`, { type: blob.type });
+
+            // Upload to new worksheet via API
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const uploadResponse = await fetch(`/api/worksheets/${newWorksheetId}/thumbnail`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (uploadResponse.ok) {
+              const { thumbnailPath: newPath } = await uploadResponse.json();
+              // Update worksheet with new thumbnail path
+              await supabase
+                .from('worksheets')
+                .update({ thumbnail_path: newPath })
+                .eq('id', newWorksheetId);
+            }
+          }
+        } catch (err) {
+          console.error('Error copying thumbnail:', err);
+          // Continue without thumbnail - not critical
+        }
+      }
+
+      toast.success(`오답 학습지가 생성되었습니다. (${wrongProblems.length}문제)`);
+      router.push(`/w/${newWorksheetId}`);
+
+    } catch (error) {
+      console.error('Error creating wrong answer worksheet:', error);
+      toast.error('오답 학습지 생성 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleGeneratePdf = async () => {
     if (worksheetProblems.length === 0) return;
 
@@ -878,6 +1685,28 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
 
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
+
+      // For tagged subjects, also pre-generate solve PDF (problems only)
+      if (isTaggedMode) {
+        setPdfProgress({ stage: '풀이용 PDF 생성 중...', percent: 90 });
+        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+          problemImageUrls,
+          base64ProblemImages,
+          [], // No answer images for solve mode
+          [],
+          worksheetTitle || '학습지명',
+          worksheetAuthor || '출제자',
+          worksheetCreatedAt,
+          subject,
+          problemMetadataForPdf,
+          problemHeights,
+          []
+        );
+        const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
+        const solveUrl = URL.createObjectURL(solveBlob);
+        setSolvePdfUrl(solveUrl);
+      }
+
       setPdfProgress({ stage: '완료!', percent: 100 });
 
       if (pdfElapsedTimerRef.current) {
@@ -953,6 +1782,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {worksheetId && isOwner && (
+              <button
+                onClick={loadWorksheet}
+                disabled={worksheetLoading}
+                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                title="저장된 상태로 되돌리기"
+              >
+                <RefreshCw className={`w-4 h-4 text-gray-500 ${worksheetLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
             {isOwner && (
               <CustomButton
                 variant="outline"
@@ -970,6 +1809,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             >
               PDF 생성
             </CustomButton>
+            {worksheetId && isTaggedMode && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => requireAuth(handleEnterSolveMode)}
+                disabled={worksheetProblems.length === 0}
+              >
+                풀기
+              </CustomButton>
+            )}
             <CustomButton
               variant="primary"
               size="sm"
@@ -1008,6 +1857,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               isTaggedMode={isTaggedMode}
               errors={validationErrors}
               readOnly={!isOwner}
+              thumbnailPath={thumbnailPath}
+              thumbnailFile={thumbnailFile}
+              onThumbnailChange={setThumbnailFile}
             />
           </ResizablePanel>
 
@@ -1024,6 +1876,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
+                  isManualSortMode={isManualSortMode}
+                  onReorder={handleManualReorder}
                 />
               ) : (
                 <ProblemsPanel
@@ -1035,6 +1889,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   editedContentsMap={editedContentsMap}
                   emptyMessage="문제 추가를 눌러 문제를 추가하세요."
                   addedProblemIds={recentlyAddedProblemIds}
+                  isManualSortMode={isManualSortMode}
+                  onReorder={handleManualReorder}
                 />
               )}
             </div>
@@ -1064,23 +1920,25 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               </span>
             </div>
           </div>
-          <CustomButton
-            variant="primary"
-            size="sm"
-            onClick={() => requireAuth(() => {
-              const newProblems = addProblemsPool.filter(
-                problem => !worksheetProblems.some(existing => existing.id === problem.id)
-              );
-              // Add new problems and apply sorting
-              const allProblems = [...worksheetProblems, ...newProblems];
-              sortAndSetProblems(allProblems, sortRules);
-              setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
-              setViewMode('worksheet');
-            })}
-            disabled={addProblemsPool.length === 0}
-          >
-            추가
-          </CustomButton>
+          <div className="flex items-center gap-4">
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={() => requireAuth(() => {
+                const newProblems = addProblemsPool.filter(
+                  problem => !worksheetProblems.some(existing => existing.id === problem.id)
+                );
+                // Add new problems and apply sorting
+                const allProblems = [...worksheetProblems, ...newProblems];
+                sortAndSetProblems(allProblems, sortRules);
+                setRecentlyAddedProblemIds(new Set(newProblems.map(p => p.id)));
+                setViewMode('worksheet');
+              })}
+              disabled={addProblemsPool.length === 0}
+            >
+              추가
+            </CustomButton>
+          </div>
         </div>
 
         {/* Panels - Add Problems */}
@@ -1163,7 +2021,11 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   if (pdfUrl) {
                     URL.revokeObjectURL(pdfUrl);
                   }
+                  if (solvePdfUrl) {
+                    URL.revokeObjectURL(solvePdfUrl);
+                  }
                   setPdfUrl(null);
+                  setSolvePdfUrl(null);
                   setPdfError(null);
                   setPdfProgress({ stage: '', percent: 0 });
                   setPdfElapsedTime(0);
@@ -1226,6 +2088,158 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </div>
           </div>
         )}
+      </div>
+
+      {/* Solve View - with fade transition */}
+      <div
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
+          viewMode === 'solve' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        }`}
+      >
+        {/* Top Bar - Solve */}
+        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExitSolveMode}
+              className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-lg font-semibold text-[var(--foreground)]">
+              풀기
+            </h1>
+            <span className="text-xs text-[var(--gray-500)]">
+              {worksheetProblems.length}문제
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CustomButton
+              variant="outline"
+              size="sm"
+              onClick={handleGradeOnly}
+            >
+              자동 채점
+            </CustomButton>
+            <CustomButton
+              variant="outline"
+              size="sm"
+              onClick={() => requireAuth(handleCreateWrongAnswerWorksheet)}
+            >
+              오답 학습지 생성
+            </CustomButton>
+            {currentEditingSolveId && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={handleStartNewSolve}
+              >
+                새로 풀기
+              </CustomButton>
+            )}
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={() => requireAuth(handleSaveAndGrade)}
+            >
+              저장
+            </CustomButton>
+          </div>
+        </div>
+
+        {/* Solve Content - OMR left, PDF right */}
+        <div className="flex-1 flex overflow-hidden bg-gray-100">
+          {/* OMR Sheet - Left Side with padding */}
+          <div className="w-52 shrink-0 p-4 pr-0 overflow-hidden flex flex-col">
+            <OMRSheet
+              problemCount={worksheetProblems.length}
+              answers={solveAnswers}
+              onAnswerChange={handleSolveAnswerChange}
+              gradingResults={solveGradingResults}
+              problemsWithoutAnswers={problemsWithoutAnswers}
+            />
+          </div>
+
+          {/* PDF Viewer - Right Side */}
+          <div className="flex-1 overflow-hidden">
+            {solvePdfLoading ? (
+              <div className="flex items-center justify-center h-full bg-gray-100">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader className="animate-spin w-4 h-4" />
+                  {pdfProgress.stage && (
+                    <div className="w-64 text-center">
+                      <div className="text-xs text-gray-500 mb-2">{pdfProgress.stage}</div>
+                      <div className="w-full h-1 bg-gray-200 rounded">
+                        <div
+                          className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
+                          style={{ width: `${pdfProgress.percent}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>{pdfProgress.percent}%</span>
+                        <span>{pdfElapsedTime}초</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : solvePdfUrl ? (
+              <SimplePDFViewer
+                pdfUrl={solvePdfUrl}
+                onError={(error) => console.error('PDF error:', error)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <span className="text-gray-500">PDF를 불러올 수 없습니다.</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Score Result Dialog */}
+        <Dialog open={solveResultDialogOpen} onOpenChange={setSolveResultDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogTitle className="text-center text-lg font-semibold">
+              채점 결과
+            </DialogTitle>
+            {solveScore && (
+              <div className="py-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl font-bold text-[#FF00A1] mb-2">
+                    {solveScore.score}/{solveScore.maxScore}점
+                  </div>
+                  <div className="text-gray-600">
+                    {solveScore.correctCount}/{solveScore.totalProblems}문제 정답
+                  </div>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#FF00A1] transition-all duration-500"
+                    style={{ width: `${(solveScore.score / solveScore.maxScore) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSolveResultDialogOpen(false);
+                  handleResetSolve();
+                }}
+              >
+                다시 풀기
+              </CustomButton>
+              <CustomButton
+                variant="primary"
+                size="sm"
+                onClick={() => setSolveResultDialogOpen(false)}
+              >
+                확인
+              </CustomButton>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Dialog with filtering and AI functionality */}
@@ -1350,9 +2364,11 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                 )}
               </div>
 
-              <div className="h-9 bg-white border-t border-gray-200 pl-4 flex items-center justify-between shadow-lg overflow-hidden">
-                <div className="text-xs text-gray-600">
-                  {addProblemsPool.length}문제
+              <div className="h-9 bg-white border-t border-gray-200 px-4 flex items-center justify-between shadow-lg overflow-hidden">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-600">
+                    {addProblemsPool.length}문제
+                  </span>
                 </div>
                 <Button
                   disabled={addProblemsPool.length === 0}

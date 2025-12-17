@@ -18,7 +18,8 @@ export default function WorksheetsPage() {
   const observerTarget = useRef<HTMLDivElement>(null);
   const currentPage = useRef(0);
   const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const isInitialMount = useRef(true);
+  const isFetching = useRef(false);
+  const prevSearchTerm = useRef(searchTerm);
   const router = useRouter();
 
   const handlePdfGenerate = useCallback((id: string) => {
@@ -31,8 +32,12 @@ export default function WorksheetsPage() {
   );
 
   const fetchWorksheets = useCallback(async (page: number, search: string = '') => {
+    // Prevent duplicate fetches (React Strict Mode)
+    if (page === 0 && isFetching.current) return;
+
     try {
       if (page === 0) {
+        isFetching.current = true;
         setLoading(true);
       } else {
         setLoadingMore(true);
@@ -46,7 +51,7 @@ export default function WorksheetsPage() {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, author, created_at, selected_problem_ids')
+        .select('id, title, author, created_at, selected_problem_ids, thumbnail_path')
         .eq('is_public', true);
 
       // Add search filter if search term exists
@@ -73,6 +78,7 @@ export default function WorksheetsPage() {
     } catch (error) {
       console.error('Error fetching worksheets:', error);
     } finally {
+      isFetching.current = false;
       setLoading(false);
       setLoadingMore(false);
     }
@@ -86,11 +92,11 @@ export default function WorksheetsPage() {
 
   // Handle search with debounce
   useEffect(() => {
-    // Skip on initial mount
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    // Skip if searchTerm hasn't actually changed (handles Strict Mode double-run)
+    if (prevSearchTerm.current === searchTerm) {
       return;
     }
+    prevSearchTerm.current = searchTerm;
 
     if (searchDebounceTimer.current) {
       clearTimeout(searchDebounceTimer.current);
@@ -106,7 +112,7 @@ export default function WorksheetsPage() {
         clearTimeout(searchDebounceTimer.current);
       }
     };
-  }, [searchTerm]);
+  }, [searchTerm, fetchWorksheets]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -157,12 +163,15 @@ export default function WorksheetsPage() {
           <div className="flex items-center justify-center h-full">
             <Loader size={16} className="animate-spin text-gray-500" />
           </div>
+        ) : worksheets.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+            아직 공개된 학습지가 없습니다.
+          </div>
         ) : (
           <>
             <WorksheetsDataTable
               columns={columns}
               data={worksheets}
-              emptyMessage="아직 공개된 학습지가 없습니다."
             />
 
             {/* Infinite Scroll Observer + Loader - Only show when there's more data */}

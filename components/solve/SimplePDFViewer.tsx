@@ -23,8 +23,17 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
   const [error, setError] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]);
 
+  // Track if we've already loaded for this URL
+  const loadedUrlRef = useRef<string | null>(null);
+
   // Load PDF document and render all pages at 100% zoom
   useEffect(() => {
+    // Skip if already loaded for this URL
+    if (loadedUrlRef.current === pdfUrl && pageImages.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     const loadAndRenderPDF = async () => {
       try {
         setLoading(true);
@@ -66,6 +75,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
         }
 
         setPageImages(images);
+        loadedUrlRef.current = pdfUrl;
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
@@ -79,11 +89,12 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
     if (pdfUrl && typeof window !== 'undefined') {
       loadAndRenderPDF();
     }
-  }, [pdfUrl, onError]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfUrl]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-100">
         <Loader className="animate-spin w-4 h-4 text-gray-600" />
       </div>
     );
@@ -91,7 +102,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-100">
         <div className="text-center text-red-600">
           <div className="font-medium mb-2">Error loading PDF</div>
           <div className="text-sm">{error}</div>
@@ -101,7 +112,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
   }
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-gray-100">
       {/* PDF Container - Continuous Scroll, no headers or toolbars */}
       <div
         ref={containerRef}

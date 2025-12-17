@@ -8,7 +8,7 @@ interface CreateWorksheetParams {
   title: string;
   author: string;
   userId?: string; // Optional: if provided, worksheet is associated with this user
-  filters: {
+  filters?: {
     selectedChapters: string[];
     selectedDifficulties: string[];
     selectedProblemTypes: string[];
@@ -19,6 +19,7 @@ interface CreateWorksheetParams {
   problems: ProblemMetadata[];
   contentTree?: ChapterTreeItem[];
   sorting?: SortRule[];
+  thumbnailPath?: string | null;
 }
 
 interface WorksheetData {
@@ -36,7 +37,7 @@ export async function createWorksheet(
   supabase: SupabaseClient,
   params: CreateWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, userId, filters, problems, sorting } = params;
+  const { title, author, userId, filters, problems, sorting, thumbnailPath } = params;
 
   // Use the provided problems directly (they're already filtered from the preview)
   const selectedProblemIds = problems.map(problem => problem.id);
@@ -54,7 +55,8 @@ export async function createWorksheet(
       selected_problem_ids: selectedProblemIds,
       filters: filters,
       created_by: userId || null,
-      sorting: sorting || []
+      sorting: sorting || [],
+      thumbnail_path: thumbnailPath || null
     })
     .select('id')
     .single();
@@ -157,9 +159,28 @@ export async function getWorksheet(
   const problemMap = new Map(transformedProblems.map(p => [p.id, p]));
 
   // Sort according to the order in selected_problem_ids
+  // For missing problems, create a placeholder with isMissing flag
   const sortedProblems = problemIds
-    .map((id: string) => problemMap.get(id))
-    .filter((p: ProblemMetadata | undefined): p is ProblemMetadata => p !== undefined);
+    .map((id: string) => {
+      const problem = problemMap.get(id);
+      if (problem) {
+        return problem;
+      }
+      // Create placeholder for missing problem
+      return {
+        id,
+        problem_filename: '',
+        answer_filename: '',
+        chapter_id: null,
+        difficulty: '-',
+        problem_type: '-',
+        tags: [],
+        related_subjects: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isMissing: true
+      } as ProblemMetadata;
+    });
 
   return {
     worksheet: {
@@ -259,6 +280,7 @@ export interface MyWorksheetItem {
   created_at: string;
   selected_problem_ids: string[];
   is_public: boolean;
+  thumbnail_path?: string | null;
 }
 
 export async function getMyWorksheets(
@@ -270,7 +292,7 @@ export async function getMyWorksheets(
 
   let query = supabase
     .from('worksheets')
-    .select('id, title, author, created_at, selected_problem_ids, is_public', { count: 'exact' })
+    .select('id, title, author, created_at, selected_problem_ids, is_public, thumbnail_path', { count: 'exact' })
     .eq('created_by', userId);
 
   if (search?.trim()) {

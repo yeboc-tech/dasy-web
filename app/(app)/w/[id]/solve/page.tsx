@@ -148,24 +148,36 @@ export default function SolvePage() {
   }
 
   return (
-    <div className="h-screen flex bg-gray-50 max-w-7xl mx-auto">
-      {/* Main Content - Full Height */}
-      {/* OMR Sheet - Left Side */}
-      <div className="w-48 bg-white border-r overflow-hidden">
-        <OMRSheet
-          problemCount={worksheetData.problems.length}
-          answers={answers}
-          onAnswerChange={handleAnswerChange}
-          onAutoGrade={handleAutoGrade}
-          gradingResults={gradingResults}
-        />
+    <div className="h-screen flex flex-col bg-gray-100 max-w-7xl mx-auto">
+      {/* Top Bar */}
+      <div className="h-14 border-b bg-white flex items-center justify-between px-4 shrink-0">
+        <h1 className="text-lg font-semibold">풀기</h1>
+        <button
+          onClick={handleAutoGrade}
+          className="px-4 py-2 bg-[#FF00A1] text-white text-sm rounded-lg hover:bg-[#E6009A] transition-colors"
+        >
+          자동 채점
+        </button>
       </div>
 
-      {/* PDF Viewer - Right Side */}
-      <div className="flex-1 bg-white">
-        <SolvePDFViewer
-          worksheetData={worksheetData}
-        />
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* OMR Sheet - Left Side */}
+        <div className="w-52 shrink-0 p-4 pr-0 overflow-hidden flex flex-col">
+          <OMRSheet
+            problemCount={worksheetData.problems.length}
+            answers={answers}
+            onAnswerChange={handleAnswerChange}
+            gradingResults={gradingResults}
+          />
+        </div>
+
+        {/* PDF Viewer - Right Side */}
+        <div className="flex-1 overflow-hidden">
+          <SolvePDFViewer
+            worksheetData={worksheetData}
+          />
+        </div>
       </div>
     </div>
   );

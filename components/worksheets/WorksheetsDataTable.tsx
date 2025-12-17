@@ -47,7 +47,7 @@ export function WorksheetsDataTable<TData, TValue>({
   }, [table, onTableReady])
 
   return (
-    <div className="relative w-full animate-fade-in">
+    <div className="relative w-full">
       <table className="w-full text-sm">
         <thead className="sticky top-0 z-10 bg-[var(--gray-50)] shadow-[0_1px_0_var(--border)]">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -101,10 +101,10 @@ export function WorksheetsDataTable<TData, TValue>({
               </tr>
             ))
           ) : (
-            <tr className="border-b border-[var(--border)]">
+            <tr>
               <td
                 colSpan={columns.length}
-                className="h-24 text-center text-gray-500"
+                className="h-96 text-center align-middle text-gray-500"
               >
                 {emptyMessage}
               </td>

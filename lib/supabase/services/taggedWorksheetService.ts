@@ -3,7 +3,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { SortRule } from '@/lib/types/sorting';
 
 // List of tagged subject prefixes
-const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_'];
+const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '세계지리_', '한국지리_'];
 
 interface CreateTaggedWorksheetParams {
   title: string;
@@ -132,29 +132,11 @@ export async function getTaggedWorksheet(
   for (let i = 0; i < problemIds.length; i += BATCH_SIZE) {
     const batch = problemIds.slice(i, i + BATCH_SIZE);
 
-    // Fetch problem tags - try with detected tag type first, fallback to any match
-    let tagsData = null;
-    let tagsError = null;
-
-    if (tagType) {
-      const result = await supabase
-        .from('problem_tags')
-        .select('problem_id, tag_ids, tag_labels')
-        .in('problem_id', batch)
-        .eq('type', tagType);
-      tagsData = result.data;
-      tagsError = result.error;
-    }
-
-    // If no results with specific tag type, try without type filter
-    if (!tagsData || tagsData.length === 0) {
-      const result = await supabase
-        .from('problem_tags')
-        .select('problem_id, tag_ids, tag_labels')
-        .in('problem_id', batch);
-      tagsData = result.data;
-      tagsError = result.error;
-    }
+    // Fetch problem tags - don't filter by type since worksheets can have mixed subjects
+    const { data: tagsData, error: tagsError } = await supabase
+      .from('problem_tags')
+      .select('problem_id, tag_ids, tag_labels')
+      .in('problem_id', batch);
 
     if (tagsError) {
       console.error('Error fetching problem tags:', tagsError);
@@ -204,10 +186,31 @@ export async function getTaggedWorksheet(
   }
 
   // Preserve original order from selected_problem_ids
+  // For missing problems, create a placeholder with isMissing flag
   const problemMap = new Map(allProblems.map(p => [p.id, p]));
   const sortedProblems = problemIds
-    .map(id => problemMap.get(id))
-    .filter((p): p is ProblemMetadata => p !== undefined);
+    .map(id => {
+      const problem = problemMap.get(id);
+      if (problem) {
+        return problem;
+      }
+      // Create placeholder for missing problem - still show image from S3
+      const parsed = parseProblemId(id);
+      const answerId = id.replace('_문제', '_해설');
+      return {
+        id,
+        problem_filename: `${id}.png`,
+        answer_filename: `${answerId}.png`,
+        chapter_id: null,
+        difficulty: '-',
+        problem_type: parsed ? `${parsed.exam_type} ${parsed.year}년 ${parseInt(parsed.month)}월` : '-',
+        tags: parsed ? [parsed.subject] : [],
+        related_subjects: parsed ? [parsed.subject] : [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        isMissing: true
+      } as ProblemMetadata;
+    });
 
   return {
     worksheet: {
