@@ -8,6 +8,7 @@ export default function WorksheetPage() {
   const searchParams = useSearchParams();
   const worksheetId = params.id as string;
   const autoPdf = searchParams.get('pdf') === 'true';
+  const solveId = searchParams.get('solve') || undefined;
 
-  return <WorksheetBuilder worksheetId={worksheetId} autoPdf={autoPdf} />;
+  return <WorksheetBuilder worksheetId={worksheetId} autoPdf={autoPdf} solveId={solveId} />;
 }

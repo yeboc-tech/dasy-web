@@ -8,7 +8,7 @@ interface CreateWorksheetParams {
   title: string;
   author: string;
   userId?: string; // Optional: if provided, worksheet is associated with this user
-  filters: {
+  filters?: {
     selectedChapters: string[];
     selectedDifficulties: string[];
     selectedProblemTypes: string[];
@@ -19,6 +19,7 @@ interface CreateWorksheetParams {
   problems: ProblemMetadata[];
   contentTree?: ChapterTreeItem[];
   sorting?: SortRule[];
+  thumbnailPath?: string | null;
 }
 
 interface WorksheetData {
@@ -36,7 +37,7 @@ export async function createWorksheet(
   supabase: SupabaseClient,
   params: CreateWorksheetParams
 ): Promise<{ id: string; problemCount: number }> {
-  const { title, author, userId, filters, problems, sorting } = params;
+  const { title, author, userId, filters, problems, sorting, thumbnailPath } = params;
 
   // Use the provided problems directly (they're already filtered from the preview)
   const selectedProblemIds = problems.map(problem => problem.id);
@@ -54,7 +55,8 @@ export async function createWorksheet(
       selected_problem_ids: selectedProblemIds,
       filters: filters,
       created_by: userId || null,
-      sorting: sorting || []
+      sorting: sorting || [],
+      thumbnail_path: thumbnailPath || null
     })
     .select('id')
     .single();

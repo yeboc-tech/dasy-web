@@ -42,7 +42,7 @@ import type { ChapterTreeItem } from '@/lib/types';
 import type { SortRule } from '@/lib/types/sorting';
 import { TONGHAP_PRESET_RULES, ECONOMY_PRESET_RULES } from '@/lib/types/sorting';
 import { applySortRules } from '@/lib/utils/sorting';
-import { saveSolve, getWrongProblemIds, type ProblemResult } from '@/lib/supabase/services/solveService';
+import { saveSolve, updateSolve, getWrongProblemIds, type ProblemResult } from '@/lib/supabase/services/solveService';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
@@ -59,9 +59,10 @@ function getCircledNumber(answer: string | number | undefined): string {
 interface WorksheetBuilderProps {
   worksheetId?: string;
   autoPdf?: boolean;
+  solveId?: string;
 }
 
-export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuilderProps) {
+export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: WorksheetBuilderProps) {
   const router = useRouter();
   const {
     selectedChapters,
@@ -114,6 +115,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [solvePdfLoading, setSolvePdfLoading] = useState(false);
   const [solveResultDialogOpen, setSolveResultDialogOpen] = useState(false);
   const [solveScore, setSolveScore] = useState<{ score: number; maxScore: number; correctCount: number; totalProblems: number } | null>(null);
+  const [currentEditingSolveId, setCurrentEditingSolveId] = useState<string | null>(null); // Track solve being edited
+  const [problemsWithoutAnswers, setProblemsWithoutAnswers] = useState<Set<number>>(new Set()); // Problems missing answer data
 
   // Filter states for "문제 추가" screen
   const [addProblemsSelectedChapters, setAddProblemsSelectedChapters] = useState<string[]>([]);
@@ -334,8 +337,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       const fetchedEditedContents = await getEditedContents(allResourceIds);
       setEditedContentsMap(fetchedEditedContents);
 
-      // Start in worksheet view when editing existing worksheet (unless autoPdf)
-      if (!autoPdf) {
+      // Start in worksheet view when editing existing worksheet (unless autoPdf or solveId)
+      // When solveId is provided, let the solve loading effect handle viewMode
+      if (!autoPdf && !solveId) {
         setViewMode('worksheet');
       }
 
@@ -365,6 +369,176 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       return () => clearTimeout(timer);
     }
   }, [autoPdf, worksheetLoading, worksheetProblems.length]);
+
+  // Load solve data when solveId is provided (from clicking solve history)
+  const solveLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!solveId || worksheetLoading || worksheetProblems.length === 0 || solveLoadedRef.current) return;
+
+    const loadSolveData = async () => {
+      try {
+        solveLoadedRef.current = true;
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+
+        // Fetch the solve record
+        const { data: solveData, error } = await supabase
+          .from('solves')
+          .select('*')
+          .eq('id', solveId)
+          .single();
+
+        if (error || !solveData) {
+          console.error('Error loading solve data:', error);
+          return;
+        }
+
+        // Check if worksheet has been modified (problems added/removed)
+        // Use total_problems count as primary check (works with old solves)
+        // Then verify IDs match for newer solves that have complete results
+        const solveProblemIds = new Set(Object.keys(solveData.results));
+        const worksheetProblemIds = new Set(worksheetProblems.map(p => p.id));
+
+        // First check: count mismatch (works for all solves)
+        const countMismatch = solveData.total_problems !== worksheetProblems.length;
+
+        // Second check: ID mismatch (only if solve has complete results)
+        // Solve is "complete" if results count matches total_problems
+        const solveHasCompleteResults = solveProblemIds.size === solveData.total_problems;
+        const idMismatch = solveHasCompleteResults && (
+          solveProblemIds.size !== worksheetProblemIds.size ||
+          [...solveProblemIds].some(id => !worksheetProblemIds.has(id))
+        );
+
+        if (countMismatch || idMismatch) {
+          toast.error('학습지가 수정되어 이 풀이를 볼 수 없습니다.');
+          setViewMode('worksheet');
+          return;
+        }
+
+        // Convert solve results to OMR answers format (answers only, no grading)
+        const answers: {[problemNumber: number]: number} = {};
+
+        worksheetProblems.forEach((problem, index) => {
+          const problemResult = solveData.results[problem.id];
+          if (problemResult) {
+            const problemNumber = index + 1;
+            answers[problemNumber] = problemResult.user_answer;
+          }
+        });
+
+        setSolveAnswers(answers);
+        // Don't auto-grade - just show user's answers, they can click 자동 채점
+        setSolveGradingResults(null);
+        setCurrentEditingSolveId(solveId); // Track that we're editing this solve
+
+        // Check which problems have answers (use worksheetProblems.answer field directly)
+        const missingAnswers = new Set<number>();
+        worksheetProblems.forEach((problem, index) => {
+          if (!problem.answer) {
+            missingAnswers.add(index + 1); // 1-indexed problem number
+          }
+        });
+        setProblemsWithoutAnswers(missingAnswers);
+
+        setViewMode('solve');
+
+        // Generate the solve PDF (inline since handleEnterSolveMode resets state)
+        setSolvePdfLoading(true);
+        setPdfProgress({ stage: '준비 중...', percent: 0 });
+        setPdfElapsedTime(0);
+
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+        }
+        pdfElapsedTimerRef.current = setInterval(() => {
+          setPdfElapsedTime(prev => prev + 1);
+        }, 1000);
+
+        setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
+
+        const problemImageUrls = worksheetProblems.map(p => {
+          const editedUrl = editedContentsMap?.get(p.id);
+          return editedUrl || getProblemImageUrl(p.id);
+        });
+
+        // Load problem images
+        const problemImages: ImageWithDimensions[] = [];
+        for (let i = 0; i < problemImageUrls.length; i++) {
+          const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
+          setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+
+          try {
+            const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
+            problemImages.push(imgData);
+          } catch (err) {
+            console.error(`Failed to load problem image ${i}:`, err);
+            problemImages.push({ base64: '', width: 0, height: 0 });
+          }
+        }
+
+        const base64ProblemImages = problemImages.map(img => img.base64);
+        const problemHeights = problemImages.map(img => img.height);
+
+        // Detect subject
+        const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
+        const subject = detectedSubject || '통합사회';
+
+        // Prepare problem metadata for PDF badges
+        const problemMetadataForPdf = worksheetProblems.map(problem => ({
+          tags: problem.tags,
+          difficulty: problem.difficulty,
+          problem_type: problem.problem_type,
+          related_subjects: problem.related_subjects,
+          correct_rate: problem.correct_rate,
+          exam_year: problem.exam_year,
+        }));
+
+        setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+
+        // Generate solve PDF (problems only, no answers)
+        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+          problemImageUrls,
+          base64ProblemImages,
+          [], // No answer images for solve mode
+          [],
+          worksheetTitle || '학습지명',
+          worksheetAuthor || '출제자',
+          worksheetCreatedAt,
+          subject,
+          problemMetadataForPdf,
+          problemHeights,
+          []
+        );
+
+        setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+
+        const solveBlob = await generatePdfWithWorker(solveDocDefinition, (progress) => {
+          if (progress.stage === 'complete') {
+            setPdfProgress({ stage: '완료!', percent: 100 });
+          }
+        });
+        const solveUrl = URL.createObjectURL(solveBlob);
+        setSolvePdfUrl(solveUrl);
+        setPdfProgress({ stage: '완료!', percent: 100 });
+        setSolvePdfLoading(false);
+
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+          pdfElapsedTimerRef.current = null;
+        }
+      } catch (error) {
+        console.error('Error loading solve data:', error);
+        setSolvePdfLoading(false);
+        if (pdfElapsedTimerRef.current) {
+          clearInterval(pdfElapsedTimerRef.current);
+          pdfElapsedTimerRef.current = null;
+        }
+      }
+    };
+
+    loadSolveData();
+  }, [solveId, worksheetLoading, worksheetProblems, editedContentsMap, worksheetTitle, worksheetAuthor, worksheetCreatedAt]);
 
   // Initialize dialog filters with current worksheet filters when switching to add problems view
   useEffect(() => {
@@ -962,6 +1136,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     setSolveGradingResults(null);
     setSolveScore(null);
     setSolveResultDialogOpen(false);
+    setCurrentEditingSolveId(null); // Starting fresh solve
+
+    // Check which problems have answers (use worksheetProblems.answer field directly)
+    const missingAnswers = new Set<number>();
+    worksheetProblems.forEach((problem, index) => {
+      if (!problem.answer) {
+        missingAnswers.add(index + 1); // 1-indexed problem number
+      }
+    });
+    setProblemsWithoutAnswers(missingAnswers);
 
     // If solve PDF already exists, just switch to solve view
     if (solvePdfUrl) {
@@ -1068,8 +1252,65 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     }));
   };
 
-  const handleAutoGrade = async () => {
-    if (!worksheetProblems.length || !user) return;
+  // Grade only - just show O/X on OMR (no save, no dialog)
+  const handleGradeOnly = async () => {
+    if (!worksheetProblems.length) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // Fetch correct answers from accuracy_rate table
+      const problemIds = worksheetProblems.map(p => p.id);
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, score')
+        .in('problem_id', problemIds);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+        toast.error('채점 중 오류가 발생했습니다.');
+        return;
+      }
+
+      // Create a map of problem ID to correct answer
+      const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+      accuracyData?.forEach(item => {
+        accuracyMap.set(item.problem_id, {
+          correctAnswer: parseInt(item.correct_answer),
+          score: item.score || 2
+        });
+      });
+
+      // Grade each answer - only update OMR display
+      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+
+      worksheetProblems.forEach((problem, index) => {
+        const problemNumber = index + 1;
+        const userAnswer = solveAnswers[problemNumber] || 0;
+        const accuracyInfo = accuracyMap.get(problem.id);
+
+        if (accuracyInfo) {
+          const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+          results[problemNumber] = {
+            isCorrect,
+            correctAnswer: accuracyInfo.correctAnswer,
+            score: accuracyInfo.score
+          };
+        }
+      });
+
+      setSolveGradingResults(results);
+
+    } catch (error) {
+      console.error('Error during grading:', error);
+      toast.error('채점 중 오류가 발생했습니다.');
+    }
+  };
+
+  // Save and grade - grade, save to DB, show result dialog
+  const handleSaveAndGrade = async () => {
+    if (!worksheetProblems.length || !user || !worksheetId) return;
 
     try {
       const { createClient } = await import('@/lib/supabase/client');
@@ -1131,6 +1372,14 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             is_correct: isCorrect,
             score
           };
+        } else {
+          // Save problem without accuracy data (for worksheet modification detection)
+          problemResults[problem.id] = {
+            user_answer: userAnswer,
+            correct_answer: 0,
+            is_correct: false,
+            score: 0
+          };
         }
       });
 
@@ -1142,9 +1391,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
         totalProblems: worksheetProblems.length
       });
 
-      // Save to database
-      if (worksheetId) {
-        await saveSolve(supabase, {
+      // Save or update in database
+      if (currentEditingSolveId) {
+        // Update existing solve
+        await updateSolve(supabase, {
+          solveId: currentEditingSolveId,
+          userId: user.id,
+          score: totalScore,
+          maxScore,
+          correctCount,
+          totalProblems: worksheetProblems.length,
+          results: problemResults
+        });
+        toast.success('풀이가 업데이트되었습니다.');
+      } else {
+        // Create new solve
+        const { id: newSolveId } = await saveSolve(supabase, {
           worksheetId,
           userId: user.id,
           score: totalScore,
@@ -1153,14 +1415,13 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           totalProblems: worksheetProblems.length,
           results: problemResults
         });
+        setCurrentEditingSolveId(newSolveId); // Now editing this new solve
+        toast.success('풀이가 저장되었습니다.');
       }
 
-      // Show result dialog
-      setSolveResultDialogOpen(true);
-
     } catch (error) {
-      console.error('Error during auto-grading:', error);
-      toast.error('채점 중 오류가 발생했습니다.');
+      console.error('Error during save and grading:', error);
+      toast.error('저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -1178,6 +1439,145 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     setSolveGradingResults(null);
     setSolveScore(null);
     setSolveResultDialogOpen(false);
+  };
+
+  // Start a new solve (for 새로 풀기 button) - clears current solve and starts fresh
+  const handleStartNewSolve = () => {
+    setSolveAnswers({});
+    setSolveGradingResults(null);
+    setSolveScore(null);
+    setSolveResultDialogOpen(false);
+    setCurrentEditingSolveId(null); // Clear so next save creates new record
+  };
+
+  // Create a new worksheet with only wrong answers (오답 학습지 생성)
+  const handleCreateWrongAnswerWorksheet = async () => {
+    if (!worksheetProblems.length) return;
+
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+
+      // If not graded yet, grade first
+      let currentResults = solveGradingResults;
+      if (!currentResults) {
+        // Fetch correct answers from accuracy_rate table
+        const problemIds = worksheetProblems.map(p => p.id);
+        const { data: accuracyData, error: accuracyError } = await supabase
+          .from('accuracy_rate')
+          .select('problem_id, correct_answer, score')
+          .in('problem_id', problemIds);
+
+        if (accuracyError) {
+          console.error('Error fetching accuracy data:', accuracyError);
+          toast.error('채점 중 오류가 발생했습니다.');
+          return;
+        }
+
+        // Create a map of problem ID to correct answer
+        const accuracyMap = new Map<string, { correctAnswer: number; score: number }>();
+        accuracyData?.forEach(item => {
+          accuracyMap.set(item.problem_id, {
+            correctAnswer: parseInt(item.correct_answer),
+            score: item.score || 2
+          });
+        });
+
+        // Grade each answer
+        const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+        worksheetProblems.forEach((problem, index) => {
+          const problemNumber = index + 1;
+          const userAnswer = solveAnswers[problemNumber] || 0;
+          const accuracyInfo = accuracyMap.get(problem.id);
+
+          if (accuracyInfo) {
+            const isCorrect = userAnswer === accuracyInfo.correctAnswer;
+            results[problemNumber] = {
+              isCorrect,
+              correctAnswer: accuracyInfo.correctAnswer,
+              score: accuracyInfo.score
+            };
+          }
+        });
+
+        setSolveGradingResults(results);
+        currentResults = results;
+      }
+
+      // Filter to only wrong answers
+      const wrongProblems = worksheetProblems.filter((_, index) => {
+        const problemNumber = index + 1;
+        const result = currentResults?.[problemNumber];
+        return result && !result.isCorrect;
+      });
+
+      if (wrongProblems.length === 0) {
+        toast.success('틀린 문제가 없습니다! 🎉');
+        return;
+      }
+
+      // Generate title
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+      const newTitle = worksheetTitle ? `오답 - ${worksheetTitle}` : `오답 학습지 ${dateStr}`;
+
+      // Get current user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+      // Create the worksheet first (without thumbnail)
+      const { createWorksheet } = await import('@/lib/supabase/services/worksheetService');
+      const { id: newWorksheetId } = await createWorksheet(supabase, {
+        title: newTitle,
+        author: '키다리',
+        userId: currentUser?.id,
+        problems: wrongProblems,
+        sorting: []
+      });
+
+      // Copy thumbnail if exists
+      if (thumbnailPath) {
+        try {
+          // Download original thumbnail from CDN
+          const { getCdnUrl } = await import('@/lib/utils/s3Utils');
+          const thumbnailUrl = getCdnUrl(thumbnailPath);
+          const response = await fetch(thumbnailUrl);
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const fileExt = thumbnailPath.split('.').pop() || 'jpg';
+            const file = new File([blob], `thumbnail.${fileExt}`, { type: blob.type });
+
+            // Upload to new worksheet via API
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const uploadResponse = await fetch(`/api/worksheets/${newWorksheetId}/thumbnail`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (uploadResponse.ok) {
+              const { thumbnailPath: newPath } = await uploadResponse.json();
+              // Update worksheet with new thumbnail path
+              await supabase
+                .from('worksheets')
+                .update({ thumbnail_path: newPath })
+                .eq('id', newWorksheetId);
+            }
+          }
+        } catch (err) {
+          console.error('Error copying thumbnail:', err);
+          // Continue without thumbnail - not critical
+        }
+      }
+
+      toast.success(`오답 학습지가 생성되었습니다. (${wrongProblems.length}문제)`);
+      router.push(`/w/${newWorksheetId}`);
+
+    } catch (error) {
+      console.error('Error creating wrong answer worksheet:', error);
+      toast.error('오답 학습지 생성 중 오류가 발생했습니다.');
+    }
   };
 
   const handleGeneratePdf = async () => {
@@ -1649,16 +2049,6 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             >
               빠른 정답
             </CustomButton>
-            {isTaggedMode && (
-              <CustomButton
-                variant="outline"
-                size="sm"
-                disabled={!pdfUrl}
-                onClick={() => requireAuth(handleEnterSolveMode)}
-              >
-                풀기
-              </CustomButton>
-            )}
           </div>
         </div>
 
@@ -1723,32 +2113,36 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {solveGradingResults ? (
+            <CustomButton
+              variant="outline"
+              size="sm"
+              onClick={handleGradeOnly}
+            >
+              자동 채점
+            </CustomButton>
+            <CustomButton
+              variant="outline"
+              size="sm"
+              onClick={() => requireAuth(handleCreateWrongAnswerWorksheet)}
+            >
+              오답 학습지 생성
+            </CustomButton>
+            {currentEditingSolveId && (
               <CustomButton
                 variant="outline"
                 size="sm"
-                onClick={handleResetSolve}
+                onClick={handleStartNewSolve}
               >
-                다시 풀기
+                새로 풀기
               </CustomButton>
-            ) : (
-              <>
-                <CustomButton
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAutoGrade}
-                >
-                  자동 채점
-                </CustomButton>
-                <CustomButton
-                  variant="primary"
-                  size="sm"
-                  onClick={handleAutoGrade}
-                >
-                  저장
-                </CustomButton>
-              </>
             )}
+            <CustomButton
+              variant="primary"
+              size="sm"
+              onClick={() => requireAuth(handleSaveAndGrade)}
+            >
+              저장
+            </CustomButton>
           </div>
         </div>
 
@@ -1761,13 +2155,14 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               answers={solveAnswers}
               onAnswerChange={handleSolveAnswerChange}
               gradingResults={solveGradingResults}
+              problemsWithoutAnswers={problemsWithoutAnswers}
             />
           </div>
 
           {/* PDF Viewer - Right Side */}
           <div className="flex-1 overflow-hidden">
             {solvePdfLoading ? (
-              <div className="flex items-center justify-center h-full bg-[var(--gray-50)]">
+              <div className="flex items-center justify-center h-full bg-gray-100">
                 <div className="flex flex-col items-center gap-4">
                   <Loader className="animate-spin w-4 h-4" />
                   {pdfProgress.stage && (

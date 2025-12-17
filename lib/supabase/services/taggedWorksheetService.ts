@@ -194,12 +194,13 @@ export async function getTaggedWorksheet(
       if (problem) {
         return problem;
       }
-      // Create placeholder for missing problem
+      // Create placeholder for missing problem - still show image from S3
       const parsed = parseProblemId(id);
+      const answerId = id.replace('_문제', '_해설');
       return {
         id,
-        problem_filename: '',
-        answer_filename: '',
+        problem_filename: `${id}.png`,
+        answer_filename: `${answerId}.png`,
         chapter_id: null,
         difficulty: '-',
         problem_type: parsed ? `${parsed.exam_type} ${parsed.year}년 ${parseInt(parsed.month)}월` : '-',

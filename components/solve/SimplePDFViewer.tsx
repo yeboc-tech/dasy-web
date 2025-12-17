@@ -94,7 +94,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-100">
         <Loader className="animate-spin w-4 h-4 text-gray-600" />
       </div>
     );
@@ -102,7 +102,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-100">
         <div className="text-center text-red-600">
           <div className="font-medium mb-2">Error loading PDF</div>
           <div className="text-sm">{error}</div>
@@ -112,7 +112,7 @@ export const SimplePDFViewer = React.memo(function SimplePDFViewer({ pdfUrl, onE
   }
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full bg-gray-100">
       {/* PDF Container - Continuous Scroll, no headers or toolbars */}
       <div
         ref={containerRef}

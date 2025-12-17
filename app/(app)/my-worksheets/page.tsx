@@ -120,6 +120,7 @@ export default function MyWorksheetsPage() {
             created_at: ws.last_solve_at,
             selected_problem_ids: [],
             solve_count: ws.solve_count,
+            thumbnail_path: ws.thumbnail_path,
           }));
 
         allWorksheets = [...allWorksheets, ...solvedItems];
@@ -380,6 +381,10 @@ export default function MyWorksheetsPage() {
             worksheetId={solvesDialog.id}
             worksheetTitle={solvesDialog.title}
             userId={user.id}
+            onSolveClick={(solve) => {
+              setSolvesDialog(prev => ({ ...prev, open: false }));
+              router.push(`/w/${solve.worksheet_id}?solve=${solve.id}`);
+            }}
           />
         )}
       </div>

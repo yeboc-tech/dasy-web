@@ -5,17 +5,26 @@ interface OMRSheetProps {
   answers: {[problemNumber: number]: number};
   onAnswerChange: (problemNumber: number, answer: number) => void;
   gradingResults?: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number }} | null;
+  problemsWithoutAnswers?: Set<number>; // Problems that can't be graded (no answer in DB)
 }
 
-export function OMRSheet({ problemCount, answers, onAnswerChange, gradingResults }: OMRSheetProps) {
+export function OMRSheet({ problemCount, answers, onAnswerChange, gradingResults, problemsWithoutAnswers }: OMRSheetProps) {
   const handleAnswerSelect = (problemNumber: number, answer: number) => {
     onAnswerChange(problemNumber, answer);
   };
 
   const SPACING = 12; // Consistent spacing in pixels
+  const hasProblemsWithoutAnswers = problemsWithoutAnswers && problemsWithoutAnswers.size > 0;
 
   return (
     <div className="h-full flex flex-col bg-white rounded-lg border border-gray-300 overflow-hidden shadow-lg">
+      {/* Warning banner for problems without answers */}
+      {hasProblemsWithoutAnswers && (
+        <div className="bg-amber-50 border-b border-amber-200 px-2 py-1.5 text-[10px] text-amber-700">
+          <span className="font-medium">⚠</span> 노란색 문제는 채점 불가
+        </div>
+      )}
+
       {/* OMR Card Header - Sticky */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-300">
         <div className="grid" style={{ gridTemplateColumns: '48px 1fr' }}>
@@ -35,21 +44,34 @@ export function OMRSheet({ problemCount, answers, onAnswerChange, gradingResults
           const selectedAnswer = answers[problemNumber];
           const gradingResult = gradingResults?.[problemNumber];
           const isWrongAnswer = gradingResult && !gradingResult.isCorrect;
+          const hasNoAnswer = problemsWithoutAnswers?.has(problemNumber);
           const showHorizontalLine = problemNumber % 5 === 0 && problemNumber !== problemCount;
           const isFirstRow = problemNumber === 1;
           const isLastRow = problemNumber === problemCount;
+
+          // Determine background colors based on state
+          const getNumberCellBg = () => {
+            if (hasNoAnswer) return 'bg-amber-100';
+            if (isWrongAnswer) return 'bg-red-100';
+            return 'bg-[#FFF0F7]';
+          };
+          const getAnswerCellBg = () => {
+            if (hasNoAnswer) return 'bg-amber-50';
+            if (isWrongAnswer) return 'bg-red-50';
+            return 'bg-white';
+          };
 
           return (
             <div key={problemNumber}>
               <div className="grid" style={{ gridTemplateColumns: '48px 1fr' }}>
                 {/* Problem Number */}
-                <div className={`${isWrongAnswer ? 'bg-red-100' : 'bg-[#FFF0F7]'} border-r border-gray-300 flex items-center justify-center text-xs text-gray-700 font-medium`}>
+                <div className={`${getNumberCellBg()} border-r border-gray-300 flex items-center justify-center text-xs text-gray-700 font-medium`}>
                   {problemNumber}
                 </div>
 
                 {/* Answer Options - Consistent spacing */}
                 <div
-                  className={`${isWrongAnswer ? 'bg-red-50' : 'bg-white'} flex items-center`}
+                  className={`${getAnswerCellBg()} flex items-center`}
                   style={{
                     paddingLeft: SPACING,
                     paddingRight: SPACING,

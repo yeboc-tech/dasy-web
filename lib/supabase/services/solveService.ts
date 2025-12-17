@@ -61,6 +61,41 @@ export async function saveSolve(
   return { id: data.id };
 }
 
+// Update an existing solve record
+interface UpdateSolveParams {
+  solveId: string;
+  userId: string;
+  score: number;
+  maxScore: number;
+  correctCount: number;
+  totalProblems: number;
+  results: Record<string, ProblemResult>;
+}
+
+export async function updateSolve(
+  supabase: SupabaseClient,
+  params: UpdateSolveParams
+): Promise<void> {
+  const { solveId, userId, score, maxScore, correctCount, totalProblems, results } = params;
+
+  const { error } = await supabase
+    .from('solves')
+    .update({
+      score,
+      max_score: maxScore,
+      correct_count: correctCount,
+      total_problems: totalProblems,
+      results
+    })
+    .eq('id', solveId)
+    .eq('user_id', userId); // Ensure user owns this solve
+
+  if (error) {
+    console.error('Error updating solve:', error);
+    throw new Error('Failed to update solve record');
+  }
+}
+
 // Get all solves for a specific worksheet by a user
 export async function getSolvesByWorksheet(
   supabase: SupabaseClient,
@@ -174,7 +209,7 @@ export async function getSolvedWorksheets(
   supabase: SupabaseClient,
   userId: string,
   options?: { limit?: number; offset?: number }
-): Promise<{ worksheets: { id: string; title: string; author: string; solve_count: number; last_solve_at: string }[]; total: number }> {
+): Promise<{ worksheets: { id: string; title: string; author: string; solve_count: number; last_solve_at: string; thumbnail_path?: string | null }[]; total: number }> {
   const { limit = 20, offset = 0 } = options || {};
 
   // Get distinct worksheet IDs with solve counts
@@ -183,7 +218,7 @@ export async function getSolvedWorksheets(
     .select(`
       worksheet_id,
       created_at,
-      worksheets!inner(id, title, author)
+      worksheets!inner(id, title, author, thumbnail_path)
     `, { count: 'exact' })
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -194,7 +229,7 @@ export async function getSolvedWorksheets(
   }
 
   // Group by worksheet and count solves
-  const worksheetMap = new Map<string, { id: string; title: string; author: string; solve_count: number; last_solve_at: string }>();
+  const worksheetMap = new Map<string, { id: string; title: string; author: string; solve_count: number; last_solve_at: string; thumbnail_path?: string | null }>();
 
   for (const solve of data || []) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -209,7 +244,8 @@ export async function getSolvedWorksheets(
         title: ws.title,
         author: ws.author,
         solve_count: 1,
-        last_solve_at: solve.created_at
+        last_solve_at: solve.created_at,
+        thumbnail_path: ws.thumbnail_path
       });
     } else {
       const existing = worksheetMap.get(ws.id)!;
