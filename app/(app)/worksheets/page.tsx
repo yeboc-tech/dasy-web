@@ -51,7 +51,7 @@ export default function WorksheetsPage() {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, author, created_at, selected_problem_ids')
+        .select('id, title, author, created_at, selected_problem_ids, thumbnail_path')
         .eq('is_public', true);
 
       // Add search filter if search term exists

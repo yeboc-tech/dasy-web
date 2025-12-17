@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Plus, X, Shuffle } from 'lucide-react';
+import { GripVertical, Plus, X, Upload, Trash2 } from 'lucide-react';
+import Image from 'next/image';
+import { getCdnUrl } from '@/lib/utils/s3Utils';
 import {
   Select,
   SelectContent,
@@ -143,6 +145,10 @@ interface WorksheetMetadataPanelProps {
     author?: string;
   };
   readOnly?: boolean;
+  // Thumbnail props (path stored in DB, construct full URL with getCdnUrl)
+  thumbnailPath: string | null;
+  thumbnailFile: File | null;
+  onThumbnailChange: (file: File | null) => void;
 }
 
 export default function WorksheetMetadataPanel({
@@ -155,7 +161,54 @@ export default function WorksheetMetadataPanel({
   isTaggedMode,
   errors,
   readOnly = false,
+  thumbnailPath,
+  thumbnailFile,
+  onThumbnailChange,
 }: WorksheetMetadataPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
+  // Generate preview when file changes
+  useEffect(() => {
+    if (thumbnailFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(thumbnailFile);
+    } else {
+      setThumbnailPreview(null);
+    }
+  }, [thumbnailFile]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('PNG 또는 JPG 파일만 업로드할 수 있습니다.');
+        return;
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('파일 크기는 10MB 이하여야 합니다.');
+        return;
+      }
+      onThumbnailChange(file);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveThumbnail = () => {
+    onThumbnailChange(null);
+  };
+
+  // Display URL: preview (local file) > full URL from path (saved)
+  const displayUrl = thumbnailPreview || (thumbnailPath ? getCdnUrl(thumbnailPath) : null);
   // Internal IDs for drag-and-drop stability (derived from sortRules prop)
   const [internalIds, setInternalIds] = useState<Map<number, string>>(new Map());
 
@@ -318,6 +371,86 @@ export default function WorksheetMetadataPanel({
               />
               {errors?.author && (
                 <p className="text-red-500 text-sm mt-1">{errors.author}</p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* 표지 */}
+          <AccordionItem value="thumbnail" className="border-none">
+            <AccordionTrigger className="hover:no-underline" tabIndex={-1}>
+              <span>표지</span>
+            </AccordionTrigger>
+            <AccordionContent>
+              {readOnly ? (
+                displayUrl ? (
+                  <div className="relative w-full aspect-[1/1.414] bg-gray-50 rounded-md overflow-hidden">
+                    <Image
+                      src={displayUrl}
+                      alt="표지 이미지"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">표지 이미지 없음</div>
+                )
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+
+                  {displayUrl ? (
+                    /* Preview with remove button */
+                    <div className="relative">
+                      <div className="relative w-full aspect-[1/1.414] bg-gray-50 rounded-md overflow-hidden border border-gray-200">
+                        <Image
+                          src={displayUrl}
+                          alt="표지 미리보기"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1"
+                        >
+                          <Upload className="w-4 h-4 mr-1" />
+                          변경
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveThumbnail}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {thumbnailFile && (
+                        <p className="text-xs text-amber-600 mt-1">저장 시 업로드됩니다</p>
+                      )}
+                    </div>
+                  ) : (
+                    /* Upload button */
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-8 h-8" />
+                      <span className="text-sm">이미지 업로드</span>
+                      <span className="text-xs text-gray-400">PNG, JPG (최대 10MB)</span>
+                    </button>
+                  )}
+                </div>
               )}
             </AccordionContent>
           </AccordionItem>

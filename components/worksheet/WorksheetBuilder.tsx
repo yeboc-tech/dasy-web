@@ -103,6 +103,10 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
   const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
 
+  // Thumbnail states (store path, not full URL)
+  const [thumbnailPath, setThumbnailPath] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+
   // Solve mode states
   const [solveAnswers, setSolveAnswers] = useState<{[problemNumber: number]: number}>({});
   const [solveGradingResults, setSolveGradingResults] = useState<{[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} | null>(null);
@@ -148,8 +152,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     callback();
   };
 
-  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리)
-  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리'];
+  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 세계지리, 한국지리)
+  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '세계지리', '한국지리'];
   const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
 
   // Get current tagged subject (if in tagged mode)
@@ -263,7 +267,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       // Fetch the worksheet to check if it's economy or regular
       const { data: worksheetMeta, error: metaError } = await supabase
         .from('worksheets')
-        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by')
+        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path')
         .eq('id', worksheetId)
         .single();
 
@@ -283,6 +287,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
       setWorksheetAuthor(worksheetMeta.author || '');
       setSavedTitle(worksheetMeta.title || null);
       setWorksheetCreatedAt(worksheetMeta.created_at);
+      setThumbnailPath(worksheetMeta.thumbnail_path || null);
 
       // Detect if it's an economy worksheet by checking problem ID format
       const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
@@ -584,6 +589,32 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     setWorksheetProblems(prev => prev.filter(p => p.id !== problemId));
   };
 
+  // Helper function to upload thumbnail (returns path, not full URL)
+  const uploadThumbnail = async (wsId: string): Promise<string | null> => {
+    if (!thumbnailFile) return thumbnailPath; // Return existing path if no new file
+
+    try {
+      const formData = new FormData();
+      formData.append('file', thumbnailFile);
+
+      const response = await fetch(`/api/worksheets/${wsId}/thumbnail`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error('Failed to upload thumbnail');
+        return thumbnailPath; // Keep existing path on failure
+      }
+
+      const { thumbnailPath: newPath } = await response.json();
+      return newPath;
+    } catch (error) {
+      console.error('Error uploading thumbnail:', error);
+      return thumbnailPath; // Keep existing path on error
+    }
+  };
+
   const handleSaveWorksheet = async () => {
     if (worksheetProblems.length === 0) return;
 
@@ -649,6 +680,20 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           });
         }
 
+        // Upload thumbnail if there's a new file
+        if (thumbnailFile) {
+          const newThumbnailPath = await uploadThumbnail(worksheetId);
+          if (newThumbnailPath) {
+            // Update thumbnail_path in database
+            await supabase
+              .from('worksheets')
+              .update({ thumbnail_path: newThumbnailPath })
+              .eq('id', worksheetId);
+            setThumbnailPath(newThumbnailPath);
+            setThumbnailFile(null);
+          }
+        }
+
         // Update saved title and show success message
         setSavedTitle(worksheetTitle);
         const { toast } = await import('sonner');
@@ -705,6 +750,18 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           });
 
           newWorksheetId = id;
+        }
+
+        // Upload thumbnail if there's a new file
+        if (thumbnailFile) {
+          const newThumbnailPath = await uploadThumbnail(newWorksheetId);
+          if (newThumbnailPath) {
+            // Update thumbnail_path in database
+            await supabase
+              .from('worksheets')
+              .update({ thumbnail_path: newThumbnailPath })
+              .eq('id', newWorksheetId);
+          }
         }
 
         // Navigate to the new worksheet page
@@ -897,17 +954,111 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
   };
 
   // Solve mode handlers
-  const handleEnterSolveMode = () => {
+  const handleEnterSolveMode = async () => {
     if (worksheetProblems.length === 0) return;
 
-    // Reset solve state (but keep the pre-generated PDF)
+    // Reset solve state
     setSolveAnswers({});
     setSolveGradingResults(null);
     setSolveScore(null);
     setSolveResultDialogOpen(false);
+
+    // If solve PDF already exists, just switch to solve view
+    if (solvePdfUrl) {
+      setViewMode('solve');
+      return;
+    }
+
+    // Generate solve PDF (problems only, no answers)
+    setSolvePdfLoading(true);
+    setPdfProgress({ stage: '준비 중...', percent: 0 });
+    setPdfElapsedTime(0);
     setViewMode('solve');
 
-    // solvePdfUrl is already generated in handleGeneratePdf, no need to regenerate
+    if (pdfElapsedTimerRef.current) {
+      clearInterval(pdfElapsedTimerRef.current);
+    }
+    pdfElapsedTimerRef.current = setInterval(() => {
+      setPdfElapsedTime(prev => prev + 1);
+    }, 1000);
+
+    try {
+      setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
+
+      const problemImageUrls = worksheetProblems.map(p => {
+        const editedUrl = editedContentsMap?.get(p.id);
+        return editedUrl || getProblemImageUrl(p.id);
+      });
+
+      // Load problem images
+      const problemImages: ImageWithDimensions[] = [];
+      for (let i = 0; i < problemImageUrls.length; i++) {
+        const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
+        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+
+        try {
+          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
+          problemImages.push(imgData);
+        } catch (err) {
+          console.error(`Failed to load problem image ${i}:`, err);
+          problemImages.push({ base64: '', width: 0, height: 0 });
+        }
+      }
+
+      const base64ProblemImages = problemImages.map(img => img.base64);
+      const problemHeights = problemImages.map(img => img.height);
+
+      // Detect subject
+      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
+      const subject = detectedSubject || '통합사회';
+
+      // Prepare problem metadata for PDF badges
+      const problemMetadataForPdf = worksheetProblems.map(problem => ({
+        tags: problem.tags,
+        difficulty: problem.difficulty,
+        problem_type: problem.problem_type,
+        related_subjects: problem.related_subjects,
+        correct_rate: problem.correct_rate,
+        exam_year: problem.exam_year,
+      }));
+
+      setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+
+      // Generate solve PDF (problems only, no answers)
+      const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
+        problemImageUrls,
+        base64ProblemImages,
+        [], // No answer images for solve mode
+        [],
+        worksheetTitle || '학습지명',
+        worksheetAuthor || '출제자',
+        worksheetCreatedAt,
+        subject,
+        problemMetadataForPdf,
+        problemHeights,
+        []
+      );
+
+      setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+
+      const solveBlob = await generatePdfWithWorker(solveDocDefinition, (progress) => {
+        if (progress.stage === 'complete') {
+          setPdfProgress({ stage: '완료!', percent: 100 });
+        }
+      });
+      const solveUrl = URL.createObjectURL(solveBlob);
+      setSolvePdfUrl(solveUrl);
+      setPdfProgress({ stage: '완료!', percent: 100 });
+    } catch (error) {
+      console.error('Error generating solve PDF:', error);
+      toast.error('PDF 생성 중 오류가 발생했습니다.');
+    } finally {
+      setSolvePdfLoading(false);
+      if (pdfElapsedTimerRef.current) {
+        clearInterval(pdfElapsedTimerRef.current);
+        pdfElapsedTimerRef.current = null;
+      }
+    }
   };
 
   const handleSolveAnswerChange = (problemNumber: number, answer: number) => {
@@ -1019,7 +1170,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
     setSolveGradingResults(null);
     setSolveScore(null);
     setSolveResultDialogOpen(false);
-    setViewMode('pdfGeneration');
+    setViewMode('worksheet');
   };
 
   const handleResetSolve = () => {
@@ -1258,6 +1409,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             >
               PDF 생성
             </CustomButton>
+            {worksheetId && isTaggedMode && (
+              <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => requireAuth(handleEnterSolveMode)}
+                disabled={worksheetProblems.length === 0}
+              >
+                풀기
+              </CustomButton>
+            )}
             <CustomButton
               variant="primary"
               size="sm"
@@ -1296,6 +1457,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
               isTaggedMode={isTaggedMode}
               errors={validationErrors}
               readOnly={!isOwner}
+              thumbnailPath={thumbnailPath}
+              thumbnailFile={thumbnailFile}
+              onThumbnailChange={setThumbnailFile}
             />
           </ResizablePanel>
 
@@ -1357,17 +1521,6 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {/* 오답만 checkbox - always show when user is logged in */}
-            {user && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={showOnlyWrongProblems}
-                  onCheckedChange={(checked) => setShowOnlyWrongProblems(checked === true)}
-                  className="data-[state=checked]:bg-[#FF00A1] data-[state=checked]:border-[#FF00A1] data-[state=checked]:text-white"
-                />
-                <span className="text-sm text-gray-600">오답만</span>
-              </label>
-            )}
             <CustomButton
               variant="primary"
               size="sm"
@@ -1614,10 +1767,24 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
           {/* PDF Viewer - Right Side */}
           <div className="flex-1 overflow-hidden">
             {solvePdfLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center justify-center h-full bg-[var(--gray-50)]">
+                <div className="flex flex-col items-center gap-4">
                   <Loader className="animate-spin w-4 h-4" />
-                  <span className="text-xs text-gray-500">PDF 생성 중...</span>
+                  {pdfProgress.stage && (
+                    <div className="w-64 text-center">
+                      <div className="text-xs text-gray-500 mb-2">{pdfProgress.stage}</div>
+                      <div className="w-full h-1 bg-gray-200 rounded">
+                        <div
+                          className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
+                          style={{ width: `${pdfProgress.percent}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>{pdfProgress.percent}%</span>
+                        <span>{pdfElapsedTime}초</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : solvePdfUrl ? (
@@ -1807,17 +1974,6 @@ export default function WorksheetBuilder({ worksheetId, autoPdf }: WorksheetBuil
                   <span className="text-xs text-gray-600">
                     {addProblemsPool.length}문제
                   </span>
-                  {/* 오답만 checkbox for mobile */}
-                  {user && (
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <Checkbox
-                        checked={showOnlyWrongProblems}
-                        onCheckedChange={(checked) => setShowOnlyWrongProblems(checked === true)}
-                        className="w-3.5 h-3.5 data-[state=checked]:bg-[#FF00A1] data-[state=checked]:border-[#FF00A1] data-[state=checked]:text-white"
-                      />
-                      <span className="text-xs text-gray-600">오답만</span>
-                    </label>
-                  )}
                 </div>
                 <Button
                   disabled={addProblemsPool.length === 0}

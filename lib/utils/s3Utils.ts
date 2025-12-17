@@ -1,12 +1,24 @@
 /**
+ * CDN base URL
+ */
+const CDN_BASE = 'https://cdn.y3c.kr';
+
+/**
  * CDN base URL for tagged subject problems
  */
-const CDN_BASE_URL = 'https://cdn.y3c.kr/tongkidari/contents';
+const CDN_BASE_URL = `${CDN_BASE}/tongkidari/contents`;
+
+/**
+ * Construct full CDN URL from a path
+ */
+export function getCdnUrl(path: string): string {
+  return `${CDN_BASE}/${path}`;
+}
 
 /**
  * Tagged subject prefixes that use CDN storage
  */
-const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계사_'];
+const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계사_', '세계지리_', '한국지리_'];
 
 /**
  * Check if a problem ID is from a tagged subject

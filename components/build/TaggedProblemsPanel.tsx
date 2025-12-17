@@ -151,12 +151,27 @@ export default function TaggedProblemsPanel({
             }
             const editedUrl = editedContentsMap?.get(problem.id);
             const hasFailed = failedUrls.has(problem.id);
+
+            // Show placeholder for missing problems (not yet in DB)
+            if (problem.isMissing) {
+              return (
+                <div className="flex items-center justify-center p-8 bg-amber-50 border-2 border-dashed border-amber-300 rounded-lg">
+                  <div className="text-center text-amber-700">
+                    <div className="text-sm font-medium mb-1">문제 준비 중</div>
+                    <div className="text-xs">이 문제는 아직 데이터베이스에 없습니다</div>
+                    <div className="text-xs text-amber-500 mt-1 font-mono">{problem.id}</div>
+                  </div>
+                </div>
+              );
+            }
+
             if (hasFailed) {
               return (
                 <div className="flex items-center justify-center p-8 bg-red-50 border-2 border-dashed border-red-300 rounded-lg">
                   <div className="text-center text-red-600">
                     <div className="text-sm font-medium mb-1">이미지 로드 실패</div>
-                    <div className="text-xs">ID: {problem.id}</div>
+                    <div className="text-xs">이미지를 불러올 수 없습니다</div>
+                    <div className="text-xs text-red-400 mt-1 font-mono">{problem.id}</div>
                   </div>
                 </div>
               );
@@ -165,7 +180,7 @@ export default function TaggedProblemsPanel({
             return (
               <Image
                 src={imageUrl}
-                alt={problem.problem_filename}
+                alt={problem.problem_filename || problem.id}
                 width={800}
                 height={600}
                 className="w-full h-auto object-contain"

@@ -2,6 +2,8 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Globe, Lock, MoreHorizontal, Trash2, FileSearch, ClipboardList } from "lucide-react"
+import Image from "next/image"
+import { getCdnUrl } from "@/lib/utils/s3Utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +20,42 @@ export interface WorksheetItem {
   selected_problem_ids: string[]
   is_public?: boolean
   solve_count?: number // For 풀이 column
+  thumbnail_path?: string | null
 }
+
+// Thumbnail column dimensions (A4 ratio: 1:1.414)
+const THUMBNAIL_WIDTH = 48
+const THUMBNAIL_HEIGHT = Math.round(THUMBNAIL_WIDTH * 1.414) // ~68px
 
 // Columns for 공유 학습지 (public worksheets)
 export const createPublicWorksheetsColumns = (
   onPdfGenerate: (id: string) => void
 ): ColumnDef<WorksheetItem>[] => [
+  {
+    id: "thumbnail",
+    header: "",
+    meta: { width: `${THUMBNAIL_WIDTH + 16}px`, minWidth: `${THUMBNAIL_WIDTH + 16}px` },
+    cell: ({ row }) => {
+      const thumbnailPath = row.original.thumbnail_path
+      if (!thumbnailPath) {
+        return <div style={{ width: THUMBNAIL_WIDTH }} />
+      }
+      return (
+        <div
+          className="relative overflow-hidden rounded bg-gray-100 flex-shrink-0 border border-gray-200"
+          style={{ width: THUMBNAIL_WIDTH, height: THUMBNAIL_HEIGHT }}
+        >
+          <Image
+            src={getCdnUrl(thumbnailPath)}
+            alt="썸네일"
+            fill
+            className="object-cover"
+            sizes={`${THUMBNAIL_WIDTH}px`}
+          />
+        </div>
+      )
+    },
+  },
   {
     accessorKey: "title",
     header: "제목",
@@ -84,6 +116,32 @@ export const createMyWorksheetsColumns = (
   onPdfGenerate: (id: string) => void,
   onSolvesClick?: (id: string, title: string) => void
 ): ColumnDef<WorksheetItem>[] => [
+  {
+    id: "thumbnail",
+    header: "",
+    meta: { width: `${THUMBNAIL_WIDTH + 16}px`, minWidth: `${THUMBNAIL_WIDTH + 16}px` },
+    cell: ({ row }) => {
+      const thumbnailPath = row.original.thumbnail_path
+      if (!thumbnailPath) {
+        // Placeholder for alignment (same width, minimal height)
+        return <div style={{ width: THUMBNAIL_WIDTH }} />
+      }
+      return (
+        <div
+          className="relative overflow-hidden rounded bg-gray-100 flex-shrink-0 border border-gray-200"
+          style={{ width: THUMBNAIL_WIDTH, height: THUMBNAIL_HEIGHT }}
+        >
+          <Image
+            src={getCdnUrl(thumbnailPath)}
+            alt="썸네일"
+            fill
+            className="object-cover"
+            sizes={`${THUMBNAIL_WIDTH}px`}
+          />
+        </div>
+      )
+    },
+  },
   {
     accessorKey: "title",
     header: "제목",

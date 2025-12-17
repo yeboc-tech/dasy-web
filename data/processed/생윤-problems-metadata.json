@@ -1,0 +1,3381 @@
+{
+  "problems": [
+    {
+      "filename": "생윤1.png",
+      "problem_filename": "생윤1.png",
+      "answer_filename": "생윤1-a.png",
+      "chapter_id": "decba78b-c5b4-4fbb-a2fe-1a07641a35ae",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2019년 3월 학평 14번",
+      "tags": [
+        "사회 정의의 분류"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:00:00.000Z",
+      "updated_at": "2024-08-20T10:00:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 299,
+        "image_index": 1,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "정의의 의미와 실질적 기준",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤1.png",
+        "original_answer_filename": "생윤1-a.png"
+      }
+    },
+    {
+      "filename": "생윤2.png",
+      "problem_filename": "생윤2.png",
+      "answer_filename": "생윤2-a.png",
+      "chapter_id": "decba78b-c5b4-4fbb-a2fe-1a07641a35ae",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 17,
+      "source": "2016년 7월 학평 13번",
+      "tags": [
+        "사회 정의의 분류"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:01:00.000Z",
+      "updated_at": "2024-08-20T10:01:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 300,
+        "image_index": 2,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "정의의 의미와 실질적 기준",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤2.png",
+        "original_answer_filename": "생윤2-a.png"
+      }
+    },
+    {
+      "filename": "생윤3.png",
+      "problem_filename": "생윤3.png",
+      "answer_filename": "생윤3-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2021년 10월 학평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:02:00.000Z",
+      "updated_at": "2024-08-20T10:02:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 301,
+        "image_index": 3,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤3.png",
+        "original_answer_filename": "생윤3-a.png"
+      }
+    },
+    {
+      "filename": "생윤4.png",
+      "problem_filename": "생윤4.png",
+      "answer_filename": "생윤4-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2024년 4월 학평 9번 ",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:03:00.000Z",
+      "updated_at": "2024-08-20T10:03:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 302,
+        "image_index": 4,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤4.png",
+        "original_answer_filename": "생윤4-a.png"
+      }
+    },
+    {
+      "filename": "생윤5.png",
+      "problem_filename": "생윤5.png",
+      "answer_filename": "생윤5-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2020년 3월 학평 5번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:04:00.000Z",
+      "updated_at": "2024-08-20T10:04:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 303,
+        "image_index": 5,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤5.png",
+        "original_answer_filename": "생윤5-a.png"
+      }
+    },
+    {
+      "filename": "생윤6.png",
+      "problem_filename": "생윤6.png",
+      "answer_filename": "생윤6-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 47,
+      "source": "2021학년도 9월 모평 18번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:05:00.000Z",
+      "updated_at": "2024-08-20T10:05:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 304,
+        "image_index": 6,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤6.png",
+        "original_answer_filename": "생윤6-a.png"
+      }
+    },
+    {
+      "filename": "생윤7(사이즈538).png",
+      "problem_filename": "생윤7(사이즈538).png",
+      "answer_filename": "생윤7-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 43,
+      "source": "2020년 10월 학평 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:06:00.000Z",
+      "updated_at": "2024-08-20T10:06:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 305,
+        "image_index": 7,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤7(사이즈538).png",
+        "original_answer_filename": "생윤7-a.png"
+      }
+    },
+    {
+      "filename": "생윤8.png",
+      "problem_filename": "생윤8.png",
+      "answer_filename": "생윤8-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2023학년도 6월 모평 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:07:00.000Z",
+      "updated_at": "2024-08-20T10:07:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 306,
+        "image_index": 8,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤8.png",
+        "original_answer_filename": "생윤8-a.png"
+      }
+    },
+    {
+      "filename": "생윤9.png",
+      "problem_filename": "생윤9.png",
+      "answer_filename": "생윤9-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 20,
+      "source": "2019년 4월 학평 19번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:08:00.000Z",
+      "updated_at": "2024-08-20T10:08:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 307,
+        "image_index": 9,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤9.png",
+        "original_answer_filename": "생윤9-a.png"
+      }
+    },
+    {
+      "filename": "생윤10.png",
+      "problem_filename": "생윤10.png",
+      "answer_filename": "생윤10-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 24,
+      "source": "2020학년도 9월 모평 17번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:09:00.000Z",
+      "updated_at": "2024-08-20T10:09:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 308,
+        "image_index": 10,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤10.png",
+        "original_answer_filename": "생윤10-a.png"
+      }
+    },
+    {
+      "filename": "생윤11.png",
+      "problem_filename": "생윤11.png",
+      "answer_filename": "생윤11-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 83,
+      "source": "(윤사) 2019년 10월 학평 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:10:00.000Z",
+      "updated_at": "2024-08-20T10:10:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 309,
+        "image_index": 11,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤11.png",
+        "original_answer_filename": "생윤11-a.png"
+      }
+    },
+    {
+      "filename": "생윤12.png",
+      "problem_filename": "생윤12.png",
+      "answer_filename": "생윤12-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2021년 7월 학평 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:11:00.000Z",
+      "updated_at": "2024-08-20T10:11:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 310,
+        "image_index": 12,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤12.png",
+        "original_answer_filename": "생윤12-a.png"
+      }
+    },
+    {
+      "filename": "생윤13.png",
+      "problem_filename": "생윤13.png",
+      "answer_filename": "생윤13-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 32,
+      "source": "2023학년도 수능 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:12:00.000Z",
+      "updated_at": "2024-08-20T10:12:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 311,
+        "image_index": 13,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤13.png",
+        "original_answer_filename": "생윤13-a.png"
+      }
+    },
+    {
+      "filename": "생윤14.png",
+      "problem_filename": "생윤14.png",
+      "answer_filename": "생윤14-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 42,
+      "source": "2024학년도 6월 모평 8번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:13:00.000Z",
+      "updated_at": "2024-08-20T10:13:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 312,
+        "image_index": 14,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤14.png",
+        "original_answer_filename": "생윤14-a.png"
+      }
+    },
+    {
+      "filename": "생윤15.png",
+      "problem_filename": "생윤15.png",
+      "answer_filename": "생윤15-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2021년 4월 학평 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:14:00.000Z",
+      "updated_at": "2024-08-20T10:14:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 313,
+        "image_index": 15,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤15.png",
+        "original_answer_filename": "생윤15-a.png"
+      }
+    },
+    {
+      "filename": "생윤16.png",
+      "problem_filename": "생윤16.png",
+      "answer_filename": "생윤16-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 57,
+      "source": "2022년 4월 학평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:15:00.000Z",
+      "updated_at": "2024-08-20T10:15:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 314,
+        "image_index": 16,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤16.png",
+        "original_answer_filename": "생윤16-a.png"
+      }
+    },
+    {
+      "filename": "생윤17.png",
+      "problem_filename": "생윤17.png",
+      "answer_filename": "생윤17-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2022학년도 9월 모평 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:16:00.000Z",
+      "updated_at": "2024-08-20T10:16:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 315,
+        "image_index": 17,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤17.png",
+        "original_answer_filename": "생윤17-a.png"
+      }
+    },
+    {
+      "filename": "생윤18.png",
+      "problem_filename": "생윤18.png",
+      "answer_filename": "생윤18-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2022학년도 6월 모평 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:17:00.000Z",
+      "updated_at": "2024-08-20T10:17:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 316,
+        "image_index": 18,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤18.png",
+        "original_answer_filename": "생윤18-a.png"
+      }
+    },
+    {
+      "filename": "생윤19.png",
+      "problem_filename": "생윤19.png",
+      "answer_filename": "생윤19-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2021학년도 수능 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:18:00.000Z",
+      "updated_at": "2024-08-20T10:18:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 317,
+        "image_index": 19,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤19.png",
+        "original_answer_filename": "생윤19-a.png"
+      }
+    },
+    {
+      "filename": "생윤20.png",
+      "problem_filename": "생윤20.png",
+      "answer_filename": "생윤20-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 50,
+      "source": "2021년 3월 학평2번 ",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:19:00.000Z",
+      "updated_at": "2024-08-20T10:19:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 318,
+        "image_index": 20,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤20.png",
+        "original_answer_filename": "생윤20-a.png"
+      }
+    },
+    {
+      "filename": "생윤21.png",
+      "problem_filename": "생윤21.png",
+      "answer_filename": "생윤21-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 29,
+      "source": "2022학년도 수능 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:20:00.000Z",
+      "updated_at": "2024-08-20T10:20:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 319,
+        "image_index": 21,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤21.png",
+        "original_answer_filename": "생윤21-a.png"
+      }
+    },
+    {
+      "filename": "생윤22.png",
+      "problem_filename": "생윤22.png",
+      "answer_filename": "생윤22-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 52,
+      "source": "2019년 10월 학평 4번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:21:00.000Z",
+      "updated_at": "2024-08-20T10:21:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 320,
+        "image_index": 22,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤22.png",
+        "original_answer_filename": "생윤22-a.png"
+      }
+    },
+    {
+      "filename": "생윤23.png",
+      "problem_filename": "생윤23.png",
+      "answer_filename": "생윤23-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 34,
+      "source": "2022년 3월 학평 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:22:00.000Z",
+      "updated_at": "2024-08-20T10:22:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 321,
+        "image_index": 23,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤23.png",
+        "original_answer_filename": "생윤23-a.png"
+      }
+    },
+    {
+      "filename": "생윤24.png",
+      "problem_filename": "생윤24.png",
+      "answer_filename": "생윤24-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2022년 7월 학평 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:23:00.000Z",
+      "updated_at": "2024-08-20T10:23:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 322,
+        "image_index": 24,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤24.png",
+        "original_answer_filename": "생윤24-a.png"
+      }
+    },
+    {
+      "filename": "생윤25.png",
+      "problem_filename": "생윤25.png",
+      "answer_filename": "생윤25-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 60,
+      "source": "2024년 7월 학평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:24:00.000Z",
+      "updated_at": "2024-08-20T10:24:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 323,
+        "image_index": 25,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤25.png",
+        "original_answer_filename": "생윤25-a.png"
+      }
+    },
+    {
+      "filename": "생윤26.png",
+      "problem_filename": "생윤26.png",
+      "answer_filename": "생윤26-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 82,
+      "source": "(윤사) 2020학년도 수능 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:25:00.000Z",
+      "updated_at": "2024-08-20T10:25:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 324,
+        "image_index": 26,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤26.png",
+        "original_answer_filename": "생윤26-a.png"
+      }
+    },
+    {
+      "filename": "생윤27.png",
+      "problem_filename": "생윤27.png",
+      "answer_filename": "생윤27-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2023년 3월 학평 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:26:00.000Z",
+      "updated_at": "2024-08-20T10:26:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 325,
+        "image_index": 27,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤27.png",
+        "original_answer_filename": "생윤27-a.png"
+      }
+    },
+    {
+      "filename": "생윤28.png",
+      "problem_filename": "생윤28.png",
+      "answer_filename": "생윤28-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 12,
+      "source": "2025학년도 6월 모평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:27:00.000Z",
+      "updated_at": "2024-08-20T10:27:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 326,
+        "image_index": 28,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤28.png",
+        "original_answer_filename": "생윤28-a.png"
+      }
+    },
+    {
+      "filename": "생윤29.png",
+      "problem_filename": "생윤29.png",
+      "answer_filename": "생윤29-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 21,
+      "source": "2024학년도 9월 모평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:28:00.000Z",
+      "updated_at": "2024-08-20T10:28:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 327,
+        "image_index": 29,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤29.png",
+        "original_answer_filename": "생윤29-a.png"
+      }
+    },
+    {
+      "filename": "생윤30.png",
+      "problem_filename": "생윤30.png",
+      "answer_filename": "생윤30-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2023년 4월 학평 12번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:29:00.000Z",
+      "updated_at": "2024-08-20T10:29:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 328,
+        "image_index": 30,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤30.png",
+        "original_answer_filename": "생윤30-a.png"
+      }
+    },
+    {
+      "filename": "생윤31.png",
+      "problem_filename": "생윤31.png",
+      "answer_filename": "생윤31-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 31,
+      "source": "2020학년도 수능 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:30:00.000Z",
+      "updated_at": "2024-08-20T10:30:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 329,
+        "image_index": 31,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤31.png",
+        "original_answer_filename": "생윤31-a.png"
+      }
+    },
+    {
+      "filename": "생윤32.png",
+      "problem_filename": "생윤32.png",
+      "answer_filename": "생윤32-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 50,
+      "source": "2023년 10월 학평 5번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:31:00.000Z",
+      "updated_at": "2024-08-20T10:31:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 330,
+        "image_index": 32,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤32.png",
+        "original_answer_filename": "생윤32-a.png"
+      }
+    },
+    {
+      "filename": "생윤33(문제중보기깨짐).png",
+      "problem_filename": "생윤33(문제중보기깨짐).png",
+      "answer_filename": "생윤33-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 33,
+      "source": "2020년 7월 학평 10번",
+      "tags": [
+        "분배적 정의관",
+        "사회 정의의 분류"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:32:00.000Z",
+      "updated_at": "2024-08-20T10:32:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 331,
+        "image_index": 33,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤33(문제중보기깨짐).png",
+        "original_answer_filename": "생윤33-a.png"
+      }
+    },
+    {
+      "filename": "생윤34.png",
+      "problem_filename": "생윤34.png",
+      "answer_filename": "생윤34-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 31,
+      "source": "2024년 3월 학평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:33:00.000Z",
+      "updated_at": "2024-08-20T10:33:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 332,
+        "image_index": 34,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤34.png",
+        "original_answer_filename": "생윤34-a.png"
+      }
+    },
+    {
+      "filename": "생윤35.png",
+      "problem_filename": "생윤35.png",
+      "answer_filename": "생윤35-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2019년 3월 학평 9번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:34:00.000Z",
+      "updated_at": "2024-08-20T10:34:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 333,
+        "image_index": 35,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤35.png",
+        "original_answer_filename": "생윤35-a.png"
+      }
+    },
+    {
+      "filename": "생윤36.png",
+      "problem_filename": "생윤36.png",
+      "answer_filename": "생윤36-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 81,
+      "source": "2017학년도 6월 모평 11번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:35:00.000Z",
+      "updated_at": "2024-08-20T10:35:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 334,
+        "image_index": 36,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤36.png",
+        "original_answer_filename": "생윤36-a.png"
+      }
+    },
+    {
+      "filename": "생윤37.png",
+      "problem_filename": "생윤37.png",
+      "answer_filename": "생윤37-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 43,
+      "source": "2019년 7월 학평 7번",
+      "tags": [
+        "분배적 정의관",
+        "사회 정의의 분류"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:36:00.000Z",
+      "updated_at": "2024-08-20T10:36:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 335,
+        "image_index": 37,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤37.png",
+        "original_answer_filename": "생윤37-a.png"
+      }
+    },
+    {
+      "filename": "생윤38.png",
+      "problem_filename": "생윤38.png",
+      "answer_filename": "생윤38-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 43,
+      "source": "2023학년도 9월 모평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:37:00.000Z",
+      "updated_at": "2024-08-20T10:37:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 336,
+        "image_index": 38,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤38.png",
+        "original_answer_filename": "생윤38-a.png"
+      }
+    },
+    {
+      "filename": "생윤39.png",
+      "problem_filename": "생윤39.png",
+      "answer_filename": "생윤39-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 43,
+      "source": "2023년 7월 학평 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:38:00.000Z",
+      "updated_at": "2024-08-20T10:38:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 337,
+        "image_index": 39,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤39.png",
+        "original_answer_filename": "생윤39-a.png"
+      }
+    },
+    {
+      "filename": "생윤40.png",
+      "problem_filename": "생윤40.png",
+      "answer_filename": "생윤40-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 77,
+      "source": "2022년 10월 학평 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:39:00.000Z",
+      "updated_at": "2024-08-20T10:39:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 338,
+        "image_index": 40,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤40.png",
+        "original_answer_filename": "생윤40-a.png"
+      }
+    },
+    {
+      "filename": "생윤41.png",
+      "problem_filename": "생윤41.png",
+      "answer_filename": "생윤41-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 87,
+      "source": "2019년 7월 학평11번 ",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:40:00.000Z",
+      "updated_at": "2024-08-20T10:40:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 339,
+        "image_index": 41,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤41.png",
+        "original_answer_filename": "생윤41-a.png"
+      }
+    },
+    {
+      "filename": "생윤42.png",
+      "problem_filename": "생윤42.png",
+      "answer_filename": "생윤42-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2020년 4월 학평 14번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:41:00.000Z",
+      "updated_at": "2024-08-20T10:41:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 340,
+        "image_index": 42,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤42.png",
+        "original_answer_filename": "생윤42-a.png"
+      }
+    },
+    {
+      "filename": "생윤43.png",
+      "problem_filename": "생윤43.png",
+      "answer_filename": "생윤43-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 91,
+      "source": "2018년 3월 학평 11번",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:42:00.000Z",
+      "updated_at": "2024-08-20T10:42:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 341,
+        "image_index": 43,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤43.png",
+        "original_answer_filename": "생윤43-a.png"
+      }
+    },
+    {
+      "filename": "생윤44.png",
+      "problem_filename": "생윤44.png",
+      "answer_filename": "생윤44-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 38,
+      "source": "2020학년도 6월 모평 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:43:00.000Z",
+      "updated_at": "2024-08-20T10:43:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 342,
+        "image_index": 44,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤44.png",
+        "original_answer_filename": "생윤44-a.png"
+      }
+    },
+    {
+      "filename": "생윤45.png",
+      "problem_filename": "생윤45.png",
+      "answer_filename": "생윤45-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 84,
+      "source": "2017년 10월 학평 14번",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:44:00.000Z",
+      "updated_at": "2024-08-20T10:44:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 343,
+        "image_index": 45,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤45.png",
+        "original_answer_filename": "생윤45-a.png"
+      }
+    },
+    {
+      "filename": "생윤46.png",
+      "problem_filename": "생윤46.png",
+      "answer_filename": "생윤46-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2021학년도 6월 모평 7번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:45:00.000Z",
+      "updated_at": "2024-08-20T10:45:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 344,
+        "image_index": 46,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤46.png",
+        "original_answer_filename": "생윤46-a.png"
+      }
+    },
+    {
+      "filename": "생윤47.png",
+      "problem_filename": "생윤47.png",
+      "answer_filename": "생윤47-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 92,
+      "source": "2018학년도 9월 모평 6번",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:46:00.000Z",
+      "updated_at": "2024-08-20T10:46:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 345,
+        "image_index": 47,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤47.png",
+        "original_answer_filename": "생윤47-a.png"
+      }
+    },
+    {
+      "filename": "생윤48.png",
+      "problem_filename": "생윤48.png",
+      "answer_filename": "생윤48-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2024학년도 수능 14번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:47:00.000Z",
+      "updated_at": "2024-08-20T10:47:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 346,
+        "image_index": 48,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤48.png",
+        "original_answer_filename": "생윤48-a.png"
+      }
+    },
+    {
+      "filename": "생윤49.png",
+      "problem_filename": "생윤49.png",
+      "answer_filename": "생윤49-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 78,
+      "source": "2018년 7월 학평 8번",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:48:00.000Z",
+      "updated_at": "2024-08-20T10:48:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 347,
+        "image_index": 49,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤49.png",
+        "original_answer_filename": "생윤49-a.png"
+      }
+    },
+    {
+      "filename": "생윤50.png",
+      "problem_filename": "생윤50.png",
+      "answer_filename": "생윤50-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 59,
+      "source": "2025학년도 9월 모평 10번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:49:00.000Z",
+      "updated_at": "2024-08-20T10:49:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 348,
+        "image_index": 50,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤50.png",
+        "original_answer_filename": "생윤50-a.png"
+      }
+    },
+    {
+      "filename": "생윤51.png",
+      "problem_filename": "생윤51.png",
+      "answer_filename": "생윤51-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2025학년도 9월 모평 7번",
+      "tags": [
+        "우대 정책에 대한 윤리적 쟁점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:50:00.000Z",
+      "updated_at": "2024-08-20T10:50:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 349,
+        "image_index": 51,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤51.png",
+        "original_answer_filename": "생윤51-a.png"
+      }
+    },
+    {
+      "filename": "생윤52.png",
+      "problem_filename": "생윤52.png",
+      "answer_filename": "생윤52-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2024년 10월 학평 12번 ",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:51:00.000Z",
+      "updated_at": "2024-08-20T10:51:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 350,
+        "image_index": 52,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤52.png",
+        "original_answer_filename": "생윤52-a.png"
+      }
+    },
+    {
+      "filename": "생윤53.png",
+      "problem_filename": "생윤53.png",
+      "answer_filename": "생윤53-a.png",
+      "chapter_id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 35,
+      "source": "2025학년도 수능 15번",
+      "tags": [
+        "분배적 정의관"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:52:00.000Z",
+      "updated_at": "2024-08-20T10:52:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 351,
+        "image_index": 53,
+        "volume": "통합사회2",
+        "chapter": "사회정의와 불평등",
+        "sub_chapter": "다양한 정의관의 특징과 적용",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤53.png",
+        "original_answer_filename": "생윤53-a.png"
+      }
+    },
+    {
+      "filename": "생윤54.png",
+      "problem_filename": "생윤54.png",
+      "answer_filename": "생윤54-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 42,
+      "source": "2024년 3월 학평 13번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:53:00.000Z",
+      "updated_at": "2024-08-20T10:53:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 352,
+        "image_index": 54,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤54.png",
+        "original_answer_filename": "생윤54-a.png"
+      }
+    },
+    {
+      "filename": "생윤55.png",
+      "problem_filename": "생윤55.png",
+      "answer_filename": "생윤55-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2020년 10월 학평 3번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:54:00.000Z",
+      "updated_at": "2024-08-20T10:54:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 353,
+        "image_index": 55,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤55.png",
+        "original_answer_filename": "생윤55-a.png"
+      }
+    },
+    {
+      "filename": "생윤56.png",
+      "problem_filename": "생윤56.png",
+      "answer_filename": "생윤56-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2023학년도 6월 모평 11번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:55:00.000Z",
+      "updated_at": "2024-08-20T10:55:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 354,
+        "image_index": 56,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤56.png",
+        "original_answer_filename": "생윤56-a.png"
+      }
+    },
+    {
+      "filename": "생윤57.png",
+      "problem_filename": "생윤57.png",
+      "answer_filename": "생윤57-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2020년 4월 학평 12번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:56:00.000Z",
+      "updated_at": "2024-08-20T10:56:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 355,
+        "image_index": 57,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤57.png",
+        "original_answer_filename": "생윤57-a.png"
+      }
+    },
+    {
+      "filename": "생윤58.png",
+      "problem_filename": "생윤58.png",
+      "answer_filename": "생윤58-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2022학년도 수능 15번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:57:00.000Z",
+      "updated_at": "2024-08-20T10:57:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 356,
+        "image_index": 58,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤58.png",
+        "original_answer_filename": "생윤58-a.png"
+      }
+    },
+    {
+      "filename": "생윤59.png",
+      "problem_filename": "생윤59.png",
+      "answer_filename": "생윤59-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 72,
+      "source": "2022년 4월 학평 13번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:58:00.000Z",
+      "updated_at": "2024-08-20T10:58:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 357,
+        "image_index": 59,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤59.png",
+        "original_answer_filename": "생윤59-a.png"
+      }
+    },
+    {
+      "filename": "생윤60.png",
+      "problem_filename": "생윤60.png",
+      "answer_filename": "생윤60-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 79,
+      "source": "2021년 4월 학평 18번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T10:59:00.000Z",
+      "updated_at": "2024-08-20T10:59:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 358,
+        "image_index": 60,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤60.png",
+        "original_answer_filename": "생윤60-a.png"
+      }
+    },
+    {
+      "filename": "생윤61.png",
+      "problem_filename": "생윤61.png",
+      "answer_filename": "생윤61-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 84,
+      "source": "2022학년도 9월 모평 7번",
+      "tags": [
+        "국가의 의무에 대한 동서양의 관점"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:00:00.000Z",
+      "updated_at": "2024-08-20T11:00:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 359,
+        "image_index": 61,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤61.png",
+        "original_answer_filename": "생윤61-a.png"
+      }
+    },
+    {
+      "filename": "생윤62.png",
+      "problem_filename": "생윤62.png",
+      "answer_filename": "생윤62-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 28,
+      "source": "2024학년도 6월 모평 6번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:01:00.000Z",
+      "updated_at": "2024-08-20T11:01:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 360,
+        "image_index": 62,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤62.png",
+        "original_answer_filename": "생윤62-a.png"
+      }
+    },
+    {
+      "filename": "생윤63.png",
+      "problem_filename": "생윤63.png",
+      "answer_filename": "생윤63-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 36,
+      "source": "2023년 3월 학평 10번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:02:00.000Z",
+      "updated_at": "2024-08-20T11:02:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 361,
+        "image_index": 63,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤63.png",
+        "original_answer_filename": "생윤63-a.png"
+      }
+    },
+    {
+      "filename": "생윤64.png",
+      "problem_filename": "생윤64.png",
+      "answer_filename": "생윤64-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 40,
+      "source": "2022년 10월 학평 12번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:03:00.000Z",
+      "updated_at": "2024-08-20T11:03:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 362,
+        "image_index": 64,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤64.png",
+        "original_answer_filename": "생윤64-a.png"
+      }
+    },
+    {
+      "filename": "생윤65.png",
+      "problem_filename": "생윤65.png",
+      "answer_filename": "생윤65-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 36,
+      "source": "2023학년도 수능 12번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:04:00.000Z",
+      "updated_at": "2024-08-20T11:04:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 363,
+        "image_index": 65,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤65.png",
+        "original_answer_filename": "생윤65-a.png"
+      }
+    },
+    {
+      "filename": "생윤66.png",
+      "problem_filename": "생윤66.png",
+      "answer_filename": "생윤66-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 37,
+      "source": "2024학년도 9월 모평 13번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:05:00.000Z",
+      "updated_at": "2024-08-20T11:05:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 364,
+        "image_index": 66,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤66.png",
+        "original_answer_filename": "생윤66-a.png"
+      }
+    },
+    {
+      "filename": "생윤67.png",
+      "problem_filename": "생윤67.png",
+      "answer_filename": "생윤67-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2023년 10월 학평 2번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:06:00.000Z",
+      "updated_at": "2024-08-20T11:06:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 365,
+        "image_index": 67,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤67.png",
+        "original_answer_filename": "생윤67-a.png"
+      }
+    },
+    {
+      "filename": "생윤68.png",
+      "problem_filename": "생윤68.png",
+      "answer_filename": "생윤68-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2024학년도 수능 7번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:07:00.000Z",
+      "updated_at": "2024-08-20T11:07:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 366,
+        "image_index": 68,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤68.png",
+        "original_answer_filename": "생윤68-a.png"
+      }
+    },
+    {
+      "filename": "생윤69.png",
+      "problem_filename": "생윤69.png",
+      "answer_filename": "생윤69-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2024년 4월 학평 15번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:08:00.000Z",
+      "updated_at": "2024-08-20T11:08:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 367,
+        "image_index": 69,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤69.png",
+        "original_answer_filename": "생윤69-a.png"
+      }
+    },
+    {
+      "filename": "생윤70.png",
+      "problem_filename": "생윤70.png",
+      "answer_filename": "생윤70-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2024년 7월 학평 18번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:09:00.000Z",
+      "updated_at": "2024-08-20T11:09:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 368,
+        "image_index": 70,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤70.png",
+        "original_answer_filename": "생윤70-a.png"
+      }
+    },
+    {
+      "filename": "생윤71.png",
+      "problem_filename": "생윤71.png",
+      "answer_filename": "생윤71-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 75,
+      "source": "2019년 10월 학평 16번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:10:00.000Z",
+      "updated_at": "2024-08-20T11:10:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 369,
+        "image_index": 71,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤71.png",
+        "original_answer_filename": "생윤71-a.png"
+      }
+    },
+    {
+      "filename": "생윤72.png",
+      "problem_filename": "생윤72.png",
+      "answer_filename": "생윤72-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2020년 3월 학평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:11:00.000Z",
+      "updated_at": "2024-08-20T11:11:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 370,
+        "image_index": 72,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤72.png",
+        "original_answer_filename": "생윤72-a.png"
+      }
+    },
+    {
+      "filename": "생윤73.png",
+      "problem_filename": "생윤73.png",
+      "answer_filename": "생윤73-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 66,
+      "source": "2022년 3월 학평 19번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:12:00.000Z",
+      "updated_at": "2024-08-20T11:12:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 371,
+        "image_index": 73,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤73.png",
+        "original_answer_filename": "생윤73-a.png"
+      }
+    },
+    {
+      "filename": "생윤74.png",
+      "problem_filename": "생윤74.png",
+      "answer_filename": "생윤74-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 70,
+      "source": "2021년 10월 학평 16번 ",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:13:00.000Z",
+      "updated_at": "2024-08-20T11:13:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 372,
+        "image_index": 74,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤74.png",
+        "original_answer_filename": "생윤74-a.png"
+      }
+    },
+    {
+      "filename": "생윤75.png",
+      "problem_filename": "생윤75.png",
+      "answer_filename": "생윤75-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2021년 3월 학평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:14:00.000Z",
+      "updated_at": "2024-08-20T11:14:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 373,
+        "image_index": 75,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤75.png",
+        "original_answer_filename": "생윤75-a.png"
+      }
+    },
+    {
+      "filename": "생윤76.png",
+      "problem_filename": "생윤76.png",
+      "answer_filename": "생윤76-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 52,
+      "source": "2020학년도 9월 모평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:15:00.000Z",
+      "updated_at": "2024-08-20T11:15:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 374,
+        "image_index": 76,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤76.png",
+        "original_answer_filename": "생윤76-a.png"
+      }
+    },
+    {
+      "filename": "생윤77.png",
+      "problem_filename": "생윤77.png",
+      "answer_filename": "생윤77-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2022학년도 6월 모평 16번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:16:00.000Z",
+      "updated_at": "2024-08-20T11:16:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 375,
+        "image_index": 77,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤77.png",
+        "original_answer_filename": "생윤77-a.png"
+      }
+    },
+    {
+      "filename": "생윤78.png",
+      "problem_filename": "생윤78.png",
+      "answer_filename": "생윤78-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2023년 7월 학평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:17:00.000Z",
+      "updated_at": "2024-08-20T11:17:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 376,
+        "image_index": 78,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤78.png",
+        "original_answer_filename": "생윤78-a.png"
+      }
+    },
+    {
+      "filename": "생윤79.png",
+      "problem_filename": "생윤79.png",
+      "answer_filename": "생윤79-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2024학년도 수능 9번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:18:00.000Z",
+      "updated_at": "2024-08-20T11:18:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 377,
+        "image_index": 79,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤79.png",
+        "original_answer_filename": "생윤79-a.png"
+      }
+    },
+    {
+      "filename": "생윤80.png",
+      "problem_filename": "생윤80.png",
+      "answer_filename": "생윤80-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2020년 7월 학평 16번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:19:00.000Z",
+      "updated_at": "2024-08-20T11:19:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 378,
+        "image_index": 80,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤80.png",
+        "original_answer_filename": "생윤80-a.png"
+      }
+    },
+    {
+      "filename": "생윤81.png",
+      "problem_filename": "생윤81.png",
+      "answer_filename": "생윤81-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 67,
+      "source": "2021학년도 수능 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:20:00.000Z",
+      "updated_at": "2024-08-20T11:20:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 379,
+        "image_index": 81,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤81.png",
+        "original_answer_filename": "생윤81-a.png"
+      }
+    },
+    {
+      "filename": "생윤82.png",
+      "problem_filename": "생윤82.png",
+      "answer_filename": "생윤82-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 79,
+      "source": "2023년 10월 학평 10번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:21:00.000Z",
+      "updated_at": "2024-08-20T11:21:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 380,
+        "image_index": 82,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤82.png",
+        "original_answer_filename": "생윤82-a.png"
+      }
+    },
+    {
+      "filename": "생윤83.png",
+      "problem_filename": "생윤83.png",
+      "answer_filename": "생윤83-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 58,
+      "source": "2020년 10월 학평 4번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:22:00.000Z",
+      "updated_at": "2024-08-20T11:22:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 381,
+        "image_index": 83,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤83.png",
+        "original_answer_filename": "생윤83-a.png"
+      }
+    },
+    {
+      "filename": "생윤84.png",
+      "problem_filename": "생윤84.png",
+      "answer_filename": "생윤84-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 37,
+      "source": "2023년 3월 학평 17번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:23:00.000Z",
+      "updated_at": "2024-08-20T11:23:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 382,
+        "image_index": 84,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤84.png",
+        "original_answer_filename": "생윤84-a.png"
+      }
+    },
+    {
+      "filename": "생윤85.png",
+      "problem_filename": "생윤85.png",
+      "answer_filename": "생윤85-a(정답파일확인필요).png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 71,
+      "source": "2022년 4월 학평 18번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:24:00.000Z",
+      "updated_at": "2024-08-20T11:24:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 383,
+        "image_index": 85,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤85.png",
+        "original_answer_filename": "생윤85-a(정답파일확인필요).png"
+      }
+    },
+    {
+      "filename": "생윤86.png",
+      "problem_filename": "생윤86.png",
+      "answer_filename": "생윤86-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2022학년도 수능 3번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:25:00.000Z",
+      "updated_at": "2024-08-20T11:25:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 384,
+        "image_index": 86,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤86.png",
+        "original_answer_filename": "생윤86-a.png"
+      }
+    },
+    {
+      "filename": "생윤87.png",
+      "problem_filename": "생윤87.png",
+      "answer_filename": "생윤87-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2022학년도 9월 모평 17번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:26:00.000Z",
+      "updated_at": "2024-08-20T11:26:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 385,
+        "image_index": 87,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤87.png",
+        "original_answer_filename": "생윤87-a.png"
+      }
+    },
+    {
+      "filename": "생윤88.png",
+      "problem_filename": "생윤88.png",
+      "answer_filename": "생윤88-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2022년 7월 학평 14번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:27:00.000Z",
+      "updated_at": "2024-08-20T11:27:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 386,
+        "image_index": 88,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤88.png",
+        "original_answer_filename": "생윤88-a.png"
+      }
+    },
+    {
+      "filename": "생윤89.png",
+      "problem_filename": "생윤89.png",
+      "answer_filename": "생윤89-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 64,
+      "source": "2021학년도 6월 모평 11번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:28:00.000Z",
+      "updated_at": "2024-08-20T11:28:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 387,
+        "image_index": 89,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤89.png",
+        "original_answer_filename": "생윤89-a.png"
+      }
+    },
+    {
+      "filename": "생윤90.png",
+      "problem_filename": "생윤90.png",
+      "answer_filename": "생윤90-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2024년 3월 학평 4번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:29:00.000Z",
+      "updated_at": "2024-08-20T11:29:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 388,
+        "image_index": 90,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤90.png",
+        "original_answer_filename": "생윤90-a.png"
+      }
+    },
+    {
+      "filename": "생윤91.png",
+      "problem_filename": "생윤91.png",
+      "answer_filename": "생윤91-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 45,
+      "source": "2019년 7월 학평 3번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:30:00.000Z",
+      "updated_at": "2024-08-20T11:30:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 389,
+        "image_index": 91,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤91.png",
+        "original_answer_filename": "생윤91-a.png"
+      }
+    },
+    {
+      "filename": "생윤92.png",
+      "problem_filename": "생윤92.png",
+      "answer_filename": "생윤92-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 56,
+      "source": "2024년 7월 학평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:31:00.000Z",
+      "updated_at": "2024-08-20T11:31:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 390,
+        "image_index": 92,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤92.png",
+        "original_answer_filename": "생윤92-a.png"
+      }
+    },
+    {
+      "filename": "생윤93.png",
+      "problem_filename": "생윤93.png",
+      "answer_filename": "생윤93-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 55,
+      "source": "2021년 7월 학평 17번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:32:00.000Z",
+      "updated_at": "2024-08-20T11:32:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 391,
+        "image_index": 93,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤93.png",
+        "original_answer_filename": "생윤93-a.png"
+      }
+    },
+    {
+      "filename": "생윤94.png",
+      "problem_filename": "생윤94.png",
+      "answer_filename": "생윤94-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 63,
+      "source": "2024년 4월 학평 13번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:33:00.000Z",
+      "updated_at": "2024-08-20T11:33:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 392,
+        "image_index": 94,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤94.png",
+        "original_answer_filename": "생윤94-a.png"
+      }
+    },
+    {
+      "filename": "생윤95.png",
+      "problem_filename": "생윤95.png",
+      "answer_filename": "생윤95-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 61,
+      "source": "2019년 4월 학평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:34:00.000Z",
+      "updated_at": "2024-08-20T11:34:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 393,
+        "image_index": 95,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤95.png",
+        "original_answer_filename": "생윤95-a.png"
+      }
+    },
+    {
+      "filename": "생윤96.png",
+      "problem_filename": "생윤96.png",
+      "answer_filename": "생윤96-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2023학년도 6월 모평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:35:00.000Z",
+      "updated_at": "2024-08-20T11:35:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 394,
+        "image_index": 96,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤96.png",
+        "original_answer_filename": "생윤96-a.png"
+      }
+    },
+    {
+      "filename": "생윤97.png",
+      "problem_filename": "생윤97.png",
+      "answer_filename": "생윤97-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 39,
+      "source": "2021년 4월 학평 14번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:36:00.000Z",
+      "updated_at": "2024-08-20T11:36:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 395,
+        "image_index": 97,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤97.png",
+        "original_answer_filename": "생윤97-a.png"
+      }
+    },
+    {
+      "filename": "생윤98.png",
+      "problem_filename": "생윤98.png",
+      "answer_filename": "생윤98-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2020학년도 수능 18번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:37:00.000Z",
+      "updated_at": "2024-08-20T11:37:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 396,
+        "image_index": 98,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤98.png",
+        "original_answer_filename": "생윤98-a.png"
+      }
+    },
+    {
+      "filename": "생윤99.png",
+      "problem_filename": "생윤99.png",
+      "answer_filename": "생윤99-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 44,
+      "source": "2021학년도 9월 모평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:38:00.000Z",
+      "updated_at": "2024-08-20T11:38:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 397,
+        "image_index": 99,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤99.png",
+        "original_answer_filename": "생윤99-a.png"
+      }
+    },
+    {
+      "filename": "생윤100.png",
+      "problem_filename": "생윤100.png",
+      "answer_filename": "생윤100-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 53,
+      "source": "2023년 4월 학평 3번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:39:00.000Z",
+      "updated_at": "2024-08-20T11:39:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 398,
+        "image_index": 100,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤100.png",
+        "original_answer_filename": "생윤100-a.png"
+      }
+    },
+    {
+      "filename": "생윤101.png",
+      "problem_filename": "생윤101.png",
+      "answer_filename": "생윤101-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 68,
+      "source": "2023학년도 9월 모평 8번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:40:00.000Z",
+      "updated_at": "2024-08-20T11:40:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 399,
+        "image_index": 101,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤101.png",
+        "original_answer_filename": "생윤101-a.png"
+      }
+    },
+    {
+      "filename": "생윤102.png",
+      "problem_filename": "생윤102.png",
+      "answer_filename": "생윤102-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 24,
+      "source": "2022년 10월 학평 19번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:41:00.000Z",
+      "updated_at": "2024-08-20T11:41:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 400,
+        "image_index": 102,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤102.png",
+        "original_answer_filename": "생윤102-a.png"
+      }
+    },
+    {
+      "filename": "생윤103.png",
+      "problem_filename": "생윤103.png",
+      "answer_filename": "생윤103-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 48,
+      "source": "2020학년도 6월 모평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:42:00.000Z",
+      "updated_at": "2024-08-20T11:42:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 401,
+        "image_index": 103,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤103.png",
+        "original_answer_filename": "생윤103-a.png"
+      }
+    },
+    {
+      "filename": "생윤104.png",
+      "problem_filename": "생윤104.png",
+      "answer_filename": "생윤104-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 37,
+      "source": "2020년 4월 학평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:43:00.000Z",
+      "updated_at": "2024-08-20T11:43:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 402,
+        "image_index": 104,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤104.png",
+        "original_answer_filename": "생윤104-a.png"
+      }
+    },
+    {
+      "filename": "생윤105.png",
+      "problem_filename": "생윤105.png",
+      "answer_filename": "생윤105-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 46,
+      "source": "2023학년도 수능 14번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:44:00.000Z",
+      "updated_at": "2024-08-20T11:44:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 403,
+        "image_index": 105,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤105.png",
+        "original_answer_filename": "생윤105-a.png"
+      }
+    },
+    {
+      "filename": "생윤106.png",
+      "problem_filename": "생윤106.png",
+      "answer_filename": "생윤106-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 41,
+      "source": "2024학년도 6월 모평 5번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:45:00.000Z",
+      "updated_at": "2024-08-20T11:45:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 404,
+        "image_index": 106,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤106.png",
+        "original_answer_filename": "생윤106-a.png"
+      }
+    },
+    {
+      "filename": "생윤107.png",
+      "problem_filename": "생윤107.png",
+      "answer_filename": "생윤107-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 36,
+      "source": "2024학년도 9월 모평 7번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:46:00.000Z",
+      "updated_at": "2024-08-20T11:46:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 405,
+        "image_index": 107,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤107.png",
+        "original_answer_filename": "생윤107-a.png"
+      }
+    },
+    {
+      "filename": "생윤108.png",
+      "problem_filename": "생윤108.png",
+      "answer_filename": "생윤108-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "하",
+      "problem_type": "기출문제",
+      "correct_rate": 62,
+      "source": "2019년 3월 학평 13번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:47:00.000Z",
+      "updated_at": "2024-08-20T11:47:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 406,
+        "image_index": 108,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤108.png",
+        "original_answer_filename": "생윤108-a.png"
+      }
+    },
+    {
+      "filename": "생윤109.png",
+      "problem_filename": "생윤109.png",
+      "answer_filename": "생윤109-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 40,
+      "source": "2025학년도 6월 모평 14번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:48:00.000Z",
+      "updated_at": "2024-08-20T11:48:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 407,
+        "image_index": 109,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤109.png",
+        "original_answer_filename": "생윤109-a.png"
+      }
+    },
+    {
+      "filename": "생윤110.png",
+      "problem_filename": "생윤110.png",
+      "answer_filename": "생윤110-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 49,
+      "source": "2025학년도 9월 모평 9번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:49:00.000Z",
+      "updated_at": "2024-08-20T11:49:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 408,
+        "image_index": 110,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤110.png",
+        "original_answer_filename": "생윤110-a.png"
+      }
+    },
+    {
+      "filename": "생윤111.png",
+      "problem_filename": "생윤111.png",
+      "answer_filename": "생윤111-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 66,
+      "source": "2025학년도 9월 모평 12번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:50:00.000Z",
+      "updated_at": "2024-08-20T11:50:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 409,
+        "image_index": 111,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤111.png",
+        "original_answer_filename": "생윤111-a.png"
+      }
+    },
+    {
+      "filename": "생윤112.png",
+      "problem_filename": "생윤112.png",
+      "answer_filename": "생윤112-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 50,
+      "source": "2024년 10월 학평 19번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:51:00.000Z",
+      "updated_at": "2024-08-20T11:51:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 410,
+        "image_index": 112,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤112.png",
+        "original_answer_filename": "생윤112-a.png"
+      }
+    },
+    {
+      "filename": "생윤113.png",
+      "problem_filename": "생윤113.png",
+      "answer_filename": "생윤113-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2024년 10월 학평 8번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:52:00.000Z",
+      "updated_at": "2024-08-20T11:52:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 411,
+        "image_index": 113,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤113.png",
+        "original_answer_filename": "생윤113-a.png"
+      }
+    },
+    {
+      "filename": "생윤114.png",
+      "problem_filename": "생윤114.png",
+      "answer_filename": "생윤114-a.png",
+      "chapter_id": "e533a439-9219-416e-8d4f-61cc52574176",
+      "difficulty": "중",
+      "problem_type": "기출문제",
+      "correct_rate": 51,
+      "source": "2025학년도 수능 10번",
+      "tags": [
+        "사회계약론"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:53:00.000Z",
+      "updated_at": "2024-08-20T11:53:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 412,
+        "image_index": 114,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권의 의미와 현대 사회의 인권",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤114.png",
+        "original_answer_filename": "생윤114-a.png"
+      }
+    },
+    {
+      "filename": "생윤115.png",
+      "problem_filename": "생윤115.png",
+      "answer_filename": "생윤115-a.png",
+      "chapter_id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+      "difficulty": "상",
+      "problem_type": "기출문제",
+      "correct_rate": 24,
+      "source": "2025학년도 수능 18번",
+      "tags": [
+        "시민 불복종"
+      ],
+      "answer": null,
+      "created_at": "2024-08-20T11:54:00.000Z",
+      "updated_at": "2024-08-20T11:54:00.000Z",
+      "related_subjects": [
+        "생활과 윤리"
+      ],
+      "_metadata": {
+        "excel_id": 413,
+        "image_index": 115,
+        "volume": "통합사회2",
+        "chapter": "인권 보장과 헌법",
+        "sub_chapter": "인권 보장을 위한 헌법의 역할과 시민 참여",
+        "is_from_past_exam": "Y",
+        "original_problem_filename": "생윤115.png",
+        "original_answer_filename": "생윤115-a.png"
+      }
+    }
+  ],
+  "metadata": {
+    "total_problems": 115,
+    "source": "Excel import - 생활과 윤리",
+    "subjects": [
+      {
+        "id": "7ec63358-5e6b-49be-89a4-8b5639f3f9c0",
+        "name": "통합사회 2"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "decba78b-c5b4-4fbb-a2fe-1a07641a35ae",
+        "name": "정의의 의미와 실질적 기준"
+      },
+      {
+        "id": "0ac063bc-5fdd-4095-abbb-e3863972e4f4",
+        "name": "다양한 정의관의 특징과 적용"
+      },
+      {
+        "id": "e533a439-9219-416e-8d4f-61cc52574176",
+        "name": "인권의 의미와 현대 사회의 인권"
+      },
+      {
+        "id": "a0631a6e-8db4-4b0b-8ba4-86de8cd48cf0",
+        "name": "인권 보장을 위한 헌법의 역할과 시민 참여"
+      }
+    ],
+    "difficulties": [
+      "하",
+      "중",
+      "상"
+    ],
+    "problem_types": [
+      "기출문제",
+      "N제"
+    ],
+    "created_at": "2025-08-21T22:13:08.987Z",
+    "version": "1.0-생활과윤리",
+    "notes": "Converted from 통합사회 문제 은행 프로젝트_생활과 윤리.xlsx - Only problems with images included"
+  }
+}
