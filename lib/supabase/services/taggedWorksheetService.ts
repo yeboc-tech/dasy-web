@@ -154,28 +154,35 @@ export async function getTaggedWorksheet(
       throw new Error('Failed to fetch problem data');
     }
 
-    // Create accuracy map
+    // Create maps for quick lookup
     const accuracyMap = new Map();
     (accuracyData || []).forEach(item => {
       accuracyMap.set(item.problem_id, item);
     });
 
-    // Merge data and convert to ProblemMetadata
-    (tagsData || []).forEach(tagItem => {
-      const parsed = parseProblemId(tagItem.problem_id);
+    const tagsMap = new Map();
+    (tagsData || []).forEach(item => {
+      tagsMap.set(item.problem_id, item);
+    });
+
+    // Iterate over batch (requested problem IDs) to ensure all problems are processed
+    // Even if problem_tags doesn't have the entry, we can still get answer from accuracy_rate
+    batch.forEach(problemId => {
+      const parsed = parseProblemId(problemId);
       if (!parsed) return;
 
-      const accuracyInfo = accuracyMap.get(tagItem.problem_id);
+      const tagItem = tagsMap.get(problemId);
+      const accuracyInfo = accuracyMap.get(problemId);
 
       allProblems.push({
-        id: tagItem.problem_id,
-        problem_filename: `${tagItem.problem_id}.png`,
-        answer_filename: tagItem.problem_id.replace('_문제', '_해설') + '.png',
+        id: problemId,
+        problem_filename: `${problemId}.png`,
+        answer_filename: problemId.replace('_문제', '_해설') + '.png',
         answer: accuracyInfo?.correct_answer,
-        chapter_id: tagItem.tag_ids[tagItem.tag_ids.length - 1] || null,
+        chapter_id: tagItem?.tag_ids?.[tagItem.tag_ids.length - 1] || null,
         difficulty: accuracyInfo?.difficulty || '중',
         problem_type: `${parsed.exam_type} ${parsed.year}년 ${parseInt(parsed.month)}월`,
-        tags: [parsed.subject, ...tagItem.tag_labels],
+        tags: tagItem ? [parsed.subject, ...tagItem.tag_labels] : [parsed.subject],
         related_subjects: [parsed.subject],
         correct_rate: accuracyInfo?.accuracy_rate,
         exam_year: parseInt(parsed.year),
