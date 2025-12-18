@@ -269,7 +269,9 @@ export async function imageToBase64WithDimensions(
           ctx.drawImage(img, 0, 0);
         }
 
-        const base64 = canvas.toDataURL('image/png');
+        // Use JPEG for faster encoding (3-5x faster than PNG)
+        // Quality 0.92 is visually indistinguishable from lossless
+        const base64 = canvas.toDataURL('image/jpeg', 0.92);
 
         // Calculate scaled height based on fixedWidth (for PDF layout)
         const aspectRatio = targetHeight / targetWidth;
