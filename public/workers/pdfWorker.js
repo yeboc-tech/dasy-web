@@ -83,9 +83,20 @@ function createFooter(currentPage) {
 self.onmessage = async function(e) {
   const { type, docDefinition } = e.data;
 
+  // Warmup: just load pdfMake library in background
+  if (type === 'warmup') {
+    try {
+      await loadPdfMake();
+      console.log('[PDF Worker] Warmup complete - pdfMake loaded');
+    } catch (err) {
+      console.warn('[PDF Worker] Warmup failed:', err);
+    }
+    return;
+  }
+
   if (type === 'generate') {
     try {
-      // Report: Loading library
+      // Report: Loading library (may already be loaded from warmup)
       self.postMessage({ type: 'progress', stage: 'loading_library', percent: 0 });
 
       await loadPdfMake();

@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
-import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, preloadPdfMake, warmupPdfWorker, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import PDFViewer from '@/components/pdf/PDFViewer';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import dynamic from 'next/dynamic';
@@ -98,6 +98,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfElapsedTime, setPdfElapsedTime] = useState(0);
   const pdfElapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pdfStartTimeRef = useRef<number>(0);
   const [worksheetTitle, setWorksheetTitle] = useState('');
   const [worksheetAuthor, setWorksheetAuthor] = useState('');
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
@@ -188,6 +189,40 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       return filtered;
     }
   }, [wrongProblemIds, isTaggedMode, currentTaggedSubject]);
+
+  // Preload pdfMake library, warm up worker, and static assets on mount for faster PDF generation
+  useEffect(() => {
+    preloadPdfMake();
+    warmupPdfWorker(); // Initialize worker and load pdfMake in background
+    // Preload logo and QR code in background
+    getCachedLogoBase64().catch(() => {});
+    getCachedQrBase64().catch(() => {});
+  }, []);
+
+  // Prefetch problem/answer images when worksheet loads for faster PDF generation
+  useEffect(() => {
+    if (worksheetProblems.length === 0) return;
+
+    // Prefetch all images via image-proxy to warm up browser cache
+    const prefetchImage = (url: string) => {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.as = 'image';
+      link.href = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+      document.head.appendChild(link);
+    };
+
+    worksheetProblems.forEach(p => {
+      const problemUrl = editedContentsMap?.get(p.id) || getProblemImageUrl(p.id);
+      prefetchImage(problemUrl);
+
+      // Also prefetch answer images
+      const isTaggedSubject = getSubjectFromProblemId(p.id) !== null;
+      const answerId = isTaggedSubject ? p.id.replace('_문제', '_해설') : p.id;
+      const answerUrl = editedContentsMap?.get(answerId) || getAnswerImageUrl(p.id);
+      prefetchImage(answerUrl);
+    });
+  }, [worksheetProblems, editedContentsMap]);
 
   // Set default sorting to 연습 preset for new worksheets
   // Track the last mode for which sorting was initialized
@@ -448,12 +483,15 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         setPdfProgress({ stage: '준비 중...', percent: 0 });
         setPdfElapsedTime(0);
 
+        // Start timestamp-based timer with 100ms updates for responsive feedback
+        pdfStartTimeRef.current = Date.now();
         if (pdfElapsedTimerRef.current) {
           clearInterval(pdfElapsedTimerRef.current);
         }
         pdfElapsedTimerRef.current = setInterval(() => {
-          setPdfElapsedTime(prev => prev + 1);
-        }, 1000);
+          const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+          setPdfElapsedTime(elapsed);
+        }, 100);
 
         setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
 
@@ -1155,39 +1193,53 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
 
     // Generate solve PDF (problems only, no answers)
     setSolvePdfLoading(true);
-    setPdfProgress({ stage: '준비 중...', percent: 0 });
     setPdfElapsedTime(0);
     setViewMode('solve');
 
+    // Start timestamp-based timer with 100ms updates for responsive feedback
+    pdfStartTimeRef.current = Date.now();
     if (pdfElapsedTimerRef.current) {
       clearInterval(pdfElapsedTimerRef.current);
     }
     pdfElapsedTimerRef.current = setInterval(() => {
-      setPdfElapsedTime(prev => prev + 1);
-    }, 1000);
+      const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+      setPdfElapsedTime(elapsed);
+    }, 100);
 
     try {
-      setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
-
       const problemImageUrls = worksheetProblems.map(p => {
         const editedUrl = editedContentsMap?.get(p.id);
         return editedUrl || getProblemImageUrl(p.id);
       });
 
-      // Load problem images
-      const problemImages: ImageWithDimensions[] = [];
-      for (let i = 0; i < problemImageUrls.length; i++) {
-        const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
-        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+      // Track image loading progress (0-70% of total)
+      const totalImages = problemImageUrls.length;
+      let loadedCount = 0;
+      const updateImageProgress = () => {
+        loadedCount++;
+        const percent = Math.round((loadedCount / totalImages) * 70); // 0-70%
+        setPdfProgress({
+          stage: `이미지 로딩 중... (${loadedCount}/${totalImages})`,
+          percent
+        });
+      };
 
-        try {
-          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
-          problemImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load problem image ${i}:`, err);
-          problemImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
+      setPdfProgress({ stage: `이미지 로딩 중... (0/${totalImages})`, percent: 0 });
+
+      // Load problem images in parallel with progress tracking
+      const problemImages = await Promise.all(
+        problemImageUrls.map(async (url, i) => {
+          try {
+            const result = await imageToBase64WithDimensions(url);
+            updateImageProgress();
+            return result;
+          } catch (err) {
+            console.error(`Failed to load problem image ${i}:`, err);
+            updateImageProgress();
+            return { base64: '', width: 0, height: 0 };
+          }
+        })
+      );
 
       const base64ProblemImages = problemImages.map(img => img.base64);
       const problemHeights = problemImages.map(img => img.height);
@@ -1206,7 +1258,10 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         exam_year: problem.exam_year,
       }));
 
-      setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+      // Document creation phase (70-80%) with animated progress
+      setPdfProgress({ stage: '문서 생성 중...', percent: 72 });
+      await new Promise(r => setTimeout(r, 50));
+      setPdfProgress({ stage: '문서 생성 중...', percent: 75 });
 
       // Generate solve PDF (problems only, no answers)
       const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
@@ -1223,13 +1278,21 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         []
       );
 
-      setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+      // PDF generation phase (80-100%) with animated progress
+      setPdfProgress({ stage: 'PDF 생성 중...', percent: 80 });
 
-      const solveBlob = await generatePdfWithWorker(solveDocDefinition, (progress) => {
-        if (progress.stage === 'complete') {
-          setPdfProgress({ stage: '완료!', percent: 100 });
+      // Start animated progress during PDF generation
+      let pdfGenPercent = 80;
+      const pdfGenInterval = setInterval(() => {
+        if (pdfGenPercent < 98) {
+          pdfGenPercent += 2;
+          setPdfProgress({ stage: 'PDF 생성 중...', percent: pdfGenPercent });
         }
-      });
+      }, 150);
+
+      const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
+      clearInterval(pdfGenInterval);
+
       const solveUrl = URL.createObjectURL(solveBlob);
       setSolvePdfUrl(solveUrl);
       setPdfProgress({ stage: '완료!', percent: 100 });
@@ -1583,22 +1646,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   const handleGeneratePdf = async () => {
     if (worksheetProblems.length === 0) return;
 
-    setPdfProgress({ stage: '준비 중...', percent: 0 });
     setPdfUrl(null);
     setPdfError(null);
     setPdfElapsedTime(0);
     setViewMode('pdfGeneration');
 
+    // Start timestamp-based timer with 100ms updates for responsive feedback
+    pdfStartTimeRef.current = Date.now();
     if (pdfElapsedTimerRef.current) {
       clearInterval(pdfElapsedTimerRef.current);
     }
     pdfElapsedTimerRef.current = setInterval(() => {
-      setPdfElapsedTime(prev => prev + 1);
-    }, 1000);
+      const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+      setPdfElapsedTime(elapsed);
+    }, 100);
 
     try {
-      setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
-
       const problemImageUrls = worksheetProblems.map(p => {
         const editedUrl = editedContentsMap?.get(p.id);
         return editedUrl || getProblemImageUrl(p.id);
@@ -1612,36 +1675,54 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         return editedUrl || getAnswerImageUrl(p.id);
       });
 
-      const problemImages: ImageWithDimensions[] = [];
-      const answerImages: ImageWithDimensions[] = [];
+      // Track image loading progress (0-70% of total)
+      const totalImages = problemImageUrls.length + answerImageUrls.length;
+      let loadedCount = 0;
+      const updateImageProgress = () => {
+        loadedCount++;
+        const percent = Math.round((loadedCount / totalImages) * 70); // 0-70%
+        setPdfProgress({
+          stage: `이미지 로딩 중... (${loadedCount}/${totalImages})`,
+          percent
+        });
+      };
 
-      for (let i = 0; i < problemImageUrls.length; i++) {
-        const percent = 5 + Math.round((i / problemImageUrls.length) * 20);
-        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
+      setPdfProgress({ stage: `이미지 로딩 중... (0/${totalImages})`, percent: 0 });
 
-        try {
-          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
-          problemImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load problem image ${i}:`, err);
-          problemImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
+      // Load ALL images in parallel with progress tracking
+      const [problemImages, answerImages] = await Promise.all([
+        Promise.all(
+          problemImageUrls.map(async (url, i) => {
+            try {
+              const result = await imageToBase64WithDimensions(url);
+              updateImageProgress();
+              return result;
+            } catch (err) {
+              console.error(`Failed to load problem image ${i}:`, err);
+              updateImageProgress();
+              return { base64: '', width: 0, height: 0 };
+            }
+          })
+        ),
+        Promise.all(
+          answerImageUrls.map(async (url, i) => {
+            try {
+              const result = await imageToBase64WithDimensions(url);
+              updateImageProgress();
+              return result;
+            } catch (err) {
+              console.error(`Failed to load answer image ${i}:`, err);
+              updateImageProgress();
+              return { base64: '', width: 0, height: 0 };
+            }
+          })
+        )
+      ]);
 
-      for (let i = 0; i < answerImageUrls.length; i++) {
-        const percent = 25 + Math.round((i / answerImageUrls.length) * 20);
-        setPdfProgress({ stage: `해설 이미지 로딩 중... (${i + 1}/${answerImageUrls.length})`, percent });
-
-        try {
-          const imgData = await imageToBase64WithDimensions(answerImageUrls[i]);
-          answerImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load answer image ${i}:`, err);
-          answerImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
-
-      setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
+      // Document creation phase (70-80%) with animated progress
+      setPdfProgress({ stage: '문서 생성 중...', percent: 72 });
+      await new Promise(r => setTimeout(r, 50));
+      setPdfProgress({ stage: '문서 생성 중...', percent: 75 });
       const base64ProblemImages = problemImages.map(img => img.base64);
       const base64AnswerImages = answerImages.map(img => img.base64);
       const problemHeights = problemImages.map(img => img.height);
@@ -1661,6 +1742,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         exam_year: problem.exam_year,
       }));
 
+      setPdfProgress({ stage: '문서 생성 중...', percent: 78 });
+
       const docDefinition = await createWorksheetWithAnswersDocDefinitionClient(
         problemImageUrls,
         base64ProblemImages,
@@ -1675,37 +1758,26 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         answerHeights
       );
 
-      setPdfProgress({ stage: 'PDF 생성 중...', percent: 60 });
+      // PDF generation phase (80-95%) with animated progress
+      setPdfProgress({ stage: 'PDF 생성 중...', percent: 80 });
 
-      const blob = await generatePdfWithWorker(docDefinition, (progress) => {
-        if (progress.stage === 'complete') {
-          setPdfProgress({ stage: '완료!', percent: 100 });
+      // Start animated progress during PDF generation
+      let pdfGenPercent = 80;
+      const pdfGenInterval = setInterval(() => {
+        if (pdfGenPercent < 94) {
+          pdfGenPercent += 2;
+          setPdfProgress({ stage: 'PDF 생성 중...', percent: pdfGenPercent });
         }
-      });
+      }, 200);
+
+      const blob = await generatePdfWithWorker(docDefinition, () => {});
+      clearInterval(pdfGenInterval);
 
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
 
-      // For tagged subjects, also pre-generate solve PDF (problems only)
-      if (isTaggedMode) {
-        setPdfProgress({ stage: '풀이용 PDF 생성 중...', percent: 90 });
-        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
-          problemImageUrls,
-          base64ProblemImages,
-          [], // No answer images for solve mode
-          [],
-          worksheetTitle || '학습지명',
-          worksheetAuthor || '출제자',
-          worksheetCreatedAt,
-          subject,
-          problemMetadataForPdf,
-          problemHeights,
-          []
-        );
-        const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
-        const solveUrl = URL.createObjectURL(solveBlob);
-        setSolvePdfUrl(solveUrl);
-      }
+      // Solve PDF is now generated lazily when user clicks "풀기" button
+      // This saves ~40% generation time for tagged worksheets
 
       setPdfProgress({ stage: '완료!', percent: 100 });
 

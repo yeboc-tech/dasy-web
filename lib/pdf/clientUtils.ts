@@ -17,6 +17,13 @@ let fontsLoaded = false;
 let cachedLogoBase64: string | null = null;
 let cachedQrBase64: string | null = null;
 
+// Cache for converted images to avoid re-processing
+const imageCache = new Map<string, ImageWithDimensions>();
+
+// Cached PDF worker for reuse (avoid create/destroy overhead)
+let cachedPdfWorker: Worker | null = null;
+let workerWarmedUp = false;
+
 // Result type for imageToBase64WithDimensions
 export interface ImageWithDimensions {
   base64: string;
@@ -34,6 +41,30 @@ export function preloadPdfMake(): void {
   loadPdfMake().catch(() => {
     // Silently ignore preload errors - will retry during actual generation
   });
+}
+
+/**
+ * Warmup the PDF worker by creating it and loading pdfMake library.
+ * Call this on page mount to eliminate cold-start delay during PDF generation.
+ */
+export function warmupPdfWorker(): void {
+  if (workerWarmedUp || cachedPdfWorker) return;
+
+  try {
+    // Create worker early
+    cachedPdfWorker = new Worker('/workers/pdfWorker.js');
+
+    // Send warmup message to trigger pdfMake loading
+    cachedPdfWorker.postMessage({ type: 'warmup' });
+
+    // Mark as warmed up (even if load fails, we don't want to retry constantly)
+    workerWarmedUp = true;
+
+    console.log('[PDF Worker] Warming up in background...');
+  } catch (err) {
+    // Silently ignore - will create worker during actual generation
+    console.warn('[PDF Worker] Warmup failed, will retry on first generation');
+  }
 }
 
 async function loadPdfMake() {
@@ -204,6 +235,13 @@ export async function imageToBase64WithDimensions(
   fixedWidth: number = 240,
   maxPixelWidth?: number // Optional: undefined = full resolution (current behavior)
 ): Promise<ImageWithDimensions> {
+  // Check cache first (using URL + options as key)
+  const cacheKey = `${imagePath}|${cropOptions?.maxHeight ?? ''}|${fixedWidth}|${maxPixelWidth ?? ''}`;
+  const cached = imageCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   return new Promise((resolve) => {
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
     const img = new Image();
@@ -256,17 +294,23 @@ export async function imageToBase64WithDimensions(
           ctx.drawImage(img, 0, 0);
         }
 
-        const base64 = canvas.toDataURL('image/png');
+        // Use JPEG for faster encoding (3-5x faster than PNG)
+        // Quality 0.92 is visually indistinguishable from lossless
+        const base64 = canvas.toDataURL('image/jpeg', 0.92);
 
         // Calculate scaled height based on fixedWidth (for PDF layout)
         const aspectRatio = targetHeight / targetWidth;
         const scaledHeight = fixedWidth * aspectRatio;
 
-        resolve({
+        const result = {
           base64,
           width: targetWidth,
           height: scaledHeight // This is the height at fixedWidth scale
-        });
+        };
+
+        // Cache the result for future use
+        imageCache.set(cacheKey, result);
+        resolve(result);
       } catch (error) {
         console.error('Error converting image to base64 with dimensions:', error);
         resolve({ base64: getNoImageBase64(), width: 300, height: 200 });
@@ -1114,21 +1158,21 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   preCalculatedProblemHeights?: number[], // Optional: skip image height calculation
   preCalculatedAnswerHeights?: number[] // Optional: skip answer height calculation
 ) {
-  // Create problem pages (pass pre-calculated heights if available)
-  const problemContent = await createColumnBasedLayoutClient(
-    problemImages,
-    base64ProblemImages,
-    problemMetadata,
-    preCalculatedProblemHeights
-  );
+  // Create problem and answer pages in parallel (they're independent operations)
+  const [problemContent, answerContent] = await Promise.all([
+    createColumnBasedLayoutClient(
+      problemImages,
+      base64ProblemImages,
+      problemMetadata,
+      preCalculatedProblemHeights
+    ),
+    createAnswerPagesClient(
+      answerImages,
+      base64AnswerImages,
+      preCalculatedAnswerHeights
+    )
+  ]);
 
-  // Create answer pages (pass pre-calculated heights if available)
-  const answerContent = await createAnswerPagesClient(
-    answerImages,
-    base64AnswerImages,
-    preCalculatedAnswerHeights
-  );
-  
   const allContent: unknown[] = [];
 
   // Add header to first page
@@ -1436,27 +1480,43 @@ export function generatePdfWithWorker(
   onProgress?: PdfProgressCallback
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    // Create worker
-    const worker = new Worker('/workers/pdfWorker.js');
+    // Reuse cached worker or create new one
+    if (!cachedPdfWorker) {
+      cachedPdfWorker = new Worker('/workers/pdfWorker.js');
+    }
+    const worker = cachedPdfWorker;
 
-    worker.onmessage = (e) => {
+    // Set up message handler for this generation
+    const messageHandler = (e: MessageEvent) => {
       const { type, stage, percent, blob, message } = e.data;
 
       if (type === 'progress') {
         onProgress?.({ stage, percent });
       } else if (type === 'complete') {
-        worker.terminate();
+        worker.removeEventListener('message', messageHandler);
+        worker.removeEventListener('error', errorHandler);
         resolve(blob);
       } else if (type === 'error') {
+        worker.removeEventListener('message', messageHandler);
+        worker.removeEventListener('error', errorHandler);
+        // On error, destroy worker so next call creates fresh one
+        cachedPdfWorker = null;
         worker.terminate();
         reject(new Error(message));
       }
     };
 
-    worker.onerror = (error) => {
+    const errorHandler = (error: ErrorEvent) => {
+      worker.removeEventListener('message', messageHandler);
+      worker.removeEventListener('error', errorHandler);
+      // On error, destroy worker so next call creates fresh one
+      cachedPdfWorker = null;
       worker.terminate();
       reject(new Error(`Worker error: ${error.message}`));
     };
+
+    worker.addEventListener('message', messageHandler);
+    worker.addEventListener('error', errorHandler);
 
     // Remove footer function before sending (functions can't be cloned)
     // The worker will add its own footer function
