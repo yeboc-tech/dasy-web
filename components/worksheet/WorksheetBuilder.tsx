@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
-import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, preloadPdfMake, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import PDFViewer from '@/components/pdf/PDFViewer';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import dynamic from 'next/dynamic';
@@ -188,6 +188,11 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       return filtered;
     }
   }, [wrongProblemIds, isTaggedMode, currentTaggedSubject]);
+
+  // Preload pdfMake library on mount for faster PDF generation
+  useEffect(() => {
+    preloadPdfMake();
+  }, []);
 
   // Set default sorting to 연습 preset for new worksheets
   // Track the last mode for which sorting was initialized
@@ -1174,20 +1179,18 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         return editedUrl || getProblemImageUrl(p.id);
       });
 
-      // Load problem images
-      const problemImages: ImageWithDimensions[] = [];
-      for (let i = 0; i < problemImageUrls.length; i++) {
-        const percent = 5 + Math.round((i / problemImageUrls.length) * 40);
-        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
-
-        try {
-          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
-          problemImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load problem image ${i}:`, err);
-          problemImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
+      // Load problem images in parallel for faster PDF generation
+      setPdfProgress({ stage: `문제 이미지 로딩 중... (${problemImageUrls.length}개)`, percent: 20 });
+      const problemImages = await Promise.all(
+        problemImageUrls.map(async (url, i) => {
+          try {
+            return await imageToBase64WithDimensions(url);
+          } catch (err) {
+            console.error(`Failed to load problem image ${i}:`, err);
+            return { base64: '', width: 0, height: 0 };
+          }
+        })
+      );
 
       const base64ProblemImages = problemImages.map(img => img.base64);
       const problemHeights = problemImages.map(img => img.height);
@@ -1612,34 +1615,30 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         return editedUrl || getAnswerImageUrl(p.id);
       });
 
-      const problemImages: ImageWithDimensions[] = [];
-      const answerImages: ImageWithDimensions[] = [];
-
-      for (let i = 0; i < problemImageUrls.length; i++) {
-        const percent = 5 + Math.round((i / problemImageUrls.length) * 20);
-        setPdfProgress({ stage: `문제 이미지 로딩 중... (${i + 1}/${problemImageUrls.length})`, percent });
-
-        try {
-          const imgData = await imageToBase64WithDimensions(problemImageUrls[i]);
-          problemImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load problem image ${i}:`, err);
-          problemImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
-
-      for (let i = 0; i < answerImageUrls.length; i++) {
-        const percent = 25 + Math.round((i / answerImageUrls.length) * 20);
-        setPdfProgress({ stage: `해설 이미지 로딩 중... (${i + 1}/${answerImageUrls.length})`, percent });
-
-        try {
-          const imgData = await imageToBase64WithDimensions(answerImageUrls[i]);
-          answerImages.push(imgData);
-        } catch (err) {
-          console.error(`Failed to load answer image ${i}:`, err);
-          answerImages.push({ base64: '', width: 0, height: 0 });
-        }
-      }
+      // Load ALL images (problem + answer) in parallel for maximum speed
+      setPdfProgress({ stage: `이미지 로딩 중... (${problemImageUrls.length + answerImageUrls.length}개)`, percent: 15 });
+      const [problemImages, answerImages] = await Promise.all([
+        Promise.all(
+          problemImageUrls.map(async (url, i) => {
+            try {
+              return await imageToBase64WithDimensions(url);
+            } catch (err) {
+              console.error(`Failed to load problem image ${i}:`, err);
+              return { base64: '', width: 0, height: 0 };
+            }
+          })
+        ),
+        Promise.all(
+          answerImageUrls.map(async (url, i) => {
+            try {
+              return await imageToBase64WithDimensions(url);
+            } catch (err) {
+              console.error(`Failed to load answer image ${i}:`, err);
+              return { base64: '', width: 0, height: 0 };
+            }
+          })
+        )
+      ]);
 
       setPdfProgress({ stage: '문서 생성 중...', percent: 50 });
       const base64ProblemImages = problemImages.map(img => img.base64);

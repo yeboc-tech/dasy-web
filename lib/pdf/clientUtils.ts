@@ -17,6 +17,12 @@ let fontsLoaded = false;
 let cachedLogoBase64: string | null = null;
 let cachedQrBase64: string | null = null;
 
+// Cache for converted images to avoid re-processing
+const imageCache = new Map<string, ImageWithDimensions>();
+
+// Cached PDF worker for reuse (avoid create/destroy overhead)
+let cachedPdfWorker: Worker | null = null;
+
 // Result type for imageToBase64WithDimensions
 export interface ImageWithDimensions {
   base64: string;
@@ -204,6 +210,13 @@ export async function imageToBase64WithDimensions(
   fixedWidth: number = 240,
   maxPixelWidth?: number // Optional: undefined = full resolution (current behavior)
 ): Promise<ImageWithDimensions> {
+  // Check cache first (using URL + options as key)
+  const cacheKey = `${imagePath}|${cropOptions?.maxHeight ?? ''}|${fixedWidth}|${maxPixelWidth ?? ''}`;
+  const cached = imageCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   return new Promise((resolve) => {
     const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
     const img = new Image();
@@ -262,11 +275,15 @@ export async function imageToBase64WithDimensions(
         const aspectRatio = targetHeight / targetWidth;
         const scaledHeight = fixedWidth * aspectRatio;
 
-        resolve({
+        const result = {
           base64,
           width: targetWidth,
           height: scaledHeight // This is the height at fixedWidth scale
-        });
+        };
+
+        // Cache the result for future use
+        imageCache.set(cacheKey, result);
+        resolve(result);
       } catch (error) {
         console.error('Error converting image to base64 with dimensions:', error);
         resolve({ base64: getNoImageBase64(), width: 300, height: 200 });
@@ -1436,27 +1453,43 @@ export function generatePdfWithWorker(
   onProgress?: PdfProgressCallback
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    // Create worker
-    const worker = new Worker('/workers/pdfWorker.js');
+    // Reuse cached worker or create new one
+    if (!cachedPdfWorker) {
+      cachedPdfWorker = new Worker('/workers/pdfWorker.js');
+    }
+    const worker = cachedPdfWorker;
 
-    worker.onmessage = (e) => {
+    // Set up message handler for this generation
+    const messageHandler = (e: MessageEvent) => {
       const { type, stage, percent, blob, message } = e.data;
 
       if (type === 'progress') {
         onProgress?.({ stage, percent });
       } else if (type === 'complete') {
-        worker.terminate();
+        worker.removeEventListener('message', messageHandler);
+        worker.removeEventListener('error', errorHandler);
         resolve(blob);
       } else if (type === 'error') {
+        worker.removeEventListener('message', messageHandler);
+        worker.removeEventListener('error', errorHandler);
+        // On error, destroy worker so next call creates fresh one
+        cachedPdfWorker = null;
         worker.terminate();
         reject(new Error(message));
       }
     };
 
-    worker.onerror = (error) => {
+    const errorHandler = (error: ErrorEvent) => {
+      worker.removeEventListener('message', messageHandler);
+      worker.removeEventListener('error', errorHandler);
+      // On error, destroy worker so next call creates fresh one
+      cachedPdfWorker = null;
       worker.terminate();
       reject(new Error(`Worker error: ${error.message}`));
     };
+
+    worker.addEventListener('message', messageHandler);
+    worker.addEventListener('error', errorHandler);
 
     // Remove footer function before sending (functions can't be cloned)
     // The worker will add its own footer function
