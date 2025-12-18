@@ -1,7 +1,7 @@
 /**
  * Utility functions to sync difficulty and correct_rate filters for tagged subject problems
  *
- * Tagged subjects (경제, 사회문화, 생활과윤리) have 6 difficulty levels based on correct_rate analysis:
+ * Tagged subjects (경제, 사회문화, 생활과윤리, 정치와법, 세계지리) have 6 difficulty levels based on correct_rate analysis:
  * - 최상 (Highest): 0-29%
  * - 상 (High): 30-49%
  * - 중상 (Medium-High): 50-59%

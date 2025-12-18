@@ -100,7 +100,7 @@ function getTonghapsahoeFieldValue(
 }
 
 /**
- * Get field value for comparison - Tagged subjects (경제, 사회문화, 생활과윤리)
+ * Get field value for comparison - Tagged subjects (경제, 사회문화, 생활과윤리, 정치와법, 세계지리)
  */
 function getTaggedFieldValue(
   problem: ProblemMetadata,
@@ -320,7 +320,7 @@ export function applySortRules(
 }
 
 /**
- * Check if the problem list contains tagged subject problems (경제, 사회문화, 생활과윤리)
+ * Check if the problem list contains tagged subject problems (경제, 사회문화, 생활과윤리, 정치와법, 세계지리)
  */
 export function isTaggedProblemList(problems: ProblemMetadata[]): boolean {
   if (problems.length === 0) return false;

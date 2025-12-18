@@ -155,8 +155,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     callback();
   };
 
-  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 세계지리, 한국지리)
-  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '세계지리', '한국지리'];
+  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 정치와법, 세계지리, 한국지리)
+  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '정치와법', '세계지리', '한국지리'];
   const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
 
   // Get current tagged subject (if in tagged mode)
@@ -233,17 +233,17 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   }, [user?.id, showOnlyWrongProblems]);
 
   // Determine locked subject based on existing worksheet problems
-  // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리)
+  // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리, 정치와법, 세계지리)
   // Returns the specific subject name to lock, or 'tonghapsahoe' for 통합사회
-  const lockedSubject: '경제' | '사회문화' | '생활과윤리' | 'tonghapsahoe' | null = (() => {
+  const lockedSubject: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | 'tonghapsahoe' | null = (() => {
     if (worksheetProblems.length === 0) return null;
 
     // Check if any problem is from a tagged subject
     for (const problem of worksheetProblems) {
       const subject = getSubjectFromProblemId(problem.id);
       if (subject) {
-        // Return the specific tagged subject (경제, 사회문화, or 생활과윤리)
-        return subject as '경제' | '사회문화' | '생활과윤리';
+        // Return the specific tagged subject (경제, 사회문화, 생활과윤리, 정치와법, or 세계지리)
+        return subject as '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리';
       }
     }
 
@@ -2090,14 +2090,16 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         )}
       </div>
 
-      {/* Solve View - with fade transition */}
+      {/* Solve View - expands from card to full screen */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'solve' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+        className={`fixed z-50 flex flex-col bg-white transition-all duration-500 ease-in-out ${
+          viewMode === 'solve'
+            ? 'inset-0 rounded-none opacity-100'
+            : 'top-14 left-[calc(0.5rem+16rem+0.5rem)] right-2 bottom-2 rounded-2xl opacity-0 pointer-events-none'
         }`}
       >
         {/* Top Bar - Solve */}
-        <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-center gap-3">
             <button
               onClick={handleExitSolveMode}

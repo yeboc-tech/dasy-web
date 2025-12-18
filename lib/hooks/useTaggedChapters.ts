@@ -5,7 +5,7 @@ import { getTaggedChapterTree } from '@/lib/supabase/services/clientServices';
 import type { ChapterTreeItem } from '@/lib/types';
 
 /**
- * Hook to fetch chapters for a tagged subject (경제, 사회문화, 생활과윤리, etc.)
+ * Hook to fetch chapters for a tagged subject (경제, 사회문화, 생활과윤리, 정치와법, 세계지리)
  */
 export function useTaggedChapters(subject: string) {
   const [chapters, setChapters] = useState<ChapterTreeItem[]>([]);

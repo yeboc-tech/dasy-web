@@ -17,7 +17,7 @@ export interface ProblemMetadata {
 }
 
 // Tagged problem type (uses problem_tags + accuracy_rate tables)
-// Used for subjects like 경제, 사회문화, 생활과윤리
+// Used for subjects like 경제, 사회문화, 생활과윤리, 정치와법, 세계지리
 export interface TaggedProblem {
   problem_id: string; // e.g., "경제_고3_2024_03_학평_1_문제"
   tag_ids: string[]; // e.g., ["경제", "경제-1", "경제-1-1"]
@@ -27,7 +27,7 @@ export interface TaggedProblem {
   correct_answer?: number; // 1-5
   score?: number;
   // Parsed metadata from problem_id
-  subject: string; // "경제", "사회문화", "생활과윤리"
+  subject: string; // "경제", "사회문화", "생활과윤리", "정치와법", "세계지리"
   grade: string; // "고1", "고2", "고3"
   year: string; // "2024"
   month: string; // "03", "04", etc.
