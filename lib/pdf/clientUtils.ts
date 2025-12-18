@@ -22,6 +22,7 @@ const imageCache = new Map<string, ImageWithDimensions>();
 
 // Cached PDF worker for reuse (avoid create/destroy overhead)
 let cachedPdfWorker: Worker | null = null;
+let workerWarmedUp = false;
 
 // Result type for imageToBase64WithDimensions
 export interface ImageWithDimensions {
@@ -40,6 +41,30 @@ export function preloadPdfMake(): void {
   loadPdfMake().catch(() => {
     // Silently ignore preload errors - will retry during actual generation
   });
+}
+
+/**
+ * Warmup the PDF worker by creating it and loading pdfMake library.
+ * Call this on page mount to eliminate cold-start delay during PDF generation.
+ */
+export function warmupPdfWorker(): void {
+  if (workerWarmedUp || cachedPdfWorker) return;
+
+  try {
+    // Create worker early
+    cachedPdfWorker = new Worker('/workers/pdfWorker.js');
+
+    // Send warmup message to trigger pdfMake loading
+    cachedPdfWorker.postMessage({ type: 'warmup' });
+
+    // Mark as warmed up (even if load fails, we don't want to retry constantly)
+    workerWarmedUp = true;
+
+    console.log('[PDF Worker] Warming up in background...');
+  } catch (err) {
+    // Silently ignore - will create worker during actual generation
+    console.warn('[PDF Worker] Warmup failed, will retry on first generation');
+  }
 }
 
 async function loadPdfMake() {
@@ -1133,21 +1158,21 @@ export async function createWorksheetWithAnswersDocDefinitionClient(
   preCalculatedProblemHeights?: number[], // Optional: skip image height calculation
   preCalculatedAnswerHeights?: number[] // Optional: skip answer height calculation
 ) {
-  // Create problem pages (pass pre-calculated heights if available)
-  const problemContent = await createColumnBasedLayoutClient(
-    problemImages,
-    base64ProblemImages,
-    problemMetadata,
-    preCalculatedProblemHeights
-  );
+  // Create problem and answer pages in parallel (they're independent operations)
+  const [problemContent, answerContent] = await Promise.all([
+    createColumnBasedLayoutClient(
+      problemImages,
+      base64ProblemImages,
+      problemMetadata,
+      preCalculatedProblemHeights
+    ),
+    createAnswerPagesClient(
+      answerImages,
+      base64AnswerImages,
+      preCalculatedAnswerHeights
+    )
+  ]);
 
-  // Create answer pages (pass pre-calculated heights if available)
-  const answerContent = await createAnswerPagesClient(
-    answerImages,
-    base64AnswerImages,
-    preCalculatedAnswerHeights
-  );
-  
   const allContent: unknown[] = [];
 
   // Add header to first page

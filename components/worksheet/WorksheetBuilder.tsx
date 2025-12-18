@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
-import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, preloadPdfMake, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, preloadPdfMake, warmupPdfWorker, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
 import PDFViewer from '@/components/pdf/PDFViewer';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import dynamic from 'next/dynamic';
@@ -98,6 +98,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfElapsedTime, setPdfElapsedTime] = useState(0);
   const pdfElapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pdfStartTimeRef = useRef<number>(0);
   const [worksheetTitle, setWorksheetTitle] = useState('');
   const [worksheetAuthor, setWorksheetAuthor] = useState('');
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
@@ -189,9 +190,10 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     }
   }, [wrongProblemIds, isTaggedMode, currentTaggedSubject]);
 
-  // Preload pdfMake library and static assets on mount for faster PDF generation
+  // Preload pdfMake library, warm up worker, and static assets on mount for faster PDF generation
   useEffect(() => {
     preloadPdfMake();
+    warmupPdfWorker(); // Initialize worker and load pdfMake in background
     // Preload logo and QR code in background
     getCachedLogoBase64().catch(() => {});
     getCachedQrBase64().catch(() => {});
@@ -481,12 +483,15 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
         setPdfProgress({ stage: '준비 중...', percent: 0 });
         setPdfElapsedTime(0);
 
+        // Start timestamp-based timer with 100ms updates for responsive feedback
+        pdfStartTimeRef.current = Date.now();
         if (pdfElapsedTimerRef.current) {
           clearInterval(pdfElapsedTimerRef.current);
         }
         pdfElapsedTimerRef.current = setInterval(() => {
-          setPdfElapsedTime(prev => prev + 1);
-        }, 1000);
+          const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+          setPdfElapsedTime(elapsed);
+        }, 100);
 
         setPdfProgress({ stage: '이미지 로딩 중...', percent: 5 });
 
@@ -1191,12 +1196,15 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     setPdfElapsedTime(0);
     setViewMode('solve');
 
+    // Start timestamp-based timer with 100ms updates for responsive feedback
+    pdfStartTimeRef.current = Date.now();
     if (pdfElapsedTimerRef.current) {
       clearInterval(pdfElapsedTimerRef.current);
     }
     pdfElapsedTimerRef.current = setInterval(() => {
-      setPdfElapsedTime(prev => prev + 1);
-    }, 1000);
+      const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+      setPdfElapsedTime(elapsed);
+    }, 100);
 
     try {
       const problemImageUrls = worksheetProblems.map(p => {
@@ -1643,12 +1651,15 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     setPdfElapsedTime(0);
     setViewMode('pdfGeneration');
 
+    // Start timestamp-based timer with 100ms updates for responsive feedback
+    pdfStartTimeRef.current = Date.now();
     if (pdfElapsedTimerRef.current) {
       clearInterval(pdfElapsedTimerRef.current);
     }
     pdfElapsedTimerRef.current = setInterval(() => {
-      setPdfElapsedTime(prev => prev + 1);
-    }, 1000);
+      const elapsed = Math.floor((Date.now() - pdfStartTimeRef.current) / 1000);
+      setPdfElapsedTime(elapsed);
+    }, 100);
 
     try {
       const problemImageUrls = worksheetProblems.map(p => {
@@ -1765,38 +1776,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
 
-      // For tagged subjects, also pre-generate solve PDF (problems only)
-      if (isTaggedMode) {
-        setPdfProgress({ stage: '풀이용 PDF 생성 중...', percent: 95 });
-        const solveDocDefinition = await createWorksheetWithAnswersDocDefinitionClient(
-          problemImageUrls,
-          base64ProblemImages,
-          [], // No answer images for solve mode
-          [],
-          worksheetTitle || '학습지명',
-          worksheetAuthor || '출제자',
-          worksheetCreatedAt,
-          subject,
-          problemMetadataForPdf,
-          problemHeights,
-          []
-        );
-
-        // Animated progress for solve PDF
-        let solveGenPercent = 95;
-        const solveGenInterval = setInterval(() => {
-          if (solveGenPercent < 99) {
-            solveGenPercent += 1;
-            setPdfProgress({ stage: '풀이용 PDF 생성 중...', percent: solveGenPercent });
-          }
-        }, 150);
-
-        const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
-        clearInterval(solveGenInterval);
-
-        const solveUrl = URL.createObjectURL(solveBlob);
-        setSolvePdfUrl(solveUrl);
-      }
+      // Solve PDF is now generated lazily when user clicks "풀기" button
+      // This saves ~40% generation time for tagged worksheets
 
       setPdfProgress({ stage: '완료!', percent: 100 });
 
