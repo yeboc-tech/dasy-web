@@ -4,7 +4,6 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Minus, Plus, Maximize, Download, Printer, Loader, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CustomButton } from '@/components/custom-button';
-import Link from 'next/link';
 
 // Print styles (minimal, just for hiding toolbar if needed)
 const printStyles = `
@@ -489,17 +488,6 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
                 </CustomButton>
               )}
 
-              {worksheetId && (
-                <Link href={`/w/${worksheetId}/solve`} target="_blank" rel="noopener noreferrer">
-                  <CustomButton
-                    variant="outline"
-                    size="sm"
-                    title="문제를 바로 풀어보세요"
-                  >
-                    바로 풀기
-                  </CustomButton>
-                </Link>
-              )}
             </div>
           </div>
         )}

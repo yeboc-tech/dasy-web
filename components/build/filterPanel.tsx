@@ -12,11 +12,9 @@ import TaggedSubjectFilters from './filters/TaggedSubjectFilters';
 const TAGGED_SUBJECTS = [
   { id: '경제', label: '경제' },
   { id: '사회문화', label: '사회문화' },
-] as const;
-
-// Disabled tagged subjects (coming soon)
-const DISABLED_TAGGED_SUBJECTS = [
   { id: '생활과윤리', label: '생활과윤리' },
+  { id: '정치와법', label: '정치와법' },
+  { id: '세계지리', label: '세계지리' },
 ] as const;
 
 // Check if a subject ID is a tagged subject
@@ -33,8 +31,8 @@ interface FilterPanelProps {
   isDialog?: boolean;
   // Lock subject selection based on existing worksheet problems
   // null = no problems, all enabled; 'tonghapsahoe' = only 통합사회 enabled
-  // For tagged subjects: '경제' | '사회문화' | '생활과윤리' = only that specific subject enabled
-  lockedSubject?: '경제' | '사회문화' | '생활과윤리' | 'tonghapsahoe' | null;
+  // For tagged subjects: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' = only that specific subject enabled
+  lockedSubject?: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | 'tonghapsahoe' | null;
   // Optional filter overrides for dialog view
   dialogFilters?: {
     selectedChapters: string[];
@@ -161,19 +159,6 @@ export default function FilterPanel({
               </Button>
             );
           })}
-          {/* Disabled tagged subjects (coming soon) */}
-          {DISABLED_TAGGED_SUBJECTS.map(subject => (
-            <div key={subject.id} className="cursor-not-allowed">
-              <DisabledButton
-                onClick={() => {}}
-                variant="outline"
-                disabled={true}
-                className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
-              >
-                {subject.label}
-              </DisabledButton>
-            </div>
-          ))}
         </div>
       </div>
 

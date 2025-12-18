@@ -26,7 +26,7 @@ const ALL_EXAM_TYPES = ['학평', '모평', '수능'];
 const ALL_DIFFICULTY_LEVELS = ['최상', '상', '중상', '중', '중하', '하'];
 
 interface TaggedSubjectFiltersProps {
-  subject: string; // '경제', '사회문화', '생활과윤리'
+  subject: string; // '경제', '사회문화', '생활과윤리', '정치와법', '세계지리'
   dialogFilters?: {
     selectedChapters: string[];
     setSelectedChapters: (value: string[]) => void;
