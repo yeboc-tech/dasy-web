@@ -15,6 +15,10 @@ const TAGGED_SUBJECTS = [
   { id: '생활과윤리', label: '생활과윤리' },
   { id: '정치와법', label: '정치와법' },
   { id: '세계지리', label: '세계지리' },
+  { id: '한국지리', label: '한국지리' },
+  { id: '윤리와사상', label: '윤리와사상' },
+  { id: '세계사', label: '세계사' },
+  { id: '동아시아사', label: '동아시아사' },
 ] as const;
 
 // Check if a subject ID is a tagged subject
@@ -32,7 +36,7 @@ interface FilterPanelProps {
   // Lock subject selection based on existing worksheet problems
   // null = no problems, all enabled; 'tonghapsahoe' = only 통합사회 enabled
   // For tagged subjects: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' = only that specific subject enabled
-  lockedSubject?: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | 'tonghapsahoe' | null;
+  lockedSubject?: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | '한국지리' | '윤리와사상' | '세계사' | '동아시아사' | 'tonghapsahoe' | null;
   // Optional filter overrides for dialog view
   dialogFilters?: {
     selectedChapters: string[];
