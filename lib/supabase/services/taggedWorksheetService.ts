@@ -3,7 +3,7 @@ import type { ProblemMetadata } from '@/lib/types/problems';
 import type { SortRule } from '@/lib/types/sorting';
 
 // List of tagged subject prefixes
-const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계지리_', '한국지리_'];
+const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계지리_', '한국지리_', '윤리와사상_', '세계사_', '동아시아사_'];
 
 interface CreateTaggedWorksheetParams {
   title: string;

@@ -18,7 +18,7 @@ export function getCdnUrl(path: string): string {
 /**
  * Tagged subject prefixes that use CDN storage
  */
-const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계사_', '세계지리_', '한국지리_'];
+const TAGGED_SUBJECT_PREFIXES = ['경제_', '사회문화_', '생활과윤리_', '정치와법_', '세계사_', '세계지리_', '한국지리_', '윤리와사상_', '동아시아사_'];
 
 /**
  * Check if a problem ID is from a tagged subject

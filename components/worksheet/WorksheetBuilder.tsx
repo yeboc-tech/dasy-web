@@ -156,8 +156,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     callback();
   };
 
-  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 정치와법, 세계지리, 한국지리)
-  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '정치와법', '세계지리', '한국지리'];
+  // Check if in tagged subject mode (경제, 사회문화, 생활과윤리, 정치와법, 세계지리, 한국지리, 윤리와사상, 세계사, 동아시아사)
+  const TAGGED_SUBJECTS = ['경제', '사회문화', '생활과윤리', '정치와법', '세계지리', '한국지리', '윤리와사상', '세계사', '동아시아사'];
   const isTaggedMode = TAGGED_SUBJECTS.some(s => selectedMainSubjects.includes(s));
 
   // Get current tagged subject (if in tagged mode)
@@ -268,17 +268,17 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   }, [user?.id, showOnlyWrongProblems]);
 
   // Determine locked subject based on existing worksheet problems
-  // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리, 정치와법, 세계지리)
+  // Uses getSubjectFromProblemId utility to detect tagged subjects (경제, 사회문화, 생활과윤리, 정치와법, 세계지리, 한국지리, 윤리와사상, 세계사, 동아시아사)
   // Returns the specific subject name to lock, or 'tonghapsahoe' for 통합사회
-  const lockedSubject: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | 'tonghapsahoe' | null = (() => {
+  const lockedSubject: '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | '한국지리' | '윤리와사상' | '세계사' | '동아시아사' | 'tonghapsahoe' | null = (() => {
     if (worksheetProblems.length === 0) return null;
 
     // Check if any problem is from a tagged subject
     for (const problem of worksheetProblems) {
       const subject = getSubjectFromProblemId(problem.id);
       if (subject) {
-        // Return the specific tagged subject (경제, 사회문화, 생활과윤리, 정치와법, or 세계지리)
-        return subject as '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리';
+        // Return the specific tagged subject
+        return subject as '경제' | '사회문화' | '생활과윤리' | '정치와법' | '세계지리' | '한국지리' | '윤리와사상' | '세계사' | '동아시아사';
       }
     }
 
