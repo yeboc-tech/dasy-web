@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
@@ -36,6 +36,7 @@ const navGroups: NavGroup[] = [
     title: '탐색',
     items: [
       { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
+      { label: '수능·모의고사 기출', href: '/exams', icon: <BookOpen className="w-4 h-4" /> },
     ],
   },
   {

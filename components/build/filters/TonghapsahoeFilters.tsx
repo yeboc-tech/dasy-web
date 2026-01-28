@@ -365,7 +365,7 @@ export default function TonghapsahoeFilters({
                     setSelectedSubjects(allSubjects);
                   }}
                   variant="outline"
-                  className={selectedSubjects.length === 9 ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedSubjects.length === 9 ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -378,7 +378,7 @@ export default function TonghapsahoeFilters({
                         onClick={() => {}} // No action for disabled
                         variant="outline"
                         disabled={true}
-                        className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+                        className="h-auto rounded-md px-4 py-1.5 text-sm font-medium bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
                       >
                         {subject}
                       </DisabledButton>
@@ -388,7 +388,7 @@ export default function TonghapsahoeFilters({
                       key={subject}
                       onClick={() => handleSubjectToggle(subject)}
                       variant="outline"
-                      className={selectedSubjects.includes(subject) && selectedSubjects.length < 9 ? "border-black text-black bg-gray-100" : ""}
+                      className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedSubjects.includes(subject) && selectedSubjects.length < 9 ? "border-black text-black bg-gray-100" : ""}`}
                     >
                       {subject}
                     </Button>
@@ -411,7 +411,7 @@ export default function TonghapsahoeFilters({
                       key={num}
                       onClick={() => setProblemCount(num)}
                       variant="outline"
-                      className={problemCount === num ? "border-black text-black bg-gray-100" : ""}
+                      className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${problemCount === num ? "border-black text-black bg-gray-100" : ""}`}
                     >
                       {num}
                     </Button>
@@ -441,7 +441,7 @@ export default function TonghapsahoeFilters({
                         setProblemCountInput(problemCount.toString());
                       }
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="1-100"
                   />
                   <span className="text-sm font-medium text-black">문제</span>
@@ -463,11 +463,11 @@ export default function TonghapsahoeFilters({
                     setSelectedDifficulties(['상', '중', '하']);
                   }}
                   variant="outline"
-                  className={
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${
                     selectedDifficulties.filter(d => ['상', '중', '하'].includes(d)).length === 3
                       ? "border-black text-black bg-gray-100"
                       : ""
-                  }
+                  }`}
                 >
                   모두
                 </Button>
@@ -497,11 +497,11 @@ export default function TonghapsahoeFilters({
                         }
                       }}
                       variant="outline"
-                      className={
+                      className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${
                         selectedDifficulties.includes(level) && relevantDifficulties.length < 3
                           ? "border-black text-black bg-gray-100"
                           : ""
-                      }
+                      }`}
                     >
                       {level}
                     </Button>
@@ -539,7 +539,7 @@ export default function TonghapsahoeFilters({
                       const clampedValue = Math.max(0, Math.min(100, value));
                       setCorrectRateRange([clampedValue, correctRateRange[1]]);
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="0"
                   />
                   <span className="text-sm font-medium text-black">%</span>
@@ -554,7 +554,7 @@ export default function TonghapsahoeFilters({
                       const clampedValue = Math.max(0, Math.min(100, value));
                       setCorrectRateRange([correctRateRange[0], clampedValue]);
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="100"
                   />
                   <span className="text-sm font-medium text-black">%</span>
@@ -575,7 +575,7 @@ export default function TonghapsahoeFilters({
                     setSelectedProblemTypes(['기출문제', 'N제']);
                   }}
                   variant="outline"
-                  className={selectedProblemTypes.length === 2 ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedProblemTypes.length === 2 ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -587,7 +587,7 @@ export default function TonghapsahoeFilters({
                           onClick={() => {}}
                           variant="outline"
                           disabled={true}
-                          className="bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+                          className="h-auto rounded-md px-4 py-1.5 text-sm font-medium bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
                         >
                           {type}
                         </DisabledButton>
@@ -611,7 +611,7 @@ export default function TonghapsahoeFilters({
                           }
                         }}
                         variant="outline"
-                        className={selectedProblemTypes.includes(type) && selectedProblemTypes.length < 2 ? "border-black text-black bg-gray-100" : ""}
+                        className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedProblemTypes.includes(type) && selectedProblemTypes.length < 2 ? "border-black text-black bg-gray-100" : ""}`}
                       >
                         {type}
                       </Button>
@@ -634,7 +634,7 @@ export default function TonghapsahoeFilters({
                     setSelectedYears(allYears);
                   }}
                   variant="outline"
-                  className={selectedYears.length === 14 ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedYears.length === 14 ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -643,7 +643,7 @@ export default function TonghapsahoeFilters({
                     key={year}
                     onClick={() => handleYearToggle(year)}
                     variant="outline"
-                    className={selectedYears.includes(year) && selectedYears.length < 14 ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedYears.includes(year) && selectedYears.length < 14 ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     {year}
                   </Button>

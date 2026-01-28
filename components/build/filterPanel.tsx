@@ -118,7 +118,7 @@ export default function FilterPanel({
               onClick={() => {}}
               variant="outline"
               disabled={true}
-              className="rounded-full px-6 py-2 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
+              className="h-auto rounded-full px-4 py-1.5 text-sm font-medium transition-all bg-red-50 text-black border-red-300 opacity-60 hover:bg-red-50 pointer-events-none"
             >
               통합사회 1
             </DisabledButton>
@@ -132,7 +132,7 @@ export default function FilterPanel({
                 onClick={() => onMainSubjectToggle('7ec63358-5e6b-49be-89a4-8b5639f3f9c0')}
                 variant="outline"
                 disabled={isDisabled}
-                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                className={`h-auto rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   selectedMainSubjects.includes('7ec63358-5e6b-49be-89a4-8b5639f3f9c0')
                     ? 'border-black text-black bg-gray-100'
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -153,7 +153,7 @@ export default function FilterPanel({
                 onClick={() => onMainSubjectToggle(subject.id)}
                 variant="outline"
                 disabled={isDisabled}
-                className={`rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                className={`h-auto rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   selectedMainSubjects.includes(subject.id)
                     ? 'border-black text-black bg-gray-100'
                     : 'bg-white text-black border-gray-300 hover:bg-gray-50'

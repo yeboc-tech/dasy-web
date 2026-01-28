@@ -296,7 +296,7 @@ export default function MyWorksheetsPage() {
             {/* 내가 만든 button */}
             <button
               onClick={() => setSelectedFilters(new Set(['created']))}
-              className={`rounded-full px-6 py-2 text-sm font-medium transition-all border cursor-pointer ${
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all border cursor-pointer ${
                 selectedFilters.has('created')
                   ? 'border-black text-black bg-gray-100'
                   : 'bg-white text-black border-gray-300 hover:bg-gray-50'
@@ -307,7 +307,7 @@ export default function MyWorksheetsPage() {
             {/* 내가 푼 button */}
             <button
               onClick={() => setSelectedFilters(new Set(['solved']))}
-              className={`rounded-full px-6 py-2 text-sm font-medium transition-all border cursor-pointer ${
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all border cursor-pointer ${
                 selectedFilters.has('solved')
                   ? 'border-black text-black bg-gray-100'
                   : 'bg-white text-black border-gray-300 hover:bg-gray-50'
