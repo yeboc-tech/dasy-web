@@ -463,7 +463,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     setSelectedGrades(['고3']);
                   }}
                   variant="outline"
-                  className="border-black text-black bg-gray-100"
+                  className="h-auto rounded-md px-4 py-1.5 text-sm font-medium border-black text-black bg-gray-100"
                 >
                   고3
                 </Button>
@@ -483,7 +483,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     setSelectedExamTypes(ALL_EXAM_TYPES);
                   }}
                   variant="outline"
-                  className={selectedExamTypes.length === ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedExamTypes.length === ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -492,7 +492,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     key={examType}
                     onClick={() => handleExamTypeToggle(examType)}
                     variant="outline"
-                    className={selectedExamTypes.includes(examType) && selectedExamTypes.length < ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedExamTypes.includes(examType) && selectedExamTypes.length < ALL_EXAM_TYPES.length ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     {examType}
                   </Button>
@@ -513,7 +513,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     setSelectedYears(ALL_YEARS);
                   }}
                   variant="outline"
-                  className={selectedYears.length === ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedYears.length === ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -522,7 +522,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     key={year}
                     onClick={() => handleYearToggle(year)}
                     variant="outline"
-                    className={selectedYears.includes(year) && selectedYears.length < ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedYears.includes(year) && selectedYears.length < ALL_YEARS.length ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     {year}
                   </Button>
@@ -543,7 +543,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     setSelectedMonths(ALL_MONTHS);
                   }}
                   variant="outline"
-                  className={selectedMonths.length === ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedMonths.length === ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -552,7 +552,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     key={month}
                     onClick={() => handleMonthToggle(month)}
                     variant="outline"
-                    className={selectedMonths.includes(month) && selectedMonths.length < ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedMonths.includes(month) && selectedMonths.length < ALL_MONTHS.length ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     {parseInt(month)}월
                   </Button>
@@ -573,7 +573,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                     setSelectedDifficulties(ALL_DIFFICULTY_LEVELS);
                   }}
                   variant="outline"
-                  className={selectedDifficulties.length === ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}
+                  className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedDifficulties.length === ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}`}
                 >
                   모두
                 </Button>
@@ -596,7 +596,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                       }
                     }}
                     variant="outline"
-                    className={selectedDifficulties.includes(level) && selectedDifficulties.length < ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${selectedDifficulties.includes(level) && selectedDifficulties.length < ALL_DIFFICULTY_LEVELS.length ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     {level}
                   </Button>
@@ -633,7 +633,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                       const clampedValue = Math.max(0, Math.min(100, value));
                       setCorrectRateRange([clampedValue, correctRateRange[1]]);
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="0"
                   />
                   <span className="text-sm font-medium text-black">%</span>
@@ -648,7 +648,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                       const clampedValue = Math.max(0, Math.min(100, value));
                       setCorrectRateRange([correctRateRange[0], clampedValue]);
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="100"
                   />
                   <span className="text-sm font-medium text-black">%</span>
@@ -668,7 +668,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                   <Button
                     onClick={() => setProblemCount(-1)}
                     variant="outline"
-                    className={problemCount === -1 ? "border-black text-black bg-gray-100" : ""}
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${problemCount === -1 ? "border-black text-black bg-gray-100" : ""}`}
                   >
                     전체
                   </Button>
@@ -677,7 +677,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                       key={num}
                       onClick={() => setProblemCount(num)}
                       variant="outline"
-                      className={problemCount === num ? "border-black text-black bg-gray-100" : ""}
+                      className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${problemCount === num ? "border-black text-black bg-gray-100" : ""}`}
                     >
                       {num}
                     </Button>
@@ -707,7 +707,7 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
                         setProblemCountInput(problemCount.toString());
                       }
                     }}
-                    className="w-[80px] focus-visible:ring-0 border-black"
+                    className="h-auto w-[80px] rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-0 border-black"
                     placeholder="1-100 or -1 for all"
                     disabled={problemCount === -1}
                   />
