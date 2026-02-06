@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
@@ -20,16 +20,24 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    title: '생성',
+    title: '기출문제',
     items: [
-      { label: '새 학습지', href: '/', icon: <FilePlus className="w-4 h-4" /> },
+      { label: '전체', href: '/board/all', icon: <List className="w-4 h-4" /> },
+      { label: '베스트', href: '/board', icon: <ThumbsUp className="w-4 h-4" /> },
+      { label: '즐겨찾기', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
     ],
   },
   {
-    title: '내 계정',
+    title: 'MY',
     items: [
-      { label: '프로필', href: '/profile', icon: <User className="w-4 h-4" /> },
-      { label: '내 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
+      { label: '내가 푼 문제 분석', href: '/my/problem-analysis', icon: <BarChart3 className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: '제작',
+    items: [
+      { label: '학습지 제작하기', href: '/', icon: <FilePlus className="w-4 h-4" /> },
+      { label: '내가 만든 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
     ],
   },
   {
@@ -37,6 +45,12 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
       { label: '수능·모의고사 기출', href: '/exams', icon: <BookOpen className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: '설정',
+    items: [
+      { label: '프로필', href: '/profile', icon: <User className="w-4 h-4" /> },
     ],
   },
   {
@@ -52,9 +66,9 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
 
-  // Filter out "내 계정" group if user is not logged in
+  // Filter out "설정" group if user is not logged in
   const visibleNavGroups = navGroups.filter(
-    (group) => group.title !== '내 계정' || user
+    (group) => group.title !== '설정' || user
   );
 
   return (

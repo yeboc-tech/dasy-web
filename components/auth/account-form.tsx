@@ -12,7 +12,6 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -20,6 +19,12 @@ import {
   DialogPortal,
 } from '@/components/ui/dialog'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { Check } from 'lucide-react'
+
+interface Subject {
+  id: string
+  name: string
+}
 
 const accountSchema = z.object({
   email: z.string().email('올바른 이메일 주소를 입력해주세요'),
@@ -66,6 +71,12 @@ export function AccountForm() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null)
 
+  // 관심 과목 관련 상태
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set())
+  const [subjectsLoading, setSubjectsLoading] = useState(true)
+  const [subjectsSaving, setSubjectsSaving] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -80,6 +91,64 @@ export function AccountForm() {
       setValue('email', user.email)
     }
   }, [user, setValue])
+
+  // 과목 목록 및 사용자의 관심 과목 불러오기
+  useEffect(() => {
+    async function fetchSubjects() {
+      // 전체 과목 목록
+      const { data: allSubjects } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .order('name')
+
+      if (allSubjects) {
+        setSubjects(allSubjects)
+      }
+
+      // 사용자의 관심 과목
+      if (user) {
+        const { data: userSubjects } = await supabase
+          .from('user_subjects')
+          .select('subject_id')
+          .eq('user_id', user.id)
+
+        if (userSubjects) {
+          setSelectedSubjects(new Set(userSubjects.map((s) => s.subject_id)))
+        }
+      }
+
+      setSubjectsLoading(false)
+    }
+
+    fetchSubjects()
+  }, [user, supabase])
+
+  // 과목 토글
+  const toggleSubject = async (subjectId: string) => {
+    if (!user || subjectsSaving) return
+
+    setSubjectsSaving(true)
+    const newSelected = new Set(selectedSubjects)
+
+    if (newSelected.has(subjectId)) {
+      // 삭제
+      newSelected.delete(subjectId)
+      await supabase
+        .from('user_subjects')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('subject_id', subjectId)
+    } else {
+      // 추가
+      newSelected.add(subjectId)
+      await supabase
+        .from('user_subjects')
+        .insert({ user_id: user.id, subject_id: subjectId })
+    }
+
+    setSelectedSubjects(newSelected)
+    setSubjectsSaving(false)
+  }
 
   const onSubmit = async (data: AccountFormData) => {
     // If no password change requested, do nothing
@@ -228,6 +297,47 @@ export function AccountForm() {
           </div>
         </div>
       </form>
+
+      {/* Divider */}
+      <div className="border-t border-[var(--border)]" />
+
+      {/* 관심 과목 설정 Section */}
+      <div className="px-4 pb-4">
+        <h2 className="text-sm font-medium text-black pt-4 mb-4">관심 과목 설정</h2>
+        <div className="max-w-md">
+          <p className="text-xs text-[var(--gray-600)] mb-4">
+            관심 있는 과목을 선택하세요. 선택한 과목을 기반으로 맞춤 콘텐츠를 제공합니다.
+          </p>
+          {subjectsLoading ? (
+            <div className="text-xs text-[var(--gray-500)]">로딩 중...</div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {subjects.map((subject) => {
+                const isSelected = selectedSubjects.has(subject.id)
+                return (
+                  <button
+                    key={subject.id}
+                    type="button"
+                    onClick={() => toggleSubject(subject.id)}
+                    disabled={subjectsSaving}
+                    className={`
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors
+                      ${isSelected
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${subjectsSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5" />}
+                    {subject.name}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Divider */}
       <div className="border-t border-[var(--border)]" />
