@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Loader } from 'lucide-react';
 import { OMRSheet } from '@/components/solve/OMRSheet';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { CustomButton } from '@/components/custom-button';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
@@ -36,6 +38,7 @@ export default function SolvePage() {
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfProgress, setPdfProgress] = useState<PdfProgress>({ stage: 'checking_cache', percent: 0 });
   const [answers, setAnswers] = useState<{[problemNumber: number]: number}>({});
+  const [showInstructionsDialog, setShowInstructionsDialog] = useState(true);
 
   // Load worksheet data and PDF
   useEffect(() => {
@@ -97,6 +100,10 @@ export default function SolvePage() {
     router.back();
   };
 
+  const handleStartExam = () => {
+    setShowInstructionsDialog(false);
+  };
+
   const problemCount = worksheet?.selected_problem_ids?.length ?? 0;
 
   if (loading) {
@@ -109,6 +116,53 @@ export default function SolvePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white">
+      {/* Instructions Dialog */}
+      <Dialog open={showInstructionsDialog} onOpenChange={setShowInstructionsDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="text-lg font-semibold text-center">
+            시험 유의사항
+          </DialogTitle>
+          <div className="py-4">
+            <ul className="space-y-3 text-sm text-gray-700">
+              <li className="flex gap-2">
+                <span className="text-[#FF00A1] font-medium">1.</span>
+                <span>문제를 꼼꼼히 읽고 정답을 선택하세요.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#FF00A1] font-medium">2.</span>
+                <span>왼쪽 OMR 카드에서 답안을 마킹하세요.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#FF00A1] font-medium">3.</span>
+                <span>모든 문제를 풀고 나면 제출 버튼을 눌러주세요.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-[#FF00A1] font-medium">4.</span>
+                <span>시험 중 페이지를 벗어나면 진행 상황이 저장되지 않을 수 있습니다.</span>
+              </li>
+            </ul>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <CustomButton
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleBack}
+            >
+              돌아가기
+            </CustomButton>
+            <CustomButton
+              variant="primary"
+              size="sm"
+              className="flex-1"
+              onClick={handleStartExam}
+            >
+              시험 시작하기
+            </CustomButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 shrink-0 bg-white">
         <div className="flex items-center gap-3">
