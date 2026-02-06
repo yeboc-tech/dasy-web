@@ -1,21 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Loader, Eye, Calendar } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-
-interface BoardItem {
-  id: number;
-  image_url: string | null;
-  title: string;
-  view_count: number;
-  created_at: string;
-}
+import { BoardListItem, BoardItem } from '@/components/board/board-list-item';
 
 export default function BoardAllPage() {
-  const router = useRouter();
   const [items, setItems] = useState<BoardItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +14,7 @@ export default function BoardAllPage() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('board')
-        .select('id, image_url, title, view_count, created_at')
+        .select('id, image_url, title, view_count, created_at, tags, subjects')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -37,15 +27,6 @@ export default function BoardAllPage() {
 
     fetchItems();
   }, []);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
 
   if (loading) {
     return (
@@ -74,45 +55,9 @@ export default function BoardAllPage() {
             게시물이 없습니다.
           </div>
         ) : (
-          <div className="flex flex-col gap-2 max-w-3xl mx-auto">
+          <div className="flex flex-col gap-2 w-full">
             {items.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => router.push(`/board/${item.id}`)}
-                className="flex items-center gap-4 p-4 bg-white border border-[var(--border)] rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                      <span className="text-blue-500 text-xl font-bold">
-                        {item.title.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-medium text-[var(--foreground)] truncate">
-                    {item.title}
-                  </h2>
-                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(item.created_at)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {item.view_count}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <BoardListItem key={item.id} item={item} />
             ))}
           </div>
         )}

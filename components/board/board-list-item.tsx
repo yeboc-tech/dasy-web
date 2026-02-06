@@ -1,0 +1,89 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Eye, Calendar } from 'lucide-react';
+import { BoardColorTag } from '@/components/ui/board-color-tag';
+import { SubjectColorTag } from '@/components/ui/subject-color-tag';
+
+export interface BoardItem {
+  id: number;
+  image_url: string | null;
+  title: string;
+  view_count: number;
+  created_at: string;
+  tags: string[] | null;
+  subjects: string[] | null;
+}
+
+interface BoardListItemProps {
+  item: BoardItem;
+}
+
+export function BoardListItem({ item }: BoardListItemProps) {
+  const router = useRouter();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  return (
+    <div
+      onClick={() => router.push(`/board/${item.id}`)}
+      className="w-full flex items-center gap-4 p-4 bg-white border border-[var(--border)] rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+    >
+      <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+        {item.image_url ? (
+          <Image
+            src={item.image_url}
+            alt={item.title}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+            <span className="text-blue-500 text-xl font-bold">
+              {item.title.charAt(0)}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        {/* Board Tags */}
+        {item.tags && item.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1">
+            {item.tags.map((tag) => (
+              <BoardColorTag key={tag} tag={tag} />
+            ))}
+          </div>
+        )}
+        {/* Subject Tags */}
+        {item.subjects && item.subjects.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1">
+            {item.subjects.map((subject) => (
+              <SubjectColorTag key={subject} subject={subject} />
+            ))}
+          </div>
+        )}
+        <h2 className="font-medium text-[var(--foreground)] truncate">
+          {item.title}
+        </h2>
+        <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            {formatDate(item.created_at)}
+          </span>
+          <span className="flex items-center gap-1">
+            <Eye className="w-3 h-3" />
+            {item.view_count}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
