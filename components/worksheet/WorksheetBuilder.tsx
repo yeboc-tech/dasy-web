@@ -60,9 +60,10 @@ interface WorksheetBuilderProps {
   worksheetId?: string;
   autoPdf?: boolean;
   solveId?: string;
+  initialSolveMode?: boolean;
 }
 
-export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: WorksheetBuilderProps) {
+export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initialSolveMode }: WorksheetBuilderProps) {
   const router = useRouter();
   const {
     selectedChapters,
@@ -404,6 +405,21 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       return () => clearTimeout(timer);
     }
   }, [autoPdf, worksheetLoading, worksheetProblems.length]);
+
+  // Track if initialSolveMode has been triggered to prevent re-triggering
+  const initialSolveModeTriggeredRef = useRef(false);
+
+  // Auto-enter solve mode when initialSolveMode is true and worksheet is loaded
+  useEffect(() => {
+    if (initialSolveMode && !worksheetLoading && worksheetProblems.length > 0 && !initialSolveModeTriggeredRef.current) {
+      initialSolveModeTriggeredRef.current = true;
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        handleEnterSolveMode();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [initialSolveMode, worksheetLoading, worksheetProblems.length]);
 
   // Load solve data when solveId is provided (from clicking solve history)
   const solveLoadedRef = useRef(false);

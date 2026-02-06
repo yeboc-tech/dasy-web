@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, Eye, Calendar, Star } from 'lucide-react';
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
+import remarkGfm from 'remark-gfm';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
@@ -87,7 +88,11 @@ export default function BoardDetailContent({ item }: BoardDetailContentProps) {
   useEffect(() => {
     async function compileMDX() {
       try {
-        const source = await serialize(item.content);
+        const source = await serialize(item.content, {
+          mdxOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        });
         setMdxSource(source);
       } catch {
         setError('MDX 파싱 오류가 발생했습니다.');
