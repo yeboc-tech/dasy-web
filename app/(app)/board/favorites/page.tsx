@@ -30,7 +30,7 @@ export default function BoardFavoritesPage() {
       if (error) {
         console.error('Error fetching favorites:', error);
       } else {
-        const boards = data?.map((item) => item.board).filter(Boolean) as BoardItem[] || [];
+        const boards = data?.map((item) => item.board as unknown as BoardItem).filter(Boolean) || [];
         setItems(boards);
       }
       setLoading(false);

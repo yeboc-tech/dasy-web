@@ -7,19 +7,11 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { createClient } from '@/lib/supabase/client';
 import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject } from '@/lib/api/SupabaseRpc';
 
-interface UserSubject {
-  subject_id: string;
-  subjects: {
-    id: string;
-    name: string;
-  };
-}
-
 export default function ProblemAnalysisPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [dataBySubject, setDataBySubject] = useState<ProblemAnalysisBySubject | null>(null);
-  const [userSubjects, setUserSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [userSubjects, setUserSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,17 +25,15 @@ export default function ProblemAnalysisPage() {
       const supabase = createClient();
 
       // 사용자의 관심 과목 가져오기
-      const { data: userSubjectsData } = await supabase
-        .from('user_subjects')
-        .select('subject_id, subjects(id, name)')
-        .eq('user_id', user.id);
+      const { data: settings } = await supabase
+        .from('user_app_setting')
+        .select('interest_subject_ids')
+        .eq('user_id', user.id)
+        .single();
 
-      if (userSubjectsData && userSubjectsData.length > 0) {
-        const subjects = (userSubjectsData as unknown as UserSubject[])
-          .map((item) => item.subjects)
-          .filter(Boolean);
-        setUserSubjects(subjects);
-        setSelectedSubject(subjects[0]?.name || null);
+      if (settings?.interest_subject_ids && settings.interest_subject_ids.length > 0) {
+        setUserSubjects(settings.interest_subject_ids);
+        setSelectedSubject(settings.interest_subject_ids[0] || null);
       }
 
       // 문제 분석 데이터 가져오기
@@ -140,10 +130,10 @@ export default function ProblemAnalysisPage() {
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">관심 과목을 설정해주세요.</p>
         <button
-          onClick={() => router.push('/profile')}
+          onClick={() => router.push('/settings/subjects')}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
-          프로필에서 설정하기
+          앱 설정에서 설정하기
         </button>
       </div>
     );
@@ -160,19 +150,19 @@ export default function ProblemAnalysisPage() {
 
       {/* 과목 탭 */}
       <div className="flex gap-1 px-4 pt-3 pb-2 bg-white border-b border-[var(--border)]">
-        {userSubjects.map((subject) => (
+        {userSubjects.map((subjectName) => (
           <button
-            key={subject.id}
-            onClick={() => setSelectedSubject(subject.name)}
+            key={subjectName}
+            onClick={() => setSelectedSubject(subjectName)}
             className={`
               px-4 py-2 text-sm font-medium rounded-lg transition-colors
-              ${selectedSubject === subject.name
+              ${selectedSubject === subjectName
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }
             `}
           >
-            {subject.name}
+            {subjectName}
           </button>
         ))}
       </div>

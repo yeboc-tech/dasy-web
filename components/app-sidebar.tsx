@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3 } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
@@ -11,6 +11,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   isExternal?: boolean;
+  subItems?: { label: string; href: string }[];
 }
 
 interface NavGroup {
@@ -20,7 +21,7 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    title: '기출문제',
+    title: '기출문제 학습지',
     items: [
       { label: '전체', href: '/board/all', icon: <List className="w-4 h-4" /> },
       { label: '베스트', href: '/board', icon: <ThumbsUp className="w-4 h-4" /> },
@@ -28,9 +29,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: 'MY',
+    title: '내가 푼 문제 분석',
     items: [
-      { label: '내가 푼 문제 분석', href: '/my/problem-analysis', icon: <BarChart3 className="w-4 h-4" /> },
+      { label: '전체문제', href: '/my/problem-analysis', icon: <BarChart3 className="w-4 h-4" /> },
+      { label: '학습지 별', href: '/my/problem-analysis/by-worksheet', icon: <FileStack className="w-4 h-4" /> },
     ],
   },
   {
@@ -50,7 +52,8 @@ const navGroups: NavGroup[] = [
   {
     title: '설정',
     items: [
-      { label: '프로필', href: '/profile', icon: <User className="w-4 h-4" /> },
+      { label: '앱 설정', href: '/settings/subjects', icon: <Settings className="w-4 h-4" /> },
+      { label: '계정 관리', href: '/profile', icon: <User className="w-4 h-4" /> },
     ],
   },
   {
@@ -66,7 +69,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
 
-  // Filter out "설정" group if user is not logged in
+  // Filter out settings groups if user is not logged in
   const visibleNavGroups = navGroups.filter(
     (group) => group.title !== '설정' || user
   );
@@ -88,6 +91,8 @@ export function AppSidebar() {
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
+                const hasSubItems = item.subItems && item.subItems.length > 0;
+                const isSubItemActive = hasSubItems && item.subItems?.some(sub => pathname === sub.href);
 
                 if (item.isExternal) {
                   return (
@@ -105,22 +110,49 @@ export function AppSidebar() {
                 }
 
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={dismissAuthBlocker}
-                    className={`
-                      flex items-center gap-2 px-2 h-8 rounded-md text-sm transition-colors cursor-pointer
-                      ${
-                        isActive
-                          ? 'bg-[var(--gray-200)] text-[var(--foreground)] font-medium'
-                          : 'text-[var(--gray-600)] hover:bg-[var(--gray-200)] hover:text-[var(--foreground)]'
-                      }
-                    `}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
+                  <div key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={dismissAuthBlocker}
+                      className={`
+                        flex items-center gap-2 px-2 h-8 rounded-md text-sm transition-colors cursor-pointer
+                        ${
+                          isActive || isSubItemActive
+                            ? 'bg-[var(--gray-200)] text-[var(--foreground)] font-medium'
+                            : 'text-[var(--gray-600)] hover:bg-[var(--gray-200)] hover:text-[var(--foreground)]'
+                        }
+                      `}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
+                    </Link>
+                    {/* Sub Items */}
+                    {hasSubItems && (
+                      <div className="ml-6 mt-0.5 space-y-0.5">
+                        {item.subItems?.map((subItem) => {
+                          const isSubActive = pathname === subItem.href;
+                          return (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              onClick={dismissAuthBlocker}
+                              className={`
+                                flex items-center gap-2 px-2 h-7 rounded-md text-xs transition-colors cursor-pointer
+                                ${
+                                  isSubActive
+                                    ? 'text-[#FF00A1] font-medium'
+                                    : 'text-[var(--gray-500)] hover:text-[var(--foreground)]'
+                                }
+                              `}
+                            >
+                              <span className="w-1 h-1 rounded-full bg-current" />
+                              <span>{subItem.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

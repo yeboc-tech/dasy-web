@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Loader } from 'lucide-react';
+import { ChevronLeft, Loader, Clock, ListOrdered, PanelLeft } from 'lucide-react';
 import { OMRSheet } from '@/components/solve/OMRSheet';
+import { ExamTimer } from '@/components/solve/ExamTimer';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { CustomButton } from '@/components/custom-button';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
+import { toast } from 'sonner';
 
 const SimplePDFViewer = dynamic(() => import('@/components/solve/SimplePDFViewer'), {
   ssr: false,
@@ -40,11 +44,43 @@ export default function SolvePage() {
   const [answers, setAnswers] = useState<{[problemNumber: number]: number}>({});
   const [showInstructionsDialog, setShowInstructionsDialog] = useState(true);
 
-  // Load worksheet data and PDF
+  // Solve mode states
+  const [solveMode, setSolveMode] = useState<'all' | 'partial'>('all');
+  const [partialCount, setPartialCount] = useState(5);
+
+  // Timer states
+  const [timerEnabled, setTimerEnabled] = useState(true);
+  const [isExamStarted, setIsExamStarted] = useState(false);
+
+  // Session states
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [maxScore, setMaxScore] = useState<number>(0);
+  const [problemIdsToSolve, setProblemIdsToSolve] = useState<string[]>([]);
+  const [isStarting, setIsStarting] = useState(false);
+  const sessionCreatingRef = useRef(false);
+
+  // OMR position state
+  const [omrPosition, setOmrPosition] = useState<'left' | 'right'>('right');
+
+  // Load worksheet data, PDF, and user settings
   useEffect(() => {
     const loadWorksheetAndPdf = async () => {
       try {
         const supabase = createClient();
+
+        // Load user settings for OMR position
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: settings } = await supabase
+            .from('user_app_setting')
+            .select('omr_position')
+            .eq('user_id', user.id)
+            .single();
+
+          if (settings?.omr_position) {
+            setOmrPosition(settings.omr_position);
+          }
+        }
 
         // Load worksheet data
         const { data, error } = await supabase
@@ -100,11 +136,226 @@ export default function SolvePage() {
     router.back();
   };
 
-  const handleStartExam = () => {
-    setShowInstructionsDialog(false);
+  const handleStartExam = async () => {
+    // Prevent duplicate session creation
+    if (sessionCreatingRef.current) return;
+    sessionCreatingRef.current = true;
+    setIsStarting(true);
+
+    try {
+      const supabase = createClient();
+
+      // Check if user is logged in
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast.error('로그인이 필요합니다.');
+        sessionCreatingRef.current = false;
+        setIsStarting(false);
+        return;
+      }
+
+      // Get the problem IDs to solve based on mode
+      const selectedProblemIds = solveMode === 'all'
+        ? worksheet?.selected_problem_ids ?? []
+        : (worksheet?.selected_problem_ids ?? []).slice(0, partialCount);
+
+      // Generate session ID
+      const newSessionId = crypto.randomUUID();
+
+      // Query accuracy_rate to calculate max_score
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, score')
+        .in('problem_id', selectedProblemIds);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+      }
+
+      // Create a map of problem_id -> score
+      const scoreMap = new Map<string, number>();
+      if (accuracyData) {
+        for (const item of accuracyData) {
+          scoreMap.set(item.problem_id, item.score ?? 2);
+        }
+      }
+
+      // Calculate max_score (default 2 points per problem if not in accuracy_rate)
+      const calculatedMaxScore = selectedProblemIds.reduce((sum, problemId) => {
+        return sum + (scoreMap.get(problemId) ?? 2);
+      }, 0);
+
+      // Insert initial record into solve_session_result
+      // score and correct_answer_count are null until submission
+      const { error: insertError } = await supabase
+        .from('solve_session_result')
+        .insert({
+          session_id: newSessionId,
+          user_id: user.id,
+          worksheet_id: worksheetId,
+          max_score: calculatedMaxScore,
+          total_problem_count: selectedProblemIds.length,
+          total_problem_ids: selectedProblemIds,
+        });
+
+      if (insertError) {
+        console.error('Error creating session:', insertError);
+        toast.error('시험 세션 생성에 실패했습니다.');
+        sessionCreatingRef.current = false;
+        setIsStarting(false);
+        return;
+      }
+
+      // Update state
+      setSessionId(newSessionId);
+      setMaxScore(calculatedMaxScore);
+      setProblemIdsToSolve(selectedProblemIds);
+      setShowInstructionsDialog(false);
+      setIsExamStarted(true);
+
+    } catch (err) {
+      console.error('Error starting exam:', err);
+      toast.error('시험 시작 중 오류가 발생했습니다.');
+    } finally {
+      sessionCreatingRef.current = false;
+      setIsStarting(false);
+    }
+  };
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  const handleTimeUp = () => {
+    // 시간 종료 시 자동 제출
+    handleSubmit();
+  };
+
+  const handleSubmit = async () => {
+    if (!sessionId || !problemIdsToSolve.length) {
+      toast.error('세션 정보가 없습니다.');
+      return;
+    }
+
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setShowSubmitDialog(false);
+
+    try {
+      const supabase = createClient();
+
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast.error('로그인이 필요합니다.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Query correct answers and scores from accuracy_rate
+      const { data: accuracyData, error: accuracyError } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, score')
+        .in('problem_id', problemIdsToSolve);
+
+      if (accuracyError) {
+        console.error('Error fetching accuracy data:', accuracyError);
+      }
+
+      // Create maps for correct answers and scores
+      const correctAnswerMap = new Map<string, number>();
+      const scoreMap = new Map<string, number>();
+
+      if (accuracyData) {
+        for (const item of accuracyData) {
+          correctAnswerMap.set(item.problem_id, parseInt(item.correct_answer) || 0);
+          scoreMap.set(item.problem_id, item.score ?? 2);
+        }
+      }
+
+      // Calculate results and prepare records
+      let totalScore = 0;
+      let correctCount = 0;
+      const records = problemIdsToSolve.map((problemId, index) => {
+        const userAnswer = answers[index + 1] ?? null; // 1-indexed, null if unanswered
+        const correctAnswer = correctAnswerMap.get(problemId) ?? 0;
+        const problemScore = scoreMap.get(problemId) ?? 2;
+
+        // Unanswered (null) is treated as wrong
+        const isCorrect = userAnswer !== null && userAnswer === correctAnswer;
+
+        if (isCorrect) {
+          correctCount++;
+          totalScore += problemScore;
+        }
+
+        return {
+          session_id: sessionId,
+          session_index: index,
+          user_id: user.id,
+          problem_id: problemId,
+          submit_answer: userAnswer,
+        };
+      });
+
+      // Insert all records into solve_session_record
+      const { error: recordError } = await supabase
+        .from('solve_session_record')
+        .insert(records);
+
+      if (recordError) {
+        console.error('Error inserting records:', recordError);
+        toast.error('답안 저장에 실패했습니다.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update solve_session_result with final score
+      const { error: resultError } = await supabase
+        .from('solve_session_result')
+        .update({
+          score: totalScore,
+          correct_answer_count: correctCount,
+        })
+        .eq('session_id', sessionId);
+
+      if (resultError) {
+        console.error('Error updating result:', resultError);
+        toast.error('결과 저장에 실패했습니다.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Navigate to result page
+      router.push(`/solve/${worksheetId}/result?session=${sessionId}`);
+
+    } catch (err) {
+      console.error('Error submitting:', err);
+      toast.error('제출 중 오류가 발생했습니다.');
+      setIsSubmitting(false);
+    }
+  };
+
+  const getUnansweredCount = () => {
+    let count = 0;
+    for (let i = 1; i <= actualProblemCount; i++) {
+      if (!answers[i]) count++;
+    }
+    return count;
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}분 ${secs.toString().padStart(2, '0')}초`;
   };
 
   const problemCount = worksheet?.selected_problem_ids?.length ?? 0;
+
+  // Calculate actual problem count based on solve mode
+  const actualProblemCount = solveMode === 'all' ? problemCount : Math.min(partialCount, problemCount);
+
+  // Calculate total time in seconds
+  const totalTimeSeconds = actualProblemCount * 90;
 
   if (loading) {
     return (
@@ -116,9 +367,52 @@ export default function SolvePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white">
+      {/* Submit Confirmation Dialog */}
+      <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogTitle className="text-lg font-semibold text-center">
+            제출 확인
+          </DialogTitle>
+          <div className="py-4 text-center">
+            {getUnansweredCount() > 0 ? (
+              <p className="text-sm text-gray-700">
+                <span className="text-red-500 font-semibold">{getUnansweredCount()}개</span>의
+                문제를 풀지 않았습니다.<br />
+                안 푼 문제는 <span className="text-red-500 font-semibold">오답 처리</span>됩니다.
+              </p>
+            ) : (
+              <p className="text-sm text-gray-700">
+                모든 문제를 풀었습니다.
+              </p>
+            )}
+            <p className="text-sm text-gray-500 mt-3">
+              정말 제출하시겠습니까?
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <CustomButton
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => setShowSubmitDialog(false)}
+            >
+              취소
+            </CustomButton>
+            <CustomButton
+              variant="primary"
+              size="sm"
+              className="flex-1"
+              onClick={handleSubmit}
+            >
+              제출하기
+            </CustomButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Instructions Dialog */}
       <Dialog open={showInstructionsDialog} onOpenChange={setShowInstructionsDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <DialogTitle className="text-lg font-semibold text-center">
             시험 유의사항
           </DialogTitle>
@@ -130,7 +424,7 @@ export default function SolvePage() {
               </li>
               <li className="flex gap-2">
                 <span className="text-[#FF00A1] font-medium">2.</span>
-                <span>왼쪽 OMR 카드에서 답안을 마킹하세요.</span>
+                <span>{omrPosition === 'left' ? '왼쪽' : '오른쪽'} OMR 카드에서 답안을 마킹하세요.</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[#FF00A1] font-medium">3.</span>
@@ -141,6 +435,129 @@ export default function SolvePage() {
                 <span>시험 중 페이지를 벗어나면 진행 상황이 저장되지 않을 수 있습니다.</span>
               </li>
             </ul>
+
+            {/* Problem Count Selection */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <ListOrdered className="w-4 h-4 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">문제 수 선택</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSolveMode('all')}
+                  className={`
+                    p-3 rounded-lg border text-sm font-medium transition-colors text-center
+                    ${solveMode === 'all'
+                      ? 'border-[#FF00A1] bg-[#FFF0F7] text-[#FF00A1]'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  전체문제 풀기
+                  <span className="block text-xs font-normal mt-0.5 opacity-70">
+                    {problemCount}문제
+                  </span>
+                </button>
+                <button
+                  onClick={() => setSolveMode('partial')}
+                  className={`
+                    p-3 rounded-lg border text-sm font-medium transition-colors text-center
+                    ${solveMode === 'partial'
+                      ? 'border-[#FF00A1] bg-[#FFF0F7] text-[#FF00A1]'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  일부문제 풀기
+                  <span className="block text-xs font-normal mt-0.5 opacity-70">
+                    선택한 개수만큼
+                  </span>
+                </button>
+              </div>
+
+              {/* Partial count selection */}
+              {solveMode === 'partial' && (
+                <div className="mt-3 flex gap-2">
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setPartialCount(num)}
+                      disabled={num > problemCount}
+                      className={`
+                        flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
+                        ${num > problemCount
+                          ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                          : partialCount === num
+                            ? 'border-[#FF00A1] bg-[#FF00A1] text-white'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }
+                      `}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Timer Toggle */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <Label htmlFor="timer-toggle" className="text-sm font-medium text-gray-700">
+                    타이머 사용
+                  </Label>
+                </div>
+                <Switch
+                  id="timer-toggle"
+                  checked={timerEnabled}
+                  onCheckedChange={setTimerEnabled}
+                />
+              </div>
+              {timerEnabled && actualProblemCount > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  제한 시간: {formatTime(totalTimeSeconds)} ({actualProblemCount}문제 × 90초)
+                </p>
+              )}
+            </div>
+
+            {/* OMR Position Toggle */}
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PanelLeft className="w-4 h-4 text-gray-500" />
+                <Label className="text-sm font-medium text-gray-700">
+                  OMR 시트 위치
+                </Label>
+                <span className="text-xs text-gray-400">(앱 설정에서 기본값 변경)</span>
+              </div>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => setOmrPosition('left')}
+                  className={`
+                    px-3 py-1 text-xs font-medium transition-colors
+                    ${omrPosition === 'left'
+                      ? 'bg-[#FF00A1] text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  좌측
+                </button>
+                <button
+                  onClick={() => setOmrPosition('right')}
+                  className={`
+                    px-3 py-1 text-xs font-medium transition-colors border-l border-gray-200
+                    ${omrPosition === 'right'
+                      ? 'bg-[#FF00A1] text-white'
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  우측
+                </button>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2 pt-2">
             <CustomButton
@@ -156,8 +573,16 @@ export default function SolvePage() {
               size="sm"
               className="flex-1"
               onClick={handleStartExam}
+              disabled={isStarting}
             >
-              시험 시작하기
+              {isStarting ? (
+                <span className="flex items-center gap-2">
+                  <Loader className="animate-spin w-4 h-4" />
+                  준비 중...
+                </span>
+              ) : (
+                '시험 시작하기'
+              )}
             </CustomButton>
           </div>
         </DialogContent>
@@ -176,7 +601,7 @@ export default function SolvePage() {
             풀기
           </h1>
           <span className="text-xs text-[var(--gray-500)]">
-            {problemCount}문제
+            {actualProblemCount}문제
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -184,12 +609,38 @@ export default function SolvePage() {
         </div>
       </div>
 
-      {/* Content - OMR left, PDF right */}
-      <div className="flex-1 flex overflow-hidden bg-gray-100">
-        {/* OMR Sheet - Left Side */}
-        <div className="w-52 shrink-0 p-4 pr-0 overflow-hidden flex flex-col">
+      {/* Content - OMR and PDF */}
+      <div className={`flex-1 flex overflow-hidden bg-gray-100 ${omrPosition === 'right' ? 'flex-row-reverse' : ''}`}>
+        {/* OMR Sheet */}
+        <div className={`w-52 shrink-0 p-4 ${omrPosition === 'right' ? 'pl-0' : 'pr-0'} overflow-hidden flex flex-col gap-3`}>
+          {/* Submit Button */}
+          <CustomButton
+            variant="primary"
+            size="sm"
+            className="w-full"
+            onClick={() => setShowSubmitDialog(true)}
+            disabled={!isExamStarted || isSubmitting}
+          >
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <Loader className="animate-spin w-4 h-4" />
+                제출 중...
+              </span>
+            ) : (
+              '제출하기'
+            )}
+          </CustomButton>
+
+          {/* Timer */}
+          <ExamTimer
+            totalSeconds={totalTimeSeconds}
+            enabled={timerEnabled}
+            isRunning={isExamStarted}
+            onTimeUp={handleTimeUp}
+          />
+
           <OMRSheet
-            problemCount={problemCount}
+            problemCount={actualProblemCount}
             answers={answers}
             onAnswerChange={handleAnswerChange}
           />

@@ -9,7 +9,7 @@ export default function ProfilePage() {
       <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
-          <h1 className="text-lg font-semibold text-[var(--foreground)]">프로필</h1>
+          <h1 className="text-lg font-semibold text-[var(--foreground)]">계정 관리</h1>
         </div>
 
         {/* Content Area */}
