@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 
@@ -15,17 +15,24 @@ interface NavItem {
 }
 
 interface NavGroup {
-  title: string;
+  title?: string; // Optional - if not provided, items render without group header
   items: NavItem[];
 }
 
 const navGroups: NavGroup[] = [
   {
+    title: 'MY',
+    items: [
+      { label: '내 학습 현황', href: '/my/dashboard', icon: <Home className="w-4 h-4" /> },
+      { label: '단원별 학습 현황', href: '/my/by-chapter', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '즐겨찾는 학습지', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
+    ],
+  },
+  {
     title: '기출문제 학습지',
     items: [
-      { label: '전체', href: '/board/all', icon: <List className="w-4 h-4" /> },
+      { label: '전체 둘러보기', href: '/board/all', icon: <List className="w-4 h-4" /> },
       { label: '베스트', href: '/board', icon: <ThumbsUp className="w-4 h-4" /> },
-      { label: '즐겨찾기', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
     ],
   },
   {
@@ -79,13 +86,15 @@ export function AppSidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto">
         {visibleNavGroups.map((group, groupIndex) => (
-          <div key={group.title} className={groupIndex > 0 ? 'mt-4' : ''}>
-            {/* Group Title - subtle and small */}
-            <div className="px-2 mb-2">
-              <span className="text-xs font-medium text-[var(--gray-500)]">
-                {group.title}
-              </span>
-            </div>
+          <div key={group.title || `group-${groupIndex}`} className={groupIndex > 0 ? 'mt-4' : ''}>
+            {/* Group Title - subtle and small (only if title exists) */}
+            {group.title && (
+              <div className="px-2 mb-2">
+                <span className="text-xs font-medium text-[var(--gray-500)]">
+                  {group.title}
+                </span>
+              </div>
+            )}
 
             {/* Group Items - 32px height (h-8) */}
             <div className="space-y-0.5">

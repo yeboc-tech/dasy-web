@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Loader, Clock, ListOrdered, PanelLeft } from 'lucide-react';
+import { ChevronLeft, Loader, Clock, ListOrdered, PanelLeft, Check, Circle } from 'lucide-react';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import { ExamTimer } from '@/components/solve/ExamTimer';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -46,7 +46,7 @@ export default function SolvePage() {
 
   // Solve mode states
   const [solveMode, setSolveMode] = useState<'all' | 'partial'>('all');
-  const [partialCount, setPartialCount] = useState(5);
+  const [selectedProblemIndices, setSelectedProblemIndices] = useState<Set<number>>(new Set());
 
   // Timer states
   const [timerEnabled, setTimerEnabled] = useState(true);
@@ -56,11 +56,15 @@ export default function SolvePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [maxScore, setMaxScore] = useState<number>(0);
   const [problemIdsToSolve, setProblemIdsToSolve] = useState<string[]>([]);
+  const [sortedSelectedIndices, setSortedSelectedIndices] = useState<number[]>([]); // Stores sorted indices for answer mapping
   const [isStarting, setIsStarting] = useState(false);
   const sessionCreatingRef = useRef(false);
 
   // OMR position state
   const [omrPosition, setOmrPosition] = useState<'left' | 'right'>('right');
+
+  // Previously solved problems (problem_id set)
+  const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
 
   // Load worksheet data, PDF, and user settings
   useEffect(() => {
@@ -80,6 +84,17 @@ export default function SolvePage() {
           if (settings?.omr_position) {
             setOmrPosition(settings.omr_position);
           }
+
+          // Load previously solved problems for this user
+          const { data: solvedRecords } = await supabase
+            .from('solve_session_record')
+            .select('problem_id')
+            .eq('user_id', user.id);
+
+          if (solvedRecords) {
+            const solvedIds = new Set(solvedRecords.map(r => r.problem_id));
+            setSolvedProblemIds(solvedIds);
+          }
         }
 
         // Load worksheet data
@@ -97,6 +112,11 @@ export default function SolvePage() {
         }
 
         setWorksheet(data);
+
+        // Initialize all problems as selected
+        const allIndices = new Set<number>(data.selected_problem_ids.map((_: string, i: number) => i));
+        setSelectedProblemIndices(allIndices);
+
         setLoading(false);
 
         // Get PDF (from cache or generate)
@@ -154,10 +174,12 @@ export default function SolvePage() {
         return;
       }
 
-      // Get the problem IDs to solve based on mode
-      const selectedProblemIds = solveMode === 'all'
-        ? worksheet?.selected_problem_ids ?? []
-        : (worksheet?.selected_problem_ids ?? []).slice(0, partialCount);
+      // Get the problem IDs to solve based on selected indices
+      const allProblemIds = worksheet?.selected_problem_ids ?? [];
+      const sortedIndices = Array.from(selectedProblemIndices).sort((a, b) => a - b);
+      const selectedProblemIds = sortedIndices
+        .map(index => allProblemIds[index])
+        .filter(Boolean);
 
       // Generate session ID
       const newSessionId = crypto.randomUUID();
@@ -210,6 +232,7 @@ export default function SolvePage() {
       setSessionId(newSessionId);
       setMaxScore(calculatedMaxScore);
       setProblemIdsToSolve(selectedProblemIds);
+      setSortedSelectedIndices(sortedIndices);
       setShowInstructionsDialog(false);
       setIsExamStarted(true);
 
@@ -276,7 +299,9 @@ export default function SolvePage() {
       let totalScore = 0;
       let correctCount = 0;
       const records = problemIdsToSolve.map((problemId, index) => {
-        const userAnswer = answers[index + 1] ?? null; // 1-indexed, null if unanswered
+        // Use sortedSelectedIndices to get the actual problem number (1-indexed in OMRSheet)
+        const problemNumber = sortedSelectedIndices[index] + 1;
+        const userAnswer = answers[problemNumber] ?? null; // null if unanswered
         const correctAnswer = correctAnswerMap.get(problemId) ?? 0;
         const problemScore = scoreMap.get(problemId) ?? 2;
 
@@ -337,8 +362,10 @@ export default function SolvePage() {
 
   const getUnansweredCount = () => {
     let count = 0;
-    for (let i = 1; i <= actualProblemCount; i++) {
-      if (!answers[i]) count++;
+    // Use sortedSelectedIndices to check only the selected problems
+    for (const index of sortedSelectedIndices) {
+      const problemNumber = index + 1; // 1-indexed in OMRSheet
+      if (!answers[problemNumber]) count++;
     }
     return count;
   };
@@ -352,7 +379,7 @@ export default function SolvePage() {
   const problemCount = worksheet?.selected_problem_ids?.length ?? 0;
 
   // Calculate actual problem count based on solve mode
-  const actualProblemCount = solveMode === 'all' ? problemCount : Math.min(partialCount, problemCount);
+  const actualProblemCount = selectedProblemIndices.size;
 
   // Calculate total time in seconds
   const totalTimeSeconds = actualProblemCount * 90;
@@ -444,7 +471,13 @@ export default function SolvePage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => setSolveMode('all')}
+                  onClick={() => {
+                    setSolveMode('all');
+                    // Select all problems
+                    if (worksheet?.selected_problem_ids) {
+                      setSelectedProblemIndices(new Set(worksheet.selected_problem_ids.map((_, i) => i)));
+                    }
+                  }}
                   className={`
                     p-3 rounded-lg border text-sm font-medium transition-colors text-center
                     ${solveMode === 'all'
@@ -459,7 +492,19 @@ export default function SolvePage() {
                   </span>
                 </button>
                 <button
-                  onClick={() => setSolveMode('partial')}
+                  onClick={() => {
+                    setSolveMode('partial');
+                    // Select only unsolved problems
+                    if (worksheet?.selected_problem_ids) {
+                      const unsolvedIndices = new Set<number>();
+                      worksheet.selected_problem_ids.forEach((problemId, i) => {
+                        if (!solvedProblemIds.has(problemId)) {
+                          unsolvedIndices.add(i);
+                        }
+                      });
+                      setSelectedProblemIndices(unsolvedIndices);
+                    }
+                  }}
                   className={`
                     p-3 rounded-lg border text-sm font-medium transition-colors text-center
                     ${solveMode === 'partial'
@@ -468,34 +513,104 @@ export default function SolvePage() {
                     }
                   `}
                 >
-                  일부문제 풀기
+                  남은문제 풀기
                   <span className="block text-xs font-normal mt-0.5 opacity-70">
-                    선택한 개수만큼
+                    안 푼 문제만
                   </span>
                 </button>
               </div>
 
-              {/* Partial count selection */}
+              {/* Quick count selection for partial mode */}
               {solveMode === 'partial' && (
                 <div className="mt-3 flex gap-2">
-                  {[1, 2, 3, 4, 5].map(num => (
-                    <button
-                      key={num}
-                      onClick={() => setPartialCount(num)}
-                      disabled={num > problemCount}
-                      className={`
-                        flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
-                        ${num > problemCount
-                          ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                          : partialCount === num
-                            ? 'border-[#FF00A1] bg-[#FF00A1] text-white'
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  {[5, 4, 3, 2, 1].map(num => {
+                    // Count unsolved problems
+                    const unsolvedCount = worksheet?.selected_problem_ids?.filter(
+                      id => !solvedProblemIds.has(id)
+                    ).length ?? 0;
+
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => {
+                          if (worksheet?.selected_problem_ids) {
+                            const unsolvedIndices: number[] = [];
+                            worksheet.selected_problem_ids.forEach((problemId, i) => {
+                              if (!solvedProblemIds.has(problemId)) {
+                                unsolvedIndices.push(i);
+                              }
+                            });
+                            // Select first N unsolved problems
+                            setSelectedProblemIndices(new Set(unsolvedIndices.slice(0, num)));
+                          }
+                        }}
+                        disabled={num > unsolvedCount}
+                        className={`
+                          flex-1 py-2 rounded-lg border text-sm font-medium transition-colors
+                          ${num > unsolvedCount
+                            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                            : selectedProblemIndices.size === num
+                              ? 'border-[#FF00A1] bg-[#FF00A1] text-white'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                          }
+                        `}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Problem Grid - shows solved status */}
+              {worksheet?.selected_problem_ids && (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-wrap gap-1.5">
+                    {worksheet.selected_problem_ids.map((problemId, index) => {
+                      const isSolved = solvedProblemIds.has(problemId);
+                      const isSelected = selectedProblemIndices.has(index);
+
+                      const toggleSelection = () => {
+                        const newSet = new Set(selectedProblemIndices);
+                        if (newSet.has(index)) {
+                          newSet.delete(index);
+                        } else {
+                          newSet.add(index);
                         }
-                      `}
-                    >
-                      {num}
-                    </button>
-                  ))}
+                        setSelectedProblemIndices(newSet);
+                      };
+
+                      return (
+                        <div
+                          key={problemId}
+                          onClick={toggleSelection}
+                          className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                          style={{
+                            border: isSelected ? '1px solid #60A5FA' : '1px solid transparent',
+                            backgroundColor: isSelected ? '#EFF6FF' : 'transparent',
+                          }}
+                          title={`${index + 1}번 문제 클릭하여 ${isSelected ? '제외' : '추가'}${isSolved ? ' (풀이 완료)' : ''}`}
+                        >
+                          <div
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{
+                              backgroundColor: isSolved ? '#FFF0F7' : isSelected ? '#EFF6FF' : '#FFFFFF',
+                              border: isSolved ? '1.5px solid #FF00A1' : isSelected ? 'none' : '1.5px solid #D1D5DB',
+                            }}
+                          >
+                            {isSolved ? (
+                              <Check className="w-2.5 h-2.5" style={{ color: '#FF00A1' }} />
+                            ) : (
+                              <span className="text-[9px] text-gray-400">{index + 1}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    <span className="text-[#FF00A1]">●</span> 풀었던 문제 <span className="text-blue-400 ml-2">●</span> 풀 문제 · 클릭하여 선택/해제
+                  </p>
                 </div>
               )}
             </div>
@@ -640,9 +755,10 @@ export default function SolvePage() {
           />
 
           <OMRSheet
-            problemCount={actualProblemCount}
+            problemCount={problemCount}
             answers={answers}
             onAnswerChange={handleAnswerChange}
+            selectedProblemIndices={selectedProblemIndices}
           />
         </div>
 

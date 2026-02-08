@@ -1,19 +1,25 @@
 'use client';
 
 import Link from 'next/link';
+import { Zap } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CustomButton } from '@/components/custom-button';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthActions } from '@/lib/hooks/use-auth';
 import { AuthBlockerProvider } from '@/lib/contexts/auth-blocker-context';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { TodayProblemDialog, useTodayProblemDialog } from '@/components/TodayProblemDialog';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { signOut } = useAuthActions();
+  const { showDialog, setShowDialog } = useTodayProblemDialog();
 
   return (
     <AuthBlockerProvider>
+      {/* 오늘의 문제 다이얼로그 */}
+      <TodayProblemDialog open={showDialog} onOpenChange={setShowDialog} />
+
       <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--app-bg)' }}>
         {/* Top Navbar */}
         <div className="w-full h-14 flex items-center justify-between px-4 gap-2 shrink-0">
@@ -27,7 +33,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
 
           {/* Auth Buttons / Profile */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {/* 오늘의 문제 버튼 */}
+            <button
+              onClick={() => setShowDialog(true)}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
+            >
+              <Zap className="w-4 h-4" />
+              <span>오늘의 문제</span>
+            </button>
+
             {loading ? (
               <div className="w-8 h-8 flex items-center justify-center">
                 <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
