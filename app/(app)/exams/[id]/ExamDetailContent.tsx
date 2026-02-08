@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Download } from 'lucide-react';
-import { CustomButton } from '@/components/custom-button';
+import Image from 'next/image';
+import { ChevronLeft, Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import examsData from '@/data/exams.json';
 
@@ -21,16 +21,12 @@ function getExamName(examType: string, year: number, month: string, grade: strin
   }
 }
 
-function getDownloadText(exam: Exam, type: '문제' | '해설'): string {
-  const { examType, year, month, grade, subject } = exam;
-
-  if (examType === '수능') {
-    return `${year}학년도 대학수학능력시험 ${subject} ${type}`;
-  } else if (examType === '모평') {
-    return `${year}학년도 ${grade} ${month}월 모의평가 ${subject} ${type}`;
-  } else {
-    return `${year}년 ${grade} ${month}월 학력평가 ${subject} ${type}`;
-  }
+function getImagePath(exam: Exam): string {
+  // exam.id: 경제_고3_2025_11_수능_NA
+  // 이미지: 경제_고3_2025_11_수능.png
+  const parts = exam.id.split('_');
+  const imageId = parts.slice(0, -1).join('_');
+  return `/images/past-exam/${imageId}.png`;
 }
 
 interface ExamDetailContentProps {
@@ -104,56 +100,11 @@ export default function ExamDetailContent({ groupId }: ExamDetailContentProps) {
     }
   };
 
-  const downloadFile = async (filename: string): Promise<boolean> => {
-    const url = `${S3_BASE_URL}/${encodeURIComponent(filename)}`;
-    const TIMEOUT_MS = 30000;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) return false;
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      URL.revokeObjectURL(blobUrl);
-      return true;
-    } catch {
-      return false;
+  const scrollToSubject = (subjectId: string) => {
+    const element = document.getElementById(subjectId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  const handleDownloadAll = async () => {
-    const totalFiles = subjects.reduce((count, exam) => {
-      return count + (exam.hasProblem ? 1 : 0) + (exam.hasAnswer ? 1 : 0);
-    }, 0);
-
-    toast.loading(`${totalFiles}개 파일 다운로드 중...`, { id: 'download-all' });
-
-    let successCount = 0;
-    for (const exam of subjects) {
-      if (exam.hasProblem) {
-        if (await downloadFile(exam.problemPdf)) successCount++;
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      if (exam.hasAnswer && exam.answerPdf) {
-        if (await downloadFile(exam.answerPdf)) successCount++;
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    }
-
-    toast.success(`${successCount}개 파일 다운로드 완료`, { id: 'download-all' });
   };
 
   if (subjects.length === 0) {
@@ -161,7 +112,7 @@ export default function ExamDetailContent({ groupId }: ExamDetailContentProps) {
       <div className="w-full h-full flex flex-col overflow-hidden">
         <div className="h-14 border-b border-[var(--border)] flex items-center px-4 shrink-0 bg-white">
           <button
-            onClick={() => router.push('/exams')}
+            onClick={() => router.back()}
             className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -176,109 +127,125 @@ export default function ExamDetailContent({ groupId }: ExamDetailContentProps) {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push('/exams')}
-            className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="flex items-end gap-2">
-            <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">
-              {examName}
-            </h1>
-            <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
-              {subjects.length}개 과목
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <CustomButton
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadAll}
-          >
-            전체 다운로드
-          </CustomButton>
-        </div>
+      {/* Header */}
+      <div className="h-14 border-b border-[var(--border)] flex items-center px-4 shrink-0 bg-white">
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <table className="w-full text-sm">
-          <colgroup>
-            <col />
-            <col style={{ width: '380px' }} />
-            <col style={{ width: '380px' }} />
-            <col style={{ width: '80px' }} />
-          </colgroup>
-          <thead className="sticky top-0 z-10 bg-[var(--gray-50)] shadow-[0_1px_0_var(--border)]">
-            <tr>
-              <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap bg-[var(--gray-50)]">
-                과목
-              </th>
-              <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap bg-[var(--gray-50)]">
-                문제
-              </th>
-              <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap bg-[var(--gray-50)]">
-                해설
-              </th>
-              <th className="h-10 px-4 text-right align-middle font-medium text-[var(--foreground)] whitespace-nowrap bg-[var(--gray-50)]">
-                전체
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {subjects.map((exam) => (
-              <tr
-                key={exam.id}
-                className="border-b border-[var(--border)]"
-              >
-                <td className="p-4 align-middle">
-                  <span className="font-medium">{exam.subject}</span>
-                </td>
-                <td className="p-4 align-middle">
-                  {exam.hasProblem ? (
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto" id="exam-scroll-container">
+        <div className="flex max-w-5xl mx-auto">
+          {/* 본문 */}
+          <div className="flex-1 px-6 py-8 max-w-3xl">
+            {/* 제목 */}
+            <div className="text-center mb-12">
+              <h1 className="text-2xl font-bold text-[var(--foreground)]">
+                {examName}
+              </h1>
+              <p className="text-sm text-gray-500 mt-2">
+                {subjects.length}개 과목
+              </p>
+            </div>
+
+            {/* 과목별 섹션 */}
+            <div className="space-y-24">
+              {subjects.map((exam) => (
+                <section key={exam.id} id={exam.id} className="scroll-mt-20 text-center">
+                  {/* 과목 제목 */}
+                  <h2 className="text-2xl font-bold text-[var(--foreground)] mb-6">
+                    {exam.subject}
+                  </h2>
+
+                  {/* 본문 이미지 */}
+                  <div className="mb-6 rounded-lg overflow-hidden border border-gray-200 max-w-md mx-auto">
+                    <Image
+                      src={getImagePath(exam)}
+                      alt={`${examName} ${exam.subject}`}
+                      width={448}
+                      height={634}
+                      className="w-full h-auto"
+                    />
+                  </div>
+
+                  {/* 다운로드 링크들 */}
+                  <div className="space-y-3 inline-flex flex-col items-center">
+                    {/* 문제 PDF */}
+                    {exam.hasProblem && (
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <Download className="w-4 h-4" />
+                        <span>{examName} {exam.subject} 문제</span>
+                        <button
+                          onClick={() => handleDownload(exam.problemPdf)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                        >
+                          [PDF 다운로드]
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 해설 PDF */}
+                    {exam.hasAnswer && exam.answerPdf && (
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <Download className="w-4 h-4" />
+                        <span>{examName} {exam.subject} 해설</span>
+                        <button
+                          onClick={() => handleDownload(exam.answerPdf!)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                        >
+                          [PDF 다운로드]
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 키다리에서 바로 풀기 */}
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <ExternalLink className="w-4 h-4" />
+                      <span>{examName} {exam.subject}</span>
+                      {exam.worksheet_id ? (
+                        <button
+                          onClick={() => router.push(`/solve/${exam.worksheet_id}`)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline transition-colors cursor-pointer"
+                        >
+                          [키다리에서 바로 풀기]
+                        </button>
+                      ) : (
+                        <>
+                          <span className="text-gray-400">[키다리에서 바로 풀기]</span>
+                          <span className="text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded">준비중</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+
+          {/* 우측 목차 (고정) */}
+          <div className="w-48 shrink-0 hidden lg:block">
+            <div className="sticky top-8 p-4">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">목차</h2>
+              <ul className="flex flex-col gap-1">
+                {subjects.map((exam) => (
+                  <li key={exam.id}>
                     <button
-                      onClick={() => handleDownload(exam.problemPdf)}
-                      className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-black cursor-pointer transition-colors"
+                      onClick={() => scrollToSubject(exam.id)}
+                      className="flex items-center gap-2 text-left px-2 py-1.5 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors cursor-pointer w-full"
                     >
-                      {getDownloadText(exam, '문제')}
-                      <Download className="w-4 h-4" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                      {exam.subject}
                     </button>
-                  ) : (
-                    <span className="text-sm text-gray-300">-</span>
-                  )}
-                </td>
-                <td className="p-4 align-middle">
-                  {exam.hasAnswer && exam.answerPdf ? (
-                    <button
-                      onClick={() => handleDownload(exam.answerPdf!)}
-                      className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-black cursor-pointer transition-colors"
-                    >
-                      {getDownloadText(exam, '해설')}
-                      <Download className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <span className="text-sm text-gray-300">-</span>
-                  )}
-                </td>
-                <td className="p-4 align-middle text-right">
-                  <button
-                    onClick={async () => {
-                      if (exam.hasProblem) await handleDownload(exam.problemPdf);
-                      if (exam.hasAnswer && exam.answerPdf) await handleDownload(exam.answerPdf);
-                    }}
-                    disabled={!exam.hasProblem && !exam.hasAnswer}
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-gray-500 bg-[var(--gray-100)] hover:bg-[var(--gray-200)] hover:text-gray-700 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

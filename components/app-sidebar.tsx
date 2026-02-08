@@ -24,8 +24,15 @@ const navGroups: NavGroup[] = [
   {
     title: 'MY',
     items: [
-      { label: '내 학습 현황', href: '/my/dashboard', icon: <Home className="w-4 h-4" /> },
-      { label: '단원별 학습 현황', href: '/my/by-chapter', icon: <BookOpen className="w-4 h-4" /> },
+      {
+        label: '내 학습 현황',
+        href: '/my/dashboard',
+        icon: <Home className="w-4 h-4" />,
+        subItems: [
+          { label: '단원별 학습 현황', href: '/my/by-chapter' },
+          { label: '난이도별 학습 현황', href: '/my/by-difficulty' },
+        ],
+      },
       { label: '즐겨찾는 학습지', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
     ],
   },
@@ -34,6 +41,10 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '전체 둘러보기', href: '/board/all', icon: <List className="w-4 h-4" /> },
       { label: '베스트', href: '/board', icon: <ThumbsUp className="w-4 h-4" /> },
+      { label: '수능', href: '/board/suneung', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '고3 모의고사', href: '/board/g3', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '고2 모의고사', href: '/board/g2', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '고1 모의고사', href: '/board/g1', icon: <BookOpen className="w-4 h-4" /> },
     ],
   },
   {
@@ -54,7 +65,6 @@ const navGroups: NavGroup[] = [
     title: '탐색',
     items: [
       { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
-      { label: '수능·모의고사 기출', href: '/exams', icon: <BookOpen className="w-4 h-4" /> },
     ],
   },
   {

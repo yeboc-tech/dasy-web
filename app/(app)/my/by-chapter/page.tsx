@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Loader, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { createClient } from '@/lib/supabase/client';
-import { useTaggedChapters } from '@/lib/hooks/useTaggedChapters';
+import { useSsotChapters } from '@/lib/hooks/useSsotChapters';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 
@@ -17,8 +17,8 @@ export default function ByChapterPage() {
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // Fetch chapters for selected subject
-  const { chapters, loading: chaptersLoading, error: chaptersError } = useTaggedChapters(selectedSubject || '');
+  // ssot에서 단원 정보 가져오기
+  const { chapters, loading: chaptersLoading, error: chaptersError } = useSsotChapters(selectedSubject || '');
 
   useEffect(() => {
     async function fetchUserSubjects() {
