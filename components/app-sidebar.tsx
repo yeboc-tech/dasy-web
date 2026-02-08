@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
+import { useAppStore } from '@/lib/zustand/appStore';
 
 interface NavItem {
   label: string;
@@ -75,11 +76,24 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
+  const { mode, toggleMode } = useAppStore();
 
-  // Filter out settings groups if user is not logged in
-  const visibleNavGroups = navGroups.filter(
-    (group) => group.title !== '설정' || user
-  );
+  // Filter nav groups based on mode and auth
+  const visibleNavGroups = navGroups.filter((group) => {
+    // 선생님 모드: 제작 그룹만 표시
+    if (mode === 'teacher') {
+      return group.title === '제작';
+    }
+    // 학생 모드: 제작 그룹 숨김
+    if (group.title === '제작') {
+      return false;
+    }
+    // 학생 모드: 설정은 로그인 시에만 표시
+    if (group.title === '설정') {
+      return !!user;
+    }
+    return true;
+  });
 
   return (
     <aside className="w-64 h-full bg-transparent flex flex-col pt-2 px-1 pb-1">
@@ -168,6 +182,17 @@ export function AppSidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Mode Toggle Button */}
+      <div className="px-2 pb-3 pt-2 border-t border-[var(--border)]">
+        <button
+          onClick={toggleMode}
+          className="w-full flex items-center justify-center gap-2 px-2 h-9 rounded-md text-sm transition-colors cursor-pointer bg-gray-100 text-[var(--gray-600)] hover:bg-gray-200 hover:text-[var(--foreground)]"
+        >
+          <ArrowRightLeft className="w-4 h-4" />
+          <span>{mode === 'student' ? '선생님용 전환' : '학생용 전환'}</span>
+        </button>
+      </div>
     </aside>
   );
 }
