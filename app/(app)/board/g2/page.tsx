@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,6 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import examsData from '@/data/exams.json';
 
 type Exam = typeof examsData.exams[number];
@@ -23,6 +30,15 @@ interface ExamGroup {
   thumbnailPath: string;
   subjects: Exam[];
 }
+
+// 월별 시험 유형 옵션
+const EXAM_TYPE_OPTIONS = [
+  { key: '03_학평', label: '03월 학력평가' },
+  { key: '06_학평', label: '06월 학력평가' },
+  { key: '09_학평', label: '09월 학력평가' },
+  { key: '10_학평', label: '10월 학력평가' },
+  { key: '11_학평', label: '11월 학력평가' },
+];
 
 // 썸네일 이미지 경로 생성 (첫 번째 과목 기준)
 function getThumbnailPath(exam: Exam): string {
@@ -40,6 +56,7 @@ function getExamName(year: number, month: string, region: string | null): string
 export default function G2Page() {
   const router = useRouter();
   const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedExamTypes, setSelectedExamTypes] = useState<Set<string>>(new Set());
 
   // Filter 고2 학평 exams, group by exam event
   const examGroups = useMemo(() => {
@@ -88,11 +105,51 @@ export default function G2Page() {
     return Array.from(years).sort((a, b) => b - a);
   }, [examGroups]);
 
-  // Filter by selected year
+  // Toggle exam type selection
+  const toggleExamType = (key: string) => {
+    setSelectedExamTypes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  // Filter by selected year and exam types
   const filteredGroups = useMemo(() => {
-    if (selectedYear === 'all') return examGroups;
-    return examGroups.filter(group => group.year === parseInt(selectedYear));
-  }, [examGroups, selectedYear]);
+    let result = examGroups;
+
+    // Year filter
+    if (selectedYear !== 'all') {
+      result = result.filter(group => group.year === parseInt(selectedYear));
+    }
+
+    // Exam type filter (month_학평)
+    if (selectedExamTypes.size > 0) {
+      result = result.filter(group => {
+        const groupKey = `${group.month}_학평`;
+        return selectedExamTypes.has(groupKey);
+      });
+    }
+
+    return result;
+  }, [examGroups, selectedYear, selectedExamTypes]);
+
+  // Get display text for exam type filter button
+  const examTypeButtonText = useMemo(() => {
+    if (selectedExamTypes.size === 0) {
+      return '전체 시험';
+    }
+    if (selectedExamTypes.size === 1) {
+      const key = Array.from(selectedExamTypes)[0];
+      const option = EXAM_TYPE_OPTIONS.find(o => o.key === key);
+      return option?.label || key;
+    }
+    return `${selectedExamTypes.size}개 선택`;
+  }, [selectedExamTypes]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -105,26 +162,51 @@ export default function G2Page() {
           </span>
         </div>
 
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[120px] h-8 text-sm">
-            <SelectValue placeholder="연도" />
-          </SelectTrigger>
-          <SelectContent className="bg-white max-h-[300px] overflow-y-auto">
-            <SelectItem value="all" className="cursor-pointer hover:bg-gray-100">전체 연도</SelectItem>
-            {availableYears.map((year) => (
-              <SelectItem key={year} value={String(year)} className="cursor-pointer hover:bg-gray-100">
-                {year}년
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          {/* Year Select */}
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[120px] h-8 text-sm">
+              <SelectValue placeholder="연도" />
+            </SelectTrigger>
+            <SelectContent className="bg-white max-h-[300px] overflow-y-auto">
+              <SelectItem value="all" className="cursor-pointer hover:bg-gray-100">전체 연도</SelectItem>
+              {availableYears.map((year) => (
+                <SelectItem key={year} value={String(year)} className="cursor-pointer hover:bg-gray-100">
+                  {year}년
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Exam Type Multi-Select */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-between gap-2 h-8 px-3 text-sm bg-white border border-[var(--border)] rounded-md hover:bg-gray-50 transition-colors cursor-pointer min-w-[120px]">
+                <span className="truncate">{examTypeButtonText}</span>
+                <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-white min-w-[160px]" align="end">
+              {EXAM_TYPE_OPTIONS.map((option) => (
+                <DropdownMenuCheckboxItem
+                  key={option.key}
+                  checked={selectedExamTypes.has(option.key)}
+                  onCheckedChange={() => toggleExamType(option.key)}
+                  className="cursor-pointer"
+                >
+                  {option.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Exam List */}
       <div className="flex-1 overflow-y-auto p-4">
         {filteredGroups.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-gray-500">
-            해당 연도의 고2 학력평가 기출이 없습니다.
+            해당 조건의 고2 학력평가 기출이 없습니다.
           </div>
         ) : (
           <div className="flex flex-col gap-2">

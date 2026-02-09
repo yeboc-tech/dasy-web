@@ -1,7 +1,7 @@
 /**
- * 시험별 비공개 워크시트 생성 스크립트
+ * 시험-워크시트 동기화 스크립트
  *
- * 사용법: npx tsx scripts/create-exam-worksheets.ts
+ * 사용법: npx tsx scripts/sync-exam-worksheets
  *
  * 1. exams.json에서 시험 목록 로드
  * 2. 각 시험에 대해 accuracy_rate 테이블에서 문제 ID 조회
@@ -27,8 +27,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// exams.json 경로
-const EXAMS_JSON_PATH = path.join(__dirname, '../data/exams.json');
+// 경로 설정
+const DATA_DIR = path.join(__dirname, '../../data');
+const EXAMS_JSON_PATH = path.join(DATA_DIR, 'exams.json');
+const OUTPUT_DIR = path.join(__dirname, 'output');
+const LOG_PATH = path.join(OUTPUT_DIR, 'sync-log.json');
 
 interface Exam {
   id: string;
@@ -54,6 +57,19 @@ interface ExamsData {
     filters: object;
   };
   exams: Exam[];
+}
+
+interface SyncLog {
+  syncedAt: string;
+  created: number;
+  skipped: number;
+  alreadyExists: number;
+  failed: number;
+  details: {
+    created: string[];
+    skipped: string[];
+    failed: string[];
+  };
 }
 
 // 시험 ID에서 문제 조회용 prefix 추출
@@ -136,21 +152,34 @@ async function createWorksheetForExam(exam: Exam): Promise<string | null> {
 }
 
 async function main() {
-  console.log('=== 시험별 워크시트 생성 스크립트 ===\n');
+  console.log('=== 시험-워크시트 동기화 스크립트 ===\n');
+
+  // 출력 디렉토리 생성
+  if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  }
 
   // exams.json 로드
   const examsData: ExamsData = JSON.parse(fs.readFileSync(EXAMS_JSON_PATH, 'utf-8'));
   console.log(`총 ${examsData.exams.length}개 시험 로드됨\n`);
 
-  let created = 0;
-  let skipped = 0;
-  let failed = 0;
-  let alreadyExists = 0;
+  const syncLog: SyncLog = {
+    syncedAt: new Date().toISOString(),
+    created: 0,
+    skipped: 0,
+    alreadyExists: 0,
+    failed: 0,
+    details: {
+      created: [],
+      skipped: [],
+      failed: [],
+    },
+  };
 
   for (const exam of examsData.exams) {
     // 이미 worksheet_id가 있으면 스킵
     if (exam.worksheet_id) {
-      alreadyExists++;
+      syncLog.alreadyExists++;
       continue;
     }
 
@@ -158,12 +187,12 @@ async function main() {
 
     if (worksheetId) {
       exam.worksheet_id = worksheetId;
-      created++;
-    } else if (worksheetId === null) {
-      // 문제가 없는 경우
-      skipped++;
+      syncLog.created++;
+      syncLog.details.created.push(exam.id);
     } else {
-      failed++;
+      // 문제가 없는 경우
+      syncLog.skipped++;
+      syncLog.details.skipped.push(exam.id);
     }
 
     // API 속도 제한 방지
@@ -174,12 +203,16 @@ async function main() {
   examsData.metadata.generatedAt = new Date().toISOString();
   fs.writeFileSync(EXAMS_JSON_PATH, JSON.stringify(examsData, null, 2));
 
+  // 로그 저장
+  fs.writeFileSync(LOG_PATH, JSON.stringify(syncLog, null, 2));
+
   console.log('\n=== 완료 ===');
-  console.log(`생성됨: ${created}`);
-  console.log(`스킵됨 (문제 없음): ${skipped}`);
-  console.log(`이미 존재: ${alreadyExists}`);
-  console.log(`실패: ${failed}`);
+  console.log(`생성됨: ${syncLog.created}`);
+  console.log(`스킵됨 (문제 없음): ${syncLog.skipped}`);
+  console.log(`이미 존재: ${syncLog.alreadyExists}`);
+  console.log(`실패: ${syncLog.failed}`);
   console.log(`\nexams.json 저장됨: ${EXAMS_JSON_PATH}`);
+  console.log(`로그 저장됨: ${LOG_PATH}`);
 }
 
 main().catch(console.error);

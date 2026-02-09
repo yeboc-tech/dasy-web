@@ -31,20 +31,30 @@ const navGroups: NavGroup[] = [
         subItems: [
           { label: '단원별 학습 현황', href: '/my/by-chapter' },
           { label: '난이도별 학습 현황', href: '/my/by-difficulty' },
+          { label: '시험별 학습 현황', href: '/my/by-exam' },
         ],
       },
-      { label: '즐겨찾는 학습지', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
     ],
   },
   {
     title: '기출문제 학습지',
     items: [
-      { label: '전체 둘러보기', href: '/board/all', icon: <List className="w-4 h-4" /> },
+      { label: '전체 학습지', href: '/board/all', icon: <List className="w-4 h-4" /> },
+      { label: '즐겨찾는 학습지', href: '/board/favorites', icon: <Star className="w-4 h-4" /> },
       { label: '베스트', href: '/board', icon: <ThumbsUp className="w-4 h-4" /> },
-      { label: '수능', href: '/board/suneung', icon: <BookOpen className="w-4 h-4" /> },
-      { label: '고3 모의고사', href: '/board/g3', icon: <BookOpen className="w-4 h-4" /> },
-      { label: '고2 모의고사', href: '/board/g2', icon: <BookOpen className="w-4 h-4" /> },
-      { label: '고1 모의고사', href: '/board/g1', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '단원별 학습지', href: '/board/by-chapter', icon: <BookOpen className="w-4 h-4" /> },
+      { label: '난이도별 학습지', href: '/board/by-difficulty', icon: <BookOpen className="w-4 h-4" /> },
+      {
+        label: '수능·모의고사 기출',
+        href: '/board/suneung',
+        icon: <BookOpen className="w-4 h-4" />,
+        subItems: [
+          { label: '수능', href: '/board/suneung' },
+          { label: '고3 모의고사', href: '/board/g3' },
+          { label: '고2 모의고사', href: '/board/g2' },
+          { label: '고1 모의고사', href: '/board/g1' },
+        ],
+      },
     ],
   },
   {
