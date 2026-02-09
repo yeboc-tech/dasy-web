@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { GradingAnimation } from '@/components/GradingAnimation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { TodayProblem } from '@/lib/api/SupabaseRpc';
 import { createClient } from '@/lib/supabase/client';
@@ -44,8 +45,12 @@ export function ProblemSolverDialog({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [showGrading, setShowGrading] = useState(false);
+  const [gradingDone, setGradingDone] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [explanationImageLoaded, setExplanationImageLoaded] = useState(false);
+  const [preloadExplanation, setPreloadExplanation] = useState(false);
+  const [showProblemInResult, setShowProblemInResult] = useState(false);
 
   // 문제 로드
   const loadProblem = useCallback(async (subjectFilter?: string) => {
@@ -53,9 +58,13 @@ export function ProblemSolverDialog({
     setError(null);
     setSelectedAnswer(null);
     setShowResult(false);
+    setShowGrading(false);
+    setGradingDone(false);
     setProblem(null);
     setImageLoaded(false);
     setExplanationImageLoaded(false);
+    setPreloadExplanation(false);
+    setShowProblemInResult(false);
 
     const { data, error: fetchError } = await fetchProblem(subjectFilter);
 
@@ -105,8 +114,22 @@ export function ProblemSolverDialog({
         submit_answer: String(selectedAnswer),
       });
 
-    setShowResult(true);
+    // 채점 애니메이션 + 해설 이미지 동시 로딩 시작
+    setShowGrading(true);
+    setPreloadExplanation(true);
   };
+
+  const handleGradingComplete = useCallback(() => {
+    setGradingDone(true);
+  }, []);
+
+  // 채점 애니메이션 완료 + 해설 이미지 로드 완료 시 결과 표시
+  useEffect(() => {
+    if (gradingDone && explanationImageLoaded) {
+      setShowGrading(false);
+      setShowResult(true);
+    }
+  }, [gradingDone, explanationImageLoaded]);
 
   const handleConfirm = () => {
     if (hideToday && showHideToday && hideLocalStorageKey) {
@@ -123,6 +146,7 @@ export function ProblemSolverDialog({
 
   const isCorrect = problem && selectedAnswer !== null &&
     String(selectedAnswer) === problem.correctAnswer;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,7 +167,8 @@ export function ProblemSolverDialog({
           )}
         </div>
 
-        <div className="mt-2 min-h-[400px]">
+        <div className="mt-2 min-h-[400px] relative">
+          {/* 채점 애니메이션 */}
           {/* 이미지 프리로드 (숨김) */}
           {problem && !showResult && !imageLoaded && (
             <img
@@ -153,7 +178,7 @@ export function ProblemSolverDialog({
               onLoad={() => setImageLoaded(true)}
             />
           )}
-          {problem && showResult && !explanationImageLoaded && (
+          {problem && (preloadExplanation || showResult) && !explanationImageLoaded && (
             <img
               src={problem.explanationImageUrl}
               alt=""
@@ -162,8 +187,8 @@ export function ProblemSolverDialog({
             />
           )}
 
-          {/* 로딩 상태: API 로딩 또는 이미지 로딩 */}
-          {(loading || (problem && !showResult && !imageLoaded) || (problem && showResult && !explanationImageLoaded)) ? (
+          {/* 로딩 상태: API 로딩 또는 이미지 로딩 (채점 중에는 표시 안함) */}
+          {!showGrading && (loading || (problem && !showResult && !imageLoaded) || (problem && showResult && !explanationImageLoaded)) ? (
             <div className="flex flex-col items-center justify-center h-[380px]">
               <div className="w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div className="h-full bg-[#FF00A1] rounded-full animate-progress" />
@@ -194,30 +219,50 @@ export function ProblemSolverDialog({
                     const examType = parts[4] || '';
 
                     return (
-                      <div className="space-y-1 mb-3">
-                        {/* 1행: 년도 - 학년 - type */}
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <span>{year}년</span>
-                          <span className="text-gray-300">·</span>
-                          <span>{grade}</span>
-                          <span className="text-gray-300">·</span>
-                          <span>{month}월 {examType}</span>
-                        </div>
-
-                        {/* 2행: 난이도 * 점수 * 정답률 */}
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                          {problem.difficulty && <span>{problem.difficulty}</span>}
-                          {problem.difficulty && problem.score && <span className="text-gray-300">·</span>}
-                          {problem.score && <span>{problem.score}점</span>}
-                          {(problem.difficulty || problem.score) && problem.accuracyRate !== null && <span className="text-gray-300">·</span>}
-                          {problem.accuracyRate !== null && <span>정답률 {problem.accuracyRate}%</span>}
-                        </div>
-
-                        {/* 3행: 단원 */}
-                        {problem.tags && problem.tags.length > 0 && (
-                          <div className="text-xs text-gray-400">
-                            {problem.tags.join(' > ')}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="space-y-1">
+                          {/* 1행: 년도 - 학년 - type */}
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                            <span>{year}년</span>
+                            <span className="text-gray-300">·</span>
+                            <span>{grade}</span>
+                            <span className="text-gray-300">·</span>
+                            <span>{month}월 {examType}</span>
                           </div>
+
+                          {/* 2행: 난이도 * 점수 * 정답률 */}
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            {problem.difficulty && <span>{problem.difficulty}</span>}
+                            {problem.difficulty && problem.score && <span className="text-gray-300">·</span>}
+                            {problem.score && <span>{problem.score}점</span>}
+                            {(problem.difficulty || problem.score) && problem.accuracyRate !== null && <span className="text-gray-300">·</span>}
+                            {problem.accuracyRate !== null && <span>정답률 {problem.accuracyRate}%</span>}
+                          </div>
+
+                          {/* 3행: 단원 */}
+                          {problem.tags && problem.tags.length > 0 && (
+                            <div className="text-xs text-gray-400">
+                              {problem.tags.join(' > ')}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 문제/해설 토글 스위치 (결과 뷰에서만) */}
+                        {showResult && (
+                          <button
+                            onClick={() => setShowProblemInResult(prev => !prev)}
+                            className="flex items-center gap-1.5 text-xs shrink-0 ml-3"
+                          >
+                            <span className={showProblemInResult ? 'text-gray-900 font-medium' : 'text-gray-400'}>문제</span>
+                            <div className="relative w-8 h-[18px] rounded-full bg-gray-200 transition-colors">
+                              <div
+                                className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-all ${
+                                  showProblemInResult ? 'left-[2px]' : 'left-[14px]'
+                                }`}
+                              />
+                            </div>
+                            <span className={!showProblemInResult ? 'text-gray-900 font-medium' : 'text-gray-400'}>해설</span>
+                          </button>
                         )}
                       </div>
                     );
@@ -227,12 +272,21 @@ export function ProblemSolverDialog({
                   {!showResult ? (
                     <>
                       {/* 문제 이미지 */}
-                      <div className="bg-gray-50 rounded-lg mb-4 overflow-hidden">
-                        <img
-                          src={problem.imageUrl}
-                          alt="문제 이미지"
-                          className="w-full h-auto"
-                        />
+                      <div className="relative mb-4">
+                        {/* 채점 애니메이션 */}
+                        {showGrading && (
+                          <GradingAnimation
+                            isCorrect={String(selectedAnswer) === problem.correctAnswer}
+                            onComplete={handleGradingComplete}
+                          />
+                        )}
+                        <div className="bg-gray-50 rounded-lg overflow-hidden">
+                          <img
+                            src={problem.imageUrl}
+                            alt="문제 이미지"
+                            className="w-full h-auto"
+                          />
+                        </div>
                       </div>
 
                       <div className="flex gap-3 justify-center">
@@ -271,11 +325,11 @@ export function ProblemSolverDialog({
                     </>
                   ) : (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      {/* 해설 이미지 */}
+                      {/* 해설/문제 이미지 */}
                       <div className="bg-gray-50 rounded-lg mb-4 overflow-hidden">
                         <img
-                          src={problem.explanationImageUrl}
-                          alt="해설 이미지"
+                          src={showProblemInResult ? problem.imageUrl : problem.explanationImageUrl}
+                          alt={showProblemInResult ? '문제 이미지' : '해설 이미지'}
                           className="w-full h-auto"
                         />
                       </div>
