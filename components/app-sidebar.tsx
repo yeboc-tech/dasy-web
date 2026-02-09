@@ -22,21 +22,6 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    title: 'MY',
-    items: [
-      {
-        label: '내 학습 현황',
-        href: '/my/dashboard',
-        icon: <Home className="w-4 h-4" />,
-        subItems: [
-          { label: '단원별 학습 현황', href: '/my/by-chapter' },
-          { label: '난이도별 학습 현황', href: '/my/by-difficulty' },
-          { label: '시험별 학습 현황', href: '/my/by-exam' },
-        ],
-      },
-    ],
-  },
-  {
     title: '기출문제 학습지',
     items: [
       { label: '전체 학습지', href: '/board/all', icon: <List className="w-4 h-4" /> },
@@ -55,13 +40,31 @@ const navGroups: NavGroup[] = [
           { label: '고1 모의고사', href: '/board/g1' },
         ],
       },
+      { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
     ],
   },
   {
-    title: '내가 푼 문제 분석',
+    title: 'MY',
     items: [
-      { label: '전체문제', href: '/my/problem-analysis', icon: <BarChart3 className="w-4 h-4" /> },
-      { label: '학습지 별', href: '/my/problem-analysis/by-worksheet', icon: <FileStack className="w-4 h-4" /> },
+      {
+        label: '내 학습 현황',
+        href: '/my/dashboard',
+        icon: <Home className="w-4 h-4" />,
+        subItems: [
+          { label: '단원별 학습 현황', href: '/my/by-chapter' },
+          { label: '난이도별 학습 현황', href: '/my/by-difficulty' },
+          { label: '시험별 학습 현황', href: '/my/by-exam' },
+        ],
+      },
+      {
+        label: '내가 푼 문제 분석',
+        href: '/my/problem-analysis',
+        icon: <BarChart3 className="w-4 h-4" />,
+        subItems: [
+          { label: '전체문제', href: '/my/problem-analysis' },
+          { label: '학습지 별', href: '/my/problem-analysis/by-worksheet' },
+        ],
+      },
     ],
   },
   {
@@ -69,12 +72,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '학습지 제작하기', href: '/', icon: <FilePlus className="w-4 h-4" /> },
       { label: '내가 만든 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
-    ],
-  },
-  {
-    title: '탐색',
-    items: [
-      { label: '공개 학습지', href: '/worksheets', icon: <Globe className="w-4 h-4" /> },
     ],
   },
   {

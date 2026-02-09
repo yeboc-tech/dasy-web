@@ -34,8 +34,9 @@ const OUTPUT_JSON_PATH = path.join(OUTPUT_DIR, 'chapter-problem-counts.json');
 const CURRENT_YEAR = new Date().getFullYear();
 
 interface ChapterCount {
-  recent3: number;
-  recent5: number;
+  current: number;  // 올해만
+  recent3: number;  // 최근 3년 (올해 제외)
+  recent5: number;  // 최근 5년 (올해 제외)
   total: number;
 }
 
@@ -84,8 +85,9 @@ function getSpecificChapterId(tagIds: string[]): string {
 async function main() {
   console.log('=== 단원별 문제 개수 생성 스크립트 ===\n');
   console.log(`현재 연도: ${CURRENT_YEAR}`);
-  console.log(`recent3: ${CURRENT_YEAR - 2} ~ ${CURRENT_YEAR}`);
-  console.log(`recent5: ${CURRENT_YEAR - 4} ~ ${CURRENT_YEAR}\n`);
+  console.log(`current: ${CURRENT_YEAR}`);
+  console.log(`recent3: ${CURRENT_YEAR - 3} ~ ${CURRENT_YEAR - 1}`);
+  console.log(`recent5: ${CURRENT_YEAR - 5} ~ ${CURRENT_YEAR - 1}\n`);
 
   // 출력 디렉토리 생성
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -149,6 +151,7 @@ async function main() {
     // 단원 초기화
     if (!counts[subject][chapterId]) {
       counts[subject][chapterId] = {
+        current: 0,
         recent3: 0,
         recent5: 0,
         total: 0,
@@ -158,12 +161,19 @@ async function main() {
     // 카운트 증가
     counts[subject][chapterId].total++;
 
-    if (year >= CURRENT_YEAR - 4) {
-      counts[subject][chapterId].recent5++;
+    // current: 올해만
+    if (year === CURRENT_YEAR) {
+      counts[subject][chapterId].current++;
     }
 
-    if (year >= CURRENT_YEAR - 2) {
+    // recent3: 올해 제외 최근 3년 (CURRENT_YEAR - 3 ~ CURRENT_YEAR - 1)
+    if (year >= CURRENT_YEAR - 3 && year <= CURRENT_YEAR - 1) {
       counts[subject][chapterId].recent3++;
+    }
+
+    // recent5: 올해 제외 최근 5년 (CURRENT_YEAR - 5 ~ CURRENT_YEAR - 1)
+    if (year >= CURRENT_YEAR - 5 && year <= CURRENT_YEAR - 1) {
+      counts[subject][chapterId].recent5++;
     }
   }
 
@@ -181,8 +191,9 @@ async function main() {
     metadata: {
       generatedAt: new Date().toISOString(),
       currentYear: CURRENT_YEAR,
-      recent3Range: `${CURRENT_YEAR - 2} ~ ${CURRENT_YEAR}`,
-      recent5Range: `${CURRENT_YEAR - 4} ~ ${CURRENT_YEAR}`,
+      currentRange: `${CURRENT_YEAR}`,
+      recent3Range: `${CURRENT_YEAR - 3} ~ ${CURRENT_YEAR - 1}`,
+      recent5Range: `${CURRENT_YEAR - 5} ~ ${CURRENT_YEAR - 1}`,
     },
     counts,
   };

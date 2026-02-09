@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export interface ChapterCount {
-  recent3: number;
-  recent5: number;
+  current: number;  // 올해
+  recent3: number;  // 최근 3년 (올해 제외)
+  recent5: number;  // 최근 5년 (올해 제외)
   total: number;
 }
 

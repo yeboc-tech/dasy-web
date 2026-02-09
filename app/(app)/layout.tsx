@@ -41,6 +41,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               오늘의 문제
             </button>
 
+            {/* 오답복습 버튼 */}
+            <button
+              onClick={() => {/* TODO: 오답복습 기능 구현 */}}
+              className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
+            >
+              오답복습
+            </button>
+
             {loading ? (
               <div className="w-8 h-8 flex items-center justify-center">
                 <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
