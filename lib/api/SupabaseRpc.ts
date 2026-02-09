@@ -160,6 +160,173 @@ function getYearRange(problemRange: ProblemRange): { minYear: number; maxYear: n
   }
 }
 
+// 문제 ID로 TodayProblem 형식의 데이터 가져오기 (공통 함수)
+export async function fetchProblemById(problemId: string): Promise<{
+  data: TodayProblem | null;
+  error: Error | null;
+}> {
+  const supabase = createClient();
+
+  try {
+    // 1. accuracy_rate에서 문제 정보 가져오기
+    const { data: problemData, error: problemError } = await supabase
+      .from('accuracy_rate')
+      .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+      .eq('problem_id', problemId)
+      .single();
+
+    if (problemError || !problemData) {
+      return { data: null, error: problemError || new Error('문제를 찾을 수 없습니다.') };
+    }
+
+    // 2. 태그 가져오기
+    const subject = extractSubject(problemData.problem_id);
+    const { data: tagData } = await supabase
+      .from('problem_tags')
+      .select('tag_labels')
+      .eq('problem_id', problemData.problem_id)
+      .like('type', `단원_%`)
+      .single();
+
+    const tags = tagData?.tag_labels || null;
+
+    // 3. 해설 ID 생성
+    const explanationId = problemData.problem_id.replace(/_문제$/, '_해설');
+
+    // 4. edited_content 존재 여부 확인
+    const { data: editedData } = await supabase
+      .rpc('fetch_edited_contents_without_base64_by_ids', {
+        p_resource_ids: [problemData.problem_id, explanationId]
+      });
+
+    const editedIds = new Set((editedData || []).map((item: { resource_id: string }) => item.resource_id));
+
+    const imageUrl = editedIds.has(problemData.problem_id)
+      ? `${CDN_EDITED_CONTENTS_URL}/${encodeURIComponent(problemData.problem_id)}.png`
+      : `${CDN_CONTENTS_URL}/${problemData.problem_id}.png`;
+
+    const explanationImageUrl = editedIds.has(explanationId)
+      ? `${CDN_EDITED_CONTENTS_URL}/${encodeURIComponent(explanationId)}.png`
+      : `${CDN_CONTENTS_URL}/${explanationId}.png`;
+
+    return {
+      data: {
+        problemId: problemData.problem_id,
+        subject,
+        correctAnswer: problemData.correct_answer,
+        difficulty: problemData.difficulty,
+        score: problemData.score,
+        accuracyRate: problemData.accuracy_rate ? Number(problemData.accuracy_rate) : null,
+        tags,
+        imageUrl,
+        explanationImageUrl,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.') };
+  }
+}
+
+// 오답 복습 문제 가져오기 (가장 최근 시도가 틀린 문제 중 랜덤)
+export async function fetchWrongAnswerProblem(params?: {
+  subjectFilter?: string; // 특정 과목만 필터링
+}): Promise<{
+  data: TodayProblem | null;
+  error: Error | null;
+}> {
+  const supabase = createClient();
+
+  try {
+    // 1. 현재 사용자 가져오기
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: new Error('로그인이 필요합니다.') };
+    }
+
+    // 2. 사용자가 푼 모든 문제 기록 가져오기 (created_at 내림차순)
+    const { data: solveRecords, error: solveError } = await supabase
+      .from('solve_session_record')
+      .select('problem_id, submit_answer, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (solveError) {
+      return { data: null, error: solveError };
+    }
+
+    if (!solveRecords || solveRecords.length === 0) {
+      return { data: null, error: new Error('푼 문제가 없습니다.') };
+    }
+
+    // 3. 각 문제의 가장 최근 제출 기록만 추출
+    const latestByProblem = new Map<string, { submit_answer: number | null }>();
+    for (const record of solveRecords) {
+      if (!latestByProblem.has(record.problem_id)) {
+        latestByProblem.set(record.problem_id, { submit_answer: record.submit_answer });
+      }
+    }
+
+    // 4. 과목 필터링 (선택된 경우)
+    let problemIds = Array.from(latestByProblem.keys());
+    if (params?.subjectFilter) {
+      problemIds = problemIds.filter(id => id.startsWith(params.subjectFilter + '_'));
+    }
+
+    if (problemIds.length === 0) {
+      return { data: null, error: new Error('해당 과목에서 푼 문제가 없습니다.') };
+    }
+
+    // 5. 정답 정보 가져오기
+    const { data: accuracyData, error: accuracyError } = await supabase
+      .from('accuracy_rate')
+      .select('problem_id, correct_answer')
+      .in('problem_id', problemIds);
+
+    if (accuracyError) {
+      return { data: null, error: accuracyError };
+    }
+
+    // 6. 정답 맵 생성
+    const correctAnswerMap = new Map<string, string>();
+    for (const item of accuracyData || []) {
+      if (item.correct_answer) {
+        correctAnswerMap.set(item.problem_id, item.correct_answer);
+      }
+    }
+
+    // 7. 가장 최근 시도가 틀린 문제만 필터링
+    const wrongProblems: string[] = [];
+    for (const [problemId, record] of latestByProblem.entries()) {
+      // 과목 필터링 적용
+      if (params?.subjectFilter && !problemId.startsWith(params.subjectFilter + '_')) {
+        continue;
+      }
+
+      const correctAnswer = correctAnswerMap.get(problemId);
+      if (correctAnswer && record.submit_answer !== null) {
+        // 정답과 제출 답안 비교
+        if (String(record.submit_answer) !== correctAnswer) {
+          wrongProblems.push(problemId);
+        }
+      }
+    }
+
+    if (wrongProblems.length === 0) {
+      return { data: null, error: new Error('복습할 오답이 없습니다. 모든 문제를 맞추셨네요!') };
+    }
+
+    // 8. 랜덤으로 1개 선택
+    const randomIndex = Math.floor(Math.random() * wrongProblems.length);
+    const selectedProblemId = wrongProblems[randomIndex];
+
+    // 9. fetchProblemById로 상세 정보 가져오기
+    return await fetchProblemById(selectedProblemId);
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.') };
+  }
+}
+
 // 오늘의 문제 가져오기
 export async function fetchTodayProblem(params: {
   interestSubjectIds: string[];

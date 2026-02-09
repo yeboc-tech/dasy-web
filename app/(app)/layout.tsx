@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CustomButton } from '@/components/custom-button';
@@ -8,16 +9,21 @@ import { useAuthActions } from '@/lib/hooks/use-auth';
 import { AuthBlockerProvider } from '@/lib/contexts/auth-blocker-context';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { TodayProblemDialog, useTodayProblemDialog } from '@/components/TodayProblemDialog';
+import { WrongAnswerReviewDialog } from '@/components/WrongAnswerReviewDialog';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { signOut } = useAuthActions();
   const { showDialog, setShowDialog } = useTodayProblemDialog();
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
 
   return (
     <AuthBlockerProvider>
       {/* 오늘의 문제 다이얼로그 */}
       <TodayProblemDialog open={showDialog} onOpenChange={setShowDialog} />
+
+      {/* 오답복습 다이얼로그 */}
+      <WrongAnswerReviewDialog open={showReviewDialog} onOpenChange={setShowReviewDialog} />
 
       <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--app-bg)' }}>
         {/* Top Navbar */}
@@ -43,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* 오답복습 버튼 */}
             <button
-              onClick={() => {/* TODO: 오답복습 기능 구현 */}}
+              onClick={() => setShowReviewDialog(true)}
               className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
             >
               오답복습
