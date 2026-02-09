@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import type { ProblemRange, CurrentGrade } from '@/lib/zustand/userAppSettingStore';
 
 // RPC 원본 응답 타입
 interface ProblemAnalysisRaw {
@@ -94,4 +95,230 @@ export async function getMyProblemAnalysis(): Promise<{
   });
 
   return { data: groupedBySubject, error: null };
+}
+
+// 오늘의 문제 타입
+export interface TodayProblem {
+  problemId: string;
+  subject: string;
+  correctAnswer: string | null;
+  difficulty: string | null;
+  score: number | null;
+  accuracyRate: number | null;
+  tags: string[] | null; // 단원 태그
+  imageUrl: string; // 문제 이미지 URL (edited_content 우선)
+  explanationImageUrl: string; // 해설 이미지 URL
+}
+
+// CDN URL 상수
+const CDN_CONTENTS_URL = 'https://cdn.y3c.kr/tongkidari/contents';
+const CDN_EDITED_CONTENTS_URL = 'https://cdn.y3c.kr/tongkidari/edited-contents';
+
+// problem_id에서 연도 추출 (예: "경제_고3_2025_09_모평_1_문제" -> 2025)
+function extractYear(problemId: string): number | null {
+  const parts = problemId.split('_');
+  // 형식: 과목_학년_년도_월_시험유형_번호_문제
+  if (parts.length >= 3) {
+    const year = parseInt(parts[2], 10);
+    if (!isNaN(year)) return year;
+  }
+  return null;
+}
+
+// problem_id에서 학년 추출 (예: "경제_고3_2025_09_모평_1_문제" -> "고3")
+function extractGrade(problemId: string): string | null {
+  const parts = problemId.split('_');
+  // 형식: 과목_학년_년도_월_시험유형_번호_문제
+  if (parts.length >= 2) {
+    return parts[1]; // "고3", "고2", "고1"
+  }
+  return null;
+}
+
+// CurrentGrade를 problem_id 형식으로 변환 (g3 -> 고3)
+function gradeToKorean(grade: CurrentGrade): string {
+  switch (grade) {
+    case 'g3': return '고3';
+    case 'g2': return '고2';
+    case 'g1': return '고1';
+    default: return '고3';
+  }
+}
+
+// 학습 목표에 따른 연도 범위 계산
+function getYearRange(problemRange: ProblemRange): { minYear: number; maxYear: number } | null {
+  const currentYear = new Date().getFullYear();
+
+  switch (problemRange) {
+    case 'recent3':
+      return { minYear: currentYear - 2, maxYear: currentYear };
+    case 'recent5':
+      return { minYear: currentYear - 4, maxYear: currentYear };
+    case 'total':
+    default:
+      return null; // 전체 - 연도 제한 없음
+  }
+}
+
+// 오늘의 문제 가져오기
+export async function fetchTodayProblem(params: {
+  interestSubjectIds: string[];
+  problemRange: ProblemRange;
+  currentGrade: CurrentGrade;
+}): Promise<{
+  data: TodayProblem | null;
+  error: Error | null;
+}> {
+  const { interestSubjectIds, problemRange, currentGrade } = params;
+  const gradeKorean = gradeToKorean(currentGrade);
+
+  if (interestSubjectIds.length === 0) {
+    return { data: null, error: new Error('관심 과목이 설정되지 않았습니다.') };
+  }
+
+  const supabase = createClient();
+
+  try {
+    // 1. 현재 사용자 가져오기
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { data: null, error: new Error('로그인이 필요합니다.') };
+    }
+
+    // 2. 사용자가 푼 문제 ID 목록 가져오기
+    const { data: solvedRecords, error: solvedError } = await supabase
+      .from('solve_session_record')
+      .select('problem_id')
+      .eq('user_id', user.id);
+
+    if (solvedError) {
+      return { data: null, error: solvedError };
+    }
+
+    const solvedProblemIds = new Set(solvedRecords?.map(r => r.problem_id) || []);
+
+    // 3. 관심 과목 + 학년 + 연도로 필터링하여 문제 가져오기
+    // problem_id는 "과목_학년_년도_월_시험유형_번호_문제" 형식
+    const yearRange = getYearRange(problemRange);
+
+    // 연도 목록 생성
+    const years: number[] = [];
+    if (yearRange) {
+      for (let y = yearRange.minYear; y <= yearRange.maxYear; y++) {
+        years.push(y);
+      }
+    }
+
+    // 과목_학년_연도 패턴으로 쿼리 (예: "경제_고3_2024_%")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const queries: PromiseLike<any>[] = [];
+
+    for (const subject of interestSubjectIds) {
+      if (years.length > 0) {
+        // 연도별로 쿼리
+        for (const year of years) {
+          queries.push(
+            supabase
+              .from('accuracy_rate')
+              .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+              .like('problem_id', `${subject}_${gradeKorean}_${year}_%`)
+          );
+        }
+      } else {
+        // 전체 연도
+        queries.push(
+          supabase
+            .from('accuracy_rate')
+            .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+            .like('problem_id', `${subject}_${gradeKorean}_%`)
+        );
+      }
+    }
+
+    const results = await Promise.all(queries);
+
+    // 모든 결과 합치기
+    const allProblems: Array<{
+      problem_id: string;
+      correct_answer: string | null;
+      difficulty: string | null;
+      score: number | null;
+      accuracy_rate: number | null;
+    }> = [];
+
+    for (const result of results) {
+      if (result.error) {
+        console.error('Supabase query error:', result.error);
+        return { data: null, error: result.error };
+      }
+      if (result.data) {
+        allProblems.push(...result.data);
+      }
+    }
+
+    if (allProblems.length === 0) {
+      return { data: null, error: new Error(`${gradeKorean} 학년의 문제가 없습니다.`) };
+    }
+
+    // 4. 안 푼 문제 필터링 (학년과 연도는 이미 쿼리에서 필터링됨)
+    const eligibleProblems = allProblems.filter(problem => {
+      // 이미 푼 문제 제외
+      return !solvedProblemIds.has(problem.problem_id);
+    });
+
+    if (eligibleProblems.length === 0) {
+      return { data: null, error: new Error('풀 수 있는 문제가 없습니다. 모든 문제를 풀었거나 조건에 맞는 문제가 없습니다.') };
+    }
+
+    // 5. 랜덤으로 1개 선택
+    const randomIndex = Math.floor(Math.random() * eligibleProblems.length);
+    const selectedProblem = eligibleProblems[randomIndex];
+
+    // 6. 선택된 문제의 태그 가져오기
+    const subject = extractSubject(selectedProblem.problem_id);
+    const { data: tagData } = await supabase
+      .from('problem_tags')
+      .select('tag_labels')
+      .eq('problem_id', selectedProblem.problem_id)
+      .like('type', `단원_%`)
+      .single();
+
+    const tags = tagData?.tag_labels || null;
+
+    // 7. 해설 ID 생성 (_문제 -> _해설)
+    const explanationId = selectedProblem.problem_id.replace(/_문제$/, '_해설');
+
+    // 8. edited_content 존재 여부 확인 (문제 + 해설)
+    const { data: editedData } = await supabase
+      .rpc('fetch_edited_contents_without_base64_by_ids', {
+        p_resource_ids: [selectedProblem.problem_id, explanationId]
+      });
+
+    const editedIds = new Set((editedData || []).map((item: { resource_id: string }) => item.resource_id));
+
+    const imageUrl = editedIds.has(selectedProblem.problem_id)
+      ? `${CDN_EDITED_CONTENTS_URL}/${encodeURIComponent(selectedProblem.problem_id)}.png`
+      : `${CDN_CONTENTS_URL}/${selectedProblem.problem_id}.png`;
+
+    const explanationImageUrl = editedIds.has(explanationId)
+      ? `${CDN_EDITED_CONTENTS_URL}/${encodeURIComponent(explanationId)}.png`
+      : `${CDN_CONTENTS_URL}/${explanationId}.png`;
+
+    return {
+      data: {
+        problemId: selectedProblem.problem_id,
+        subject,
+        correctAnswer: selectedProblem.correct_answer,
+        difficulty: selectedProblem.difficulty,
+        score: selectedProblem.score,
+        accuracyRate: selectedProblem.accuracy_rate ? Number(selectedProblem.accuracy_rate) : null,
+        tags,
+        imageUrl,
+        explanationImageUrl,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.') };
+  }
 }

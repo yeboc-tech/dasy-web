@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CustomButton } from '@/components/custom-button';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -37,10 +36,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* 오늘의 문제 버튼 */}
             <button
               onClick={() => setShowDialog(true)}
-              className="flex items-center gap-1.5 px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
+              className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
             >
-              <Zap className="w-4 h-4" />
-              <span>오늘의 문제</span>
+              오늘의 문제
             </button>
 
             {loading ? (

@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Loader, Check, ChevronDown } from 'lucide-react';
+import { Loader, ChevronDown } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { createClient } from '@/lib/supabase/client';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getSubjectsByYear, TONGHAP_SUBJECT_IDS } from '@/lib/utils/subjectUtils';
-
-type OmrPosition = 'left' | 'right';
 
 // 올해부터 5년간 수능 연도 생성
 const currentYear = new Date().getFullYear();
@@ -15,106 +13,87 @@ const suneungYears = Array.from({ length: 5 }, (_, i) => currentYear + i);
 
 export default function AppSettingsPage() {
   const { user, loading: authLoading } = useAuth();
-  const supabase = createClient();
-
-  // 수능 연도 state
-  const [suneungYear, setSuneungYear] = useState<number | null>(null);
-
-  // OMR position state
-  const [omrPosition, setOmrPosition] = useState<OmrPosition>('right');
-
-  // 선택된 과목 state
-  const [selectedSubjects, setSelectedSubjects] = useState<Set<string>>(new Set());
-
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const {
+    suneungYear,
+    currentGrade,
+    omrPosition,
+    problemRange,
+    interestSubjectIds,
+    loading,
+    fetchSettings,
+    updateSettings,
+  } = useUserAppSettingStore();
+
   useEffect(() => {
-    async function fetchSettings() {
-      // 사용자 설정 가져오기
-      if (user) {
-        const { data: settings } = await supabase
-          .from('user_app_setting')
-          .select('omr_position, interest_subject_ids, suneung_year')
-          .eq('user_id', user.id)
-          .single();
-
-        if (settings) {
-          setSuneungYear(settings.suneung_year || null);
-          setOmrPosition(settings.omr_position || 'right');
-          setSelectedSubjects(new Set(settings.interest_subject_ids || []));
-        }
-      }
-
-      setLoading(false);
-    }
-
     if (!authLoading && user) {
-      fetchSettings();
-    } else if (!authLoading) {
-      setLoading(false);
+      fetchSettings(user.id);
     }
-  }, [user, authLoading, supabase]);
+  }, [user, authLoading, fetchSettings]);
 
-  const updateSettings = async (updates: { suneung_year?: number; omr_position?: OmrPosition; interest_subject_ids?: string[] }) => {
-    if (!user || saving) return;
-
+  const handleSuneungYearChange = async (year: number) => {
+    if (!user) return;
     setSaving(true);
 
-    const { error } = await supabase
-      .from('user_app_setting')
-      .upsert({
-        user_id: user.id,
-        ...updates,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id',
-      });
-
-    if (error) {
-      console.error('Error saving settings:', error);
+    if (year >= 2027) {
+      // 2027년 이후: 통합사회 자동 선택
+      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: TONGHAP_SUBJECT_IDS });
+    } else {
+      // 2026년: 빈 배열로 초기화
+      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: [] });
     }
 
     setSaving(false);
   };
 
-  const handleSuneungYearChange = async (year: number) => {
-    setSuneungYear(year);
-
-    if (year >= 2027) {
-      // 2027년 이후: 통합사회 자동 선택
-      const tonghapIds = TONGHAP_SUBJECT_IDS;
-      setSelectedSubjects(new Set(tonghapIds));
-      await updateSettings({ suneung_year: year, interest_subject_ids: tonghapIds });
-    } else {
-      // 2026년: 빈 배열로 초기화
-      setSelectedSubjects(new Set());
-      await updateSettings({ suneung_year: year, interest_subject_ids: [] });
-    }
+  const handleCurrentGradeChange = async (grade: 'g3' | 'g2' | 'g1') => {
+    if (!user) return;
+    setSaving(true);
+    await updateSettings(user.id, { current_grade: grade });
+    setSaving(false);
   };
 
-  const handleOmrPositionChange = async (position: OmrPosition) => {
-    setOmrPosition(position);
-    await updateSettings({ omr_position: position });
+  const handleOmrPositionChange = async (position: 'left' | 'right') => {
+    if (!user) return;
+    setSaving(true);
+    await updateSettings(user.id, { omr_position: position });
+    setSaving(false);
+  };
+
+  const handleProblemRangeChange = async (range: 'recent3' | 'recent5' | 'total') => {
+    if (!user) return;
+    setSaving(true);
+    await updateSettings(user.id, { problem_range: range });
+    setSaving(false);
   };
 
   const toggleSubject = async (subjectId: string) => {
-    const newSelected = new Set(selectedSubjects);
+    if (!user) return;
+
+    const newSelected = new Set(interestSubjectIds);
 
     if (newSelected.has(subjectId)) {
       newSelected.delete(subjectId);
     } else {
+      // 최대 2개까지만 선택 가능
+      if (newSelected.size >= 2) {
+        return;
+      }
       newSelected.add(subjectId);
     }
 
-    setSelectedSubjects(newSelected);
-    await updateSettings({ interest_subject_ids: Array.from(newSelected) });
+    setSaving(true);
+    await updateSettings(user.id, { interest_subject_ids: Array.from(newSelected) });
+    setSaving(false);
   };
 
   // 수능 연도에 따라 과목 필터링 (하드코딩된 과목 사용)
   const filteredSubjects = useMemo(() => {
     return getSubjectsByYear(suneungYear);
   }, [suneungYear]);
+
+  const selectedSubjects = new Set(interestSubjectIds);
 
   return (
     <ProtectedRoute>
@@ -126,7 +105,7 @@ export default function AppSettingsPage() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
+          {loading || authLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader className="animate-spin w-6 h-6 text-gray-400" />
             </div>
@@ -161,53 +140,115 @@ export default function AppSettingsPage() {
                 </div>
               </div>
 
-              {/* OMR Position Setting */}
+              {/* Current Grade Setting */}
               <div className="p-4 border-b border-[var(--border)]">
-                <h2 className="text-sm font-medium text-black mb-2">OMR 시트 위치</h2>
-                <p className="text-sm text-[var(--gray-600)] mb-4">
-                  문제 풀이 화면에서 OMR 시트의 위치를 설정합니다.
-                </p>
+                <h2 className="text-sm font-medium text-black mb-4">현재 학년</h2>
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => handleOmrPositionChange('left')}
+                    onClick={() => handleCurrentGradeChange('g3')}
                     disabled={saving}
                     className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      ${omrPosition === 'left'
-                        ? 'bg-[#FF00A1] text-white'
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${currentGrade === 'g3'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }
                       ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                   >
-                    {omrPosition === 'left' && <Check className="w-4 h-4" />}
-                    좌측
+                    고3
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleOmrPositionChange('right')}
+                    onClick={() => handleCurrentGradeChange('g2')}
                     disabled={saving}
                     className={`
-                      flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      ${omrPosition === 'right'
-                        ? 'bg-[#FF00A1] text-white'
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${currentGrade === 'g2'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }
                       ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                     `}
                   >
-                    {omrPosition === 'right' && <Check className="w-4 h-4" />}
-                    우측
+                    고2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCurrentGradeChange('g1')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${currentGrade === 'g1'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    고1
+                  </button>
+                </div>
+              </div>
+
+              {/* Problem Range Setting */}
+              <div className="p-4 border-b border-[var(--border)]">
+                <h2 className="text-sm font-medium text-black mb-4">학습 목표</h2>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleProblemRangeChange('recent3')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${problemRange === 'recent3'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    최근 3개년
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleProblemRangeChange('recent5')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${problemRange === 'recent5'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    최근 5개년
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleProblemRangeChange('total')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${problemRange === 'total'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    전체
                   </button>
                 </div>
               </div>
 
               {/* Interest Subjects Setting */}
-              <div className="p-4">
-                <h2 className="text-sm font-medium text-black mb-2">관심 과목</h2>
+              <div className="p-4 border-b border-[var(--border)]">
+                <h2 className="text-sm font-medium text-black mb-2">학습 과목</h2>
                 <p className="text-sm text-[var(--gray-600)] mb-4">
-                  관심 있는 과목을 선택하세요. 선택한 과목을 기반으로 맞춤 콘텐츠를 제공합니다.
+                  학습할 과목을 선택하세요 (최대 2개).
                 </p>
 
                 <div className="flex flex-wrap gap-3">
@@ -220,15 +261,14 @@ export default function AppSettingsPage() {
                         onClick={() => toggleSubject(subject.id)}
                         disabled={saving}
                         className={`
-                          flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                          px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                           ${isSelected
-                            ? 'bg-[#FF00A1] text-white'
+                            ? 'bg-[#fff0f7] text-[#FF00A1]'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }
                           ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                         `}
                       >
-                        {isSelected && <Check className="w-4 h-4" />}
                         {subject.label}
                       </button>
                     );
@@ -238,6 +278,46 @@ export default function AppSettingsPage() {
                 {filteredSubjects.length === 0 && (
                   <p className="text-sm text-gray-500">선택 가능한 과목이 없습니다.</p>
                 )}
+              </div>
+
+              {/* OMR Position Setting */}
+              <div className="p-4">
+                <h2 className="text-sm font-medium text-black mb-2">OMR 시트 위치</h2>
+                <p className="text-sm text-[var(--gray-600)] mb-4">
+                  문제 풀이 화면에서 OMR 시트의 위치를 설정합니다.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleOmrPositionChange('left')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${omrPosition === 'left'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    좌측
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOmrPositionChange('right')}
+                    disabled={saving}
+                    className={`
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${omrPosition === 'right'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    우측
+                  </button>
+                </div>
               </div>
             </div>
           )}

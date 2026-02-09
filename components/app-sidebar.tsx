@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
-import { useAppStore } from '@/lib/zustand/appStore';
+import { useAppStore } from '@/lib/zustand/localStorageStore';
 
 interface NavItem {
   label: string;

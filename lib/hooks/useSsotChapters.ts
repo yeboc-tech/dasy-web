@@ -30,12 +30,13 @@ function getSsotKey(subjectId: string): string {
 // ssot 챕터 데이터를 ChapterTreeItem으로 변환
 function convertToChapterTree(ssotChapters: SsotChapter[], parentId: string = ''): ChapterTreeItem[] {
   return ssotChapters.map(chapter => {
-    const id = parentId ? `${parentId}-${chapter.id}` : chapter.id;
+    // 원본 chapter.id를 그대로 사용 (문제 개수 조회에 필요)
+    const id = chapter.id;
     return {
       id,
       label: chapter.title,
       type: chapter.chapters && chapter.chapters.length > 0 ? 'category' : 'item',
-      expanded: false,
+      expanded: true, // 기본으로 펼침
       children: chapter.chapters ? convertToChapterTree(chapter.chapters, id) : undefined,
     };
   });

@@ -4,58 +4,55 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { createClient } from '@/lib/supabase/client';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { useSsotChapters } from '@/lib/hooks/useSsotChapters';
+import { useChapterProblemCounts } from '@/lib/hooks/useChapterProblemCounts';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 
 export default function ByChapterPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [userSubjects, setUserSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const { interestSubjectIds, loading, fetchSettings } = useUserAppSettingStore();
 
   // ssot에서 단원 정보 가져오기
   const { chapters, loading: chaptersLoading, error: chaptersError } = useSsotChapters(selectedSubject || '');
 
+  // 단원별 문제 개수 가져오기
+  const { getCount, loading: countsLoading } = useChapterProblemCounts();
+
   useEffect(() => {
-    async function fetchUserSubjects() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const supabase = createClient();
-
-      // 사용자의 관심 과목 가져오기
-      const { data: settings } = await supabase
-        .from('user_app_setting')
-        .select('interest_subject_ids')
-        .eq('user_id', user.id)
-        .single();
-
-      if (settings?.interest_subject_ids && settings.interest_subject_ids.length > 0) {
-        setUserSubjects(settings.interest_subject_ids);
-        setSelectedSubject(settings.interest_subject_ids[0] || null);
-      }
-
-      setLoading(false);
+    if (!authLoading && user) {
+      fetchSettings(user.id);
     }
+  }, [user, authLoading, fetchSettings]);
 
-    if (!authLoading) {
-      fetchUserSubjects();
+  // 과목이 로드되면 첫 번째 과목 선택
+  useEffect(() => {
+    if (interestSubjectIds.length > 0 && !selectedSubject) {
+      setSelectedSubject(interestSubjectIds[0]);
     }
-  }, [user, authLoading]);
+  }, [interestSubjectIds, selectedSubject]);
 
-  // Auto-expand root when chapters load
+  // Auto-expand all items when chapters load
   useEffect(() => {
     if (chapters && chapters.length > 0) {
-      const rootId = chapters[0]?.id;
-      if (rootId) {
-        setExpandedItems(new Set([rootId]));
-      }
+      const allIds = new Set<string>();
+
+      const collectIds = (items: ChapterTreeItem[]) => {
+        items.forEach(item => {
+          allIds.add(item.id);
+          if (item.children) {
+            collectIds(item.children);
+          }
+        });
+      };
+
+      collectIds(chapters);
+      setExpandedItems(allIds);
     }
   }, [chapters]);
 
@@ -71,36 +68,58 @@ export default function ByChapterPage() {
     });
   };
 
+  // 과목 ID에서 문제 개수 조회용 키 추출
+  const getCountSubjectKey = (subjectId: string): string => {
+    // 통합사회_1, 통합사회_2는 그대로 사용
+    if (subjectId.startsWith('통합사회_')) {
+      return subjectId;
+    }
+    // 나머지는 과목명만 사용 (예: 경제, 사회문화 등)
+    return subjectId;
+  };
+
   const renderTreeItem = (item: ChapterTreeItem, level: number = 0) => {
     const isExpanded = expandedItems.has(item.id);
     const hasChildren = item.children && item.children.length > 0;
+
+    // 문제 개수 조회 (해당 ID에 개수가 있으면 표시)
+    const subjectKey = selectedSubject ? getCountSubjectKey(selectedSubject) : '';
+    const count = subjectKey ? getCount(subjectKey, item.id) : null;
 
     return (
       <div key={item.id}>
         <div
           className={`
-            flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-colors
+            flex items-center justify-between py-2 px-3 rounded-lg cursor-pointer transition-colors
             hover:bg-gray-50
             ${level === 0 ? 'font-medium' : ''}
           `}
           style={{ paddingLeft: `${12 + level * 24}px` }}
           onClick={() => hasChildren && toggleExpanded(item.id)}
         >
-          {hasChildren ? (
-            <span className="w-5 h-5 flex items-center justify-center text-gray-400">
-              {isExpanded ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+          <div className="flex items-center gap-2">
+            {hasChildren ? (
+              <span className="w-5 h-5 flex items-center justify-center text-gray-400">
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </span>
+            ) : (
+              <span className="w-5 h-5" />
+            )}
+            <span className={`text-sm ${level === 0 ? 'text-[var(--foreground)]' : 'text-gray-600'}`}>
+              {item.label}
             </span>
-          ) : (
-            <span className="w-5 h-5" />
+          </div>
+
+          {/* 문제 개수 표시 (3개년 / 5개년 / 전체) */}
+          {count && (
+            <span className="text-xs text-gray-400 pr-2">
+              {count.recent3} / {count.recent5} / {count.total}
+            </span>
           )}
-          <span className={`text-sm ${level === 0 ? 'text-[var(--foreground)]' : 'text-gray-600'}`}>
-            {item.label}
-          </span>
-          {/* TODO: 학습 현황 표시 (푼 문제 수, 정답률 등) */}
         </div>
 
         {hasChildren && isExpanded && (
@@ -134,7 +153,7 @@ export default function ByChapterPage() {
     );
   }
 
-  if (userSubjects.length === 0) {
+  if (interestSubjectIds.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">관심 과목을 설정해주세요.</p>
@@ -157,7 +176,7 @@ export default function ByChapterPage() {
 
       {/* 과목 탭 */}
       <div className="flex gap-1 px-4 pt-3 pb-2 bg-white border-b border-[var(--border)]">
-        {userSubjects.map((subjectId) => (
+        {interestSubjectIds.map((subjectId) => (
           <button
             key={subjectId}
             onClick={() => setSelectedSubject(subjectId)}

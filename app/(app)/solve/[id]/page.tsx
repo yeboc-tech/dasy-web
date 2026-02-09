@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { CustomButton } from '@/components/custom-button';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
 import { toast } from 'sonner';
 
@@ -60,8 +61,8 @@ export default function SolvePage() {
   const [isStarting, setIsStarting] = useState(false);
   const sessionCreatingRef = useRef(false);
 
-  // OMR position state
-  const [omrPosition, setOmrPosition] = useState<'left' | 'right'>('right');
+  // OMR position from store
+  const { omrPosition, setOmrPosition, fetchSettings } = useUserAppSettingStore();
 
   // Previously solved problems (problem_id set)
   const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
@@ -72,18 +73,10 @@ export default function SolvePage() {
       try {
         const supabase = createClient();
 
-        // Load user settings for OMR position
+        // Load user settings from store
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: settings } = await supabase
-            .from('user_app_setting')
-            .select('omr_position')
-            .eq('user_id', user.id)
-            .single();
-
-          if (settings?.omr_position) {
-            setOmrPosition(settings.omr_position);
-          }
+          fetchSettings(user.id);
 
           // Load previously solved problems for this user
           const { data: solvedRecords } = await supabase

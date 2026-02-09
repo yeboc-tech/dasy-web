@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { createClient } from '@/lib/supabase/client';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 
 const DIFFICULTY_LEVELS = ['최상', '상', '중상', '중', '중하', '하'];
@@ -12,38 +12,22 @@ const DIFFICULTY_LEVELS = ['최상', '상', '중상', '중', '중하', '하'];
 export default function ByDifficultyPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [userSubjects, setUserSubjects] = useState<string[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const { interestSubjectIds, loading, fetchSettings } = useUserAppSettingStore();
 
   useEffect(() => {
-    async function fetchUserSubjects() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const supabase = createClient();
-
-      // 사용자의 관심 과목 가져오기
-      const { data: settings } = await supabase
-        .from('user_app_setting')
-        .select('interest_subject_ids')
-        .eq('user_id', user.id)
-        .single();
-
-      if (settings?.interest_subject_ids && settings.interest_subject_ids.length > 0) {
-        setUserSubjects(settings.interest_subject_ids);
-        setSelectedSubject(settings.interest_subject_ids[0] || null);
-      }
-
-      setLoading(false);
+    if (!authLoading && user) {
+      fetchSettings(user.id);
     }
+  }, [user, authLoading, fetchSettings]);
 
-    if (!authLoading) {
-      fetchUserSubjects();
+  // 과목이 로드되면 첫 번째 과목 선택
+  useEffect(() => {
+    if (interestSubjectIds.length > 0 && !selectedSubject) {
+      setSelectedSubject(interestSubjectIds[0]);
     }
-  }, [user, authLoading]);
+  }, [interestSubjectIds, selectedSubject]);
 
   if (authLoading || loading) {
     return (
@@ -67,7 +51,7 @@ export default function ByDifficultyPage() {
     );
   }
 
-  if (userSubjects.length === 0) {
+  if (interestSubjectIds.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">관심 과목을 설정해주세요.</p>
@@ -90,7 +74,7 @@ export default function ByDifficultyPage() {
 
       {/* 과목 탭 */}
       <div className="flex gap-1 px-4 pt-3 pb-2 bg-white border-b border-[var(--border)]">
-        {userSubjects.map((subjectId) => (
+        {interestSubjectIds.map((subjectId) => (
           <button
             key={subjectId}
             onClick={() => setSelectedSubject(subjectId)}
