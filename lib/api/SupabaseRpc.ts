@@ -20,6 +20,7 @@ interface ProblemAnalysisRaw {
   단원_사회탐구_한국지리: string[] | null;
   단원_자세한통합사회_2: string[] | null;
   커스텀_자세한_통합사회: string[] | null;
+  last_solved_at: string | null;
 }
 
 // 정제된 응답 타입
@@ -32,6 +33,7 @@ export interface ProblemAnalysis {
   difficulty: string | null;
   score: number | null;
   tags: string[] | null;
+  lastSolvedAt: string | null;
 }
 
 // 과목별로 그룹화된 데이터 타입
@@ -85,6 +87,7 @@ export async function getMyProblemAnalysis(): Promise<{
       difficulty: raw.difficulty,
       score: raw.score,
       tags,
+      lastSolvedAt: raw.last_solved_at || null,
     };
 
     // 과목별로 그룹화

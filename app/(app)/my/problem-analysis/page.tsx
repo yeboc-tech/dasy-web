@@ -7,6 +7,23 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject } from '@/lib/api/SupabaseRpc';
 
+function getRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return '-';
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.floor((now.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return '오늘';
+  if (diffDays <= 6) return `${diffDays}일전`;
+  if (diffDays <= 13) return '1주전';
+  if (diffDays <= 20) return '2주전';
+  if (diffDays <= 27) return '3주전';
+  const months = Math.floor(diffDays / 30);
+  return months <= 0 ? '1달전' : `${months}달전`;
+}
+
 export default function ProblemAnalysisPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -55,7 +72,13 @@ export default function ProblemAnalysisPage() {
   // 선택된 과목의 데이터
   const data = useMemo(() => {
     if (!dataBySubject || !selectedSubject) return [];
-    return dataBySubject.get(selectedSubject) || [];
+    const items = dataBySubject.get(selectedSubject) || [];
+    return [...items].sort((a, b) => {
+      if (!a.lastSolvedAt && !b.lastSolvedAt) return 0;
+      if (!a.lastSolvedAt) return 1;
+      if (!b.lastSolvedAt) return -1;
+      return b.lastSolvedAt.localeCompare(a.lastSolvedAt);
+    });
   }, [dataBySubject, selectedSubject]);
 
   // 통계 계산 (useMemo로 최적화)
@@ -159,7 +182,7 @@ export default function ProblemAnalysisPage() {
             className={`
               px-4 py-2 text-sm font-medium rounded-lg transition-colors
               ${selectedSubject === subjectName
-                ? 'bg-blue-500 text-white'
+                ? 'bg-[#FF00A1] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }
             `}
@@ -263,6 +286,21 @@ export default function ProblemAnalysisPage() {
                 <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
                   문제 ID
                 </th>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
+                  단원
+                </th>
+                <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
+                  푼 횟수
+                </th>
+                <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap w-[120px] min-w-[120px]">
+                  결과
+                </th>
+                <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
+                  경과
+                </th>
+                <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
+                  마지막 풀이
+                </th>
                 <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
                   정답률
                 </th>
@@ -272,15 +310,6 @@ export default function ProblemAnalysisPage() {
                 <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
                   배점
                 </th>
-                <th className="h-10 px-4 text-left align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
-                  단원
-                </th>
-                <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
-                  푼 횟수
-                </th>
-                <th className="h-10 px-4 text-center align-middle font-medium text-[var(--foreground)] whitespace-nowrap">
-                  결과
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -289,17 +318,12 @@ export default function ProblemAnalysisPage() {
                   key={item.problemId}
                   className="hover:bg-gray-50 transition-colors border-b border-[var(--border)]"
                 >
-                  <td className="p-4 align-middle font-mono text-xs">
+                  <td
+                    className="p-4 align-middle font-mono text-xs cursor-pointer hover:text-[#FF00A1] transition-colors"
+                    onClick={() => navigator.clipboard.writeText(item.problemId)}
+                    title="클릭하여 복사"
+                  >
                     {item.problemId}
-                  </td>
-                  <td className="p-4 align-middle text-center">
-                    {item.accuracyRate ? `${item.accuracyRate}%` : '-'}
-                  </td>
-                  <td className="p-4 align-middle text-center">
-                    {item.difficulty || '-'}
-                  </td>
-                  <td className="p-4 align-middle text-center">
-                    {item.score || '-'}
                   </td>
                   <td className="p-4 align-middle">
                     {item.tags ? (
@@ -320,7 +344,7 @@ export default function ProblemAnalysisPage() {
                   <td className="p-4 align-middle text-center">
                     {item.solveCount}
                   </td>
-                  <td className="p-4 align-middle text-center font-mono">
+                  <td className="p-4 align-middle text-left font-mono w-[120px] min-w-[120px]">
                     {item.oxRecord.split('').map((char, idx) => (
                       <span
                         key={idx}
@@ -329,6 +353,21 @@ export default function ProblemAnalysisPage() {
                         {char}
                       </span>
                     ))}
+                  </td>
+                  <td className="p-4 align-middle text-center text-xs text-[var(--gray-500)] whitespace-nowrap">
+                    {getRelativeTime(item.lastSolvedAt)}
+                  </td>
+                  <td className="p-4 align-middle text-center text-xs text-[var(--gray-500)] whitespace-nowrap">
+                    {item.lastSolvedAt ? item.lastSolvedAt.slice(0, 10) : '-'}
+                  </td>
+                  <td className="p-4 align-middle text-center">
+                    {item.accuracyRate ? `${item.accuracyRate}%` : '-'}
+                  </td>
+                  <td className="p-4 align-middle text-center">
+                    {item.difficulty || '-'}
+                  </td>
+                  <td className="p-4 align-middle text-center">
+                    {item.score || '-'}
                   </td>
                 </tr>
               ))}
