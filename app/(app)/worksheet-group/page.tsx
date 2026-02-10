@@ -3,22 +3,23 @@
 import { useState, useEffect } from 'react';
 import { Loader } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { BoardListItem, BoardItem } from '@/components/board/board-list-item';
+import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
 
-export default function BoardAllPage() {
-  const [items, setItems] = useState<BoardItem[]>([]);
+export default function WorksheetGroupBestPage() {
+  const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchItems() {
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('board')
+        .from('worksheet_group')
         .select('id, image_url, title, view_count, created_at, tags, subjects')
+        .eq('is_best', true)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching board items:', error);
+        console.error('Error fetching worksheet group items:', error);
       } else {
         setItems(data || []);
       }
@@ -38,17 +39,15 @@ export default function BoardAllPage() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Top Bar */}
       <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
         <div className="flex items-end gap-2">
-          <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">전체 게시물</h1>
+          <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">게시판</h1>
           <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
             {items.length}개 게시물
           </span>
         </div>
       </div>
 
-      {/* Board List */}
       <div className="flex-1 overflow-y-auto p-4">
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-gray-500">
@@ -57,7 +56,7 @@ export default function BoardAllPage() {
         ) : (
           <div className="flex flex-col gap-2 w-full">
             {items.map((item) => (
-              <BoardListItem key={item.id} item={item} />
+              <WorksheetGroupListItem key={item.id} item={item} />
             ))}
           </div>
         )}

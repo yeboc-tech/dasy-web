@@ -75,21 +75,21 @@ export default function HomePage() {
                 </p>
                 <div className="flex flex-col gap-2">
                   <Link
-                    href="/board/11"
+                    href="/worksheet-group/11"
                     className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <span className="text-sm font-medium text-[var(--foreground)]">상위권 진단고사 시작하기</span>
                     <span className="text-xs text-[var(--gray-500)]">정답률 90% 이상</span>
                   </Link>
                   <Link
-                    href="/board/12"
+                    href="/worksheet-group/12"
                     className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <span className="text-sm font-medium text-[var(--foreground)]">중위권 진단고사 시작하기</span>
                     <span className="text-xs text-[var(--gray-500)]">정답률 70~90%</span>
                   </Link>
                   <Link
-                    href="/board/13"
+                    href="/worksheet-group/13"
                     className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <span className="text-sm font-medium text-[var(--foreground)]">하위권 진단고사 시작하기</span>

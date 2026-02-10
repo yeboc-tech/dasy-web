@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Loader } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { BoardListItem, BoardItem } from '@/components/board/board-list-item';
+import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
 
-export default function BoardFavoritesPage() {
+export default function WorksheetGroupFavoritesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [items, setItems] = useState<BoardItem[]>([]);
+  const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,16 +22,16 @@ export default function BoardFavoritesPage() {
 
       const supabase = createClient();
       const { data, error } = await supabase
-        .from('board_favorites')
-        .select('board:board_id(id, image_url, title, view_count, created_at, tags, subjects)')
+        .from('worksheet_group_favorites')
+        .select('worksheet_group:worksheet_group_id(id, image_url, title, view_count, created_at, tags, subjects)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching favorites:', error);
       } else {
-        const boards = data?.map((item) => item.board as unknown as BoardItem).filter(Boolean) || [];
-        setItems(boards);
+        const worksheetGroups = data?.map((item) => item.worksheet_group as unknown as WorksheetGroupItem).filter(Boolean) || [];
+        setItems(worksheetGroups);
       }
       setLoading(false);
     }
@@ -65,7 +65,6 @@ export default function BoardFavoritesPage() {
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Top Bar */}
       <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
         <div className="flex items-end gap-2">
           <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">즐겨찾기</h1>
@@ -75,7 +74,6 @@ export default function BoardFavoritesPage() {
         </div>
       </div>
 
-      {/* Board List */}
       <div className="flex-1 overflow-y-auto p-4">
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-gray-500">
@@ -84,7 +82,7 @@ export default function BoardFavoritesPage() {
         ) : (
           <div className="flex flex-col gap-2 w-full">
             {items.map((item) => (
-              <BoardListItem key={item.id} item={item} />
+              <WorksheetGroupListItem key={item.id} item={item} />
             ))}
           </div>
         )}

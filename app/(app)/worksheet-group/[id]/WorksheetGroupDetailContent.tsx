@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
 
-interface BoardItem {
+interface WorksheetGroupItem {
   id: number;
   image_url: string | null;
   title: string;
@@ -20,8 +20,8 @@ interface BoardItem {
   created_at: string;
 }
 
-interface BoardDetailContentProps {
-  item: BoardItem;
+interface WorksheetGroupDetailContentProps {
+  item: WorksheetGroupItem;
 }
 
 // Custom MDX components
@@ -77,7 +77,7 @@ const mdxComponents = {
   ),
 };
 
-export default function BoardDetailContent({ item }: BoardDetailContentProps) {
+export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDetailContentProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null);
@@ -106,10 +106,10 @@ export default function BoardDetailContent({ item }: BoardDetailContentProps) {
       if (!user) return;
       const supabase = createClient();
       const { data } = await supabase
-        .from('board_favorites')
+        .from('worksheet_group_favorites')
         .select('id')
         .eq('user_id', user.id)
-        .eq('board_id', item.id)
+        .eq('worksheet_group_id', item.id)
         .single();
       setIsFavorite(!!data);
     }
@@ -127,15 +127,15 @@ export default function BoardDetailContent({ item }: BoardDetailContentProps) {
 
     if (isFavorite) {
       await supabase
-        .from('board_favorites')
+        .from('worksheet_group_favorites')
         .delete()
         .eq('user_id', user.id)
-        .eq('board_id', item.id);
+        .eq('worksheet_group_id', item.id);
       setIsFavorite(false);
     } else {
       await supabase
-        .from('board_favorites')
-        .insert({ user_id: user.id, board_id: item.id });
+        .from('worksheet_group_favorites')
+        .insert({ user_id: user.id, worksheet_group_id: item.id });
       setIsFavorite(true);
     }
     setFavoriteLoading(false);
@@ -157,7 +157,7 @@ export default function BoardDetailContent({ item }: BoardDetailContentProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/board')}
+          onClick={() => router.push('/worksheet-group')}
           className="flex items-center gap-1 -ml-2"
         >
           <ArrowLeft className="w-4 h-4" />

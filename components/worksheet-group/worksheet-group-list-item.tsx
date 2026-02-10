@@ -6,7 +6,7 @@ import { Eye, Calendar } from 'lucide-react';
 import { BoardColorTag } from '@/components/ui/board-color-tag';
 import { SubjectColorTag } from '@/components/ui/subject-color-tag';
 
-export interface BoardItem {
+export interface WorksheetGroupItem {
   id: number;
   image_url: string | null;
   title: string;
@@ -16,11 +16,11 @@ export interface BoardItem {
   subjects: string[] | null;
 }
 
-interface BoardListItemProps {
-  item: BoardItem;
+interface WorksheetGroupListItemProps {
+  item: WorksheetGroupItem;
 }
 
-export function BoardListItem({ item }: BoardListItemProps) {
+export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
   const router = useRouter();
 
   const formatDate = (dateString: string) => {
@@ -34,7 +34,7 @@ export function BoardListItem({ item }: BoardListItemProps) {
 
   return (
     <div
-      onClick={() => router.push(`/board/${item.id}`)}
+      onClick={() => router.push(`/worksheet-group/${item.id}`)}
       className="w-full flex items-center gap-4 p-4 bg-white border border-[var(--border)] rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
     >
       <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -54,7 +54,6 @@ export function BoardListItem({ item }: BoardListItemProps) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        {/* Board Tags */}
         {item.tags && item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1">
             {item.tags.map((tag) => (
@@ -62,7 +61,6 @@ export function BoardListItem({ item }: BoardListItemProps) {
             ))}
           </div>
         )}
-        {/* Subject Tags */}
         {item.subjects && item.subjects.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1">
             {item.subjects.map((subject) => (

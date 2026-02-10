@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import BoardDetailContent from './BoardDetailContent';
+import WorksheetGroupDetailContent from './WorksheetGroupDetailContent';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const supabase = await createClient();
 
   const { data: item } = await supabase
-    .from('board')
+    .from('worksheet_group')
     .select('title')
     .eq('id', parseInt(id))
     .single();
@@ -29,21 +29,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BoardDetailPage({ params }: PageProps) {
+export default async function WorksheetGroupDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const boardId = parseInt(id);
+  const worksheetGroupId = parseInt(id);
 
-  if (isNaN(boardId)) {
+  if (isNaN(worksheetGroupId)) {
     notFound();
   }
 
   const supabase = await createClient();
 
-  // Fetch board item
   const { data: item, error } = await supabase
-    .from('board')
+    .from('worksheet_group')
     .select('*')
-    .eq('id', boardId)
+    .eq('id', worksheetGroupId)
     .single();
 
   if (error || !item) {
@@ -52,9 +51,9 @@ export default async function BoardDetailPage({ params }: PageProps) {
 
   // Increment view count
   await supabase
-    .from('board')
+    .from('worksheet_group')
     .update({ view_count: item.view_count + 1 })
-    .eq('id', boardId);
+    .eq('id', worksheetGroupId);
 
-  return <BoardDetailContent item={{ ...item, view_count: item.view_count + 1 }} />;
+  return <WorksheetGroupDetailContent item={{ ...item, view_count: item.view_count + 1 }} />;
 }
