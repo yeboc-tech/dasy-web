@@ -1,11 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChevronLeft, Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import examsData from '@/data/exams.json';
+import { getSubjectId } from '@/lib/utils/subjectUtils';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 type Exam = typeof examsData.exams[number];
 
@@ -35,6 +38,19 @@ interface ExamDetailContentProps {
 
 export default function ExamDetailContent({ groupId }: ExamDetailContentProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const { interestSubjectIds, initialized, fetchSettings } = useUserAppSettingStore();
+
+  useEffect(() => {
+    if (user && !initialized) {
+      fetchSettings(user.id);
+    }
+  }, [user, initialized, fetchSettings]);
+
+  const isInterestSubject = (subjectLabel: string) => {
+    const id = getSubjectId(subjectLabel);
+    return id ? interestSubjectIds.includes(id) : false;
+  };
 
   const { examName, subjects } = useMemo(() => {
     const decodedId = decodeURIComponent(groupId);
@@ -227,18 +243,21 @@ export default function ExamDetailContent({ groupId }: ExamDetailContentProps) {
           </div>
 
           {/* 우측 목차 (고정) */}
-          <div className="w-48 shrink-0 hidden lg:block">
-            <div className="sticky top-8 p-4">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">목차</h2>
-              <ul className="flex flex-col gap-1">
-                {subjects.map((exam) => (
+          <div className="w-52 shrink-0 hidden lg:block pr-10">
+            <div className="sticky top-8 border border-[var(--border)] rounded-lg bg-gray-50 p-4">
+              <h2 className="text-sm font-bold text-[var(--foreground)] mb-2">목차</h2>
+              <ul className="flex flex-col">
+                {subjects.map((exam, index) => (
                   <li key={exam.id}>
                     <button
                       onClick={() => scrollToSubject(exam.id)}
-                      className="flex items-center gap-2 text-left px-2 py-1.5 text-sm text-gray-600 hover:text-black hover:bg-gray-100 rounded transition-colors cursor-pointer w-full"
+                      className={`flex items-center gap-2 text-left py-0.5 text-xs transition-colors cursor-pointer w-full ${
+                        isInterestSubject(exam.subject)
+                          ? 'text-[var(--pink-primary)] font-medium'
+                          : 'text-gray-600 hover:text-[var(--foreground)]'
+                      }`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
-                      {exam.subject}
+                      <span>{index + 1}. {exam.subject}</span>
                     </button>
                   </li>
                 ))}

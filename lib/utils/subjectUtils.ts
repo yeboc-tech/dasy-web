@@ -56,3 +56,12 @@ export function getSubjectLabel(id: string): string | null {
   const subject = allSubjects.find(s => s.id === id);
   return subject?.label || null;
 }
+
+/**
+ * 과목 라벨로 ID 가져오기
+ */
+export function getSubjectId(label: string): string | null {
+  const allSubjects = [...SUBJECTS_2026, ...SUBJECTS_2027];
+  const subject = allSubjects.find(s => s.label === label);
+  return subject?.id || null;
+}

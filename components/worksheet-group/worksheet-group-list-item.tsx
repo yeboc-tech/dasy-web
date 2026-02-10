@@ -13,7 +13,7 @@ export interface WorksheetGroupItem {
   view_count: number;
   created_at: string;
   tags: string[] | null;
-  subjects: string[] | null;
+  subjects: string[];
 }
 
 interface WorksheetGroupListItemProps {
@@ -61,10 +61,10 @@ export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
             ))}
           </div>
         )}
-        {item.subjects && item.subjects.length > 0 && (
+        {item.subjects.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1">
-            {item.subjects.map((subject) => (
-              <SubjectColorTag key={subject} subject={subject} />
+            {[...item.subjects].sort((a, b) => a.localeCompare(b, 'ko')).map((subject) => (
+              <SubjectColorTag key={subject} subjectId={subject} />
             ))}
           </div>
         )}
