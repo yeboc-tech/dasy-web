@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { TodayProblem } from '@/lib/api/SupabaseRpc';
 import { createClient } from '@/lib/supabase/client';
 
-export type ProblemMode = 'today' | 'review';
+export type ProblemMode = 'today' | 'review' | 'resolve';
 
 interface ProblemSolverDialogProps {
   open: boolean;
@@ -351,13 +351,15 @@ export function ProblemSolverDialog({
                         내 학습기록에 저장되었습니다.
                       </p>
 
-                      {/* 다음 문제 버튼 */}
-                      <button
-                        onClick={handleNextProblem}
-                        className="w-full mt-4 py-2.5 text-sm font-medium text-white bg-[#FF00A1] rounded-lg hover:bg-[#E0008E] transition-colors"
-                      >
-                        다음문제 풀기
-                      </button>
+                      {/* 다음 문제 버튼 (resolve 모드에서는 숨김) */}
+                      {mode !== 'resolve' && (
+                        <button
+                          onClick={handleNextProblem}
+                          className="w-full mt-4 py-2.5 text-sm font-medium text-white bg-[#FF00A1] rounded-lg hover:bg-[#E0008E] transition-colors"
+                        >
+                          다음문제 풀기
+                        </button>
+                      )}
                     </div>
                   )}
 

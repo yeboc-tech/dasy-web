@@ -62,6 +62,7 @@ const navGroups: NavGroup[] = [
         icon: <BarChart3 className="w-4 h-4" />,
         subItems: [
           { label: '전체문제', href: '/my/problem-analysis' },
+          { label: '오답문제', href: '/my/problem-analysis/wrong' },
           { label: '학습지 별', href: '/my/problem-analysis/by-worksheet' },
         ],
       },
