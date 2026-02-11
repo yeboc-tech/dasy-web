@@ -21,14 +21,17 @@ export interface WorksheetGroupItem {
 
 interface WorksheetGroupListItemProps {
   item: WorksheetGroupItem;
+  href?: string;
+  hideFavorite?: boolean;
 }
 
-export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
+export function WorksheetGroupListItem({ item, href, hideFavorite }: WorksheetGroupListItemProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
+    if (hideFavorite) return;
     async function checkFavorite() {
       if (!user) return;
       const supabase = createClient();
@@ -41,7 +44,7 @@ export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
       setIsFavorite(!!data);
     }
     checkFavorite();
-  }, [user, item.id]);
+  }, [user, item.id, hideFavorite]);
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,7 +80,7 @@ export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
 
   return (
     <div
-      onClick={() => router.push(`/worksheet-group/${item.id}`)}
+      onClick={() => router.push(href || `/worksheet-group/${item.id}`)}
       className="w-full flex items-center gap-4 p-4 bg-white border border-[var(--border)] rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
     >
       <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -125,12 +128,14 @@ export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
           </span>
         </div>
       </div>
-      <button
-        onClick={toggleFavorite}
-        className="shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
-      >
-        <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-      </button>
+      {!hideFavorite && (
+        <button
+          onClick={toggleFavorite}
+          className="shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+        </button>
+      )}
     </div>
   );
 }
