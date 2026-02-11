@@ -59,9 +59,9 @@ export default function WorksheetGroupAllPage() {
     <div className="w-full h-full flex flex-col overflow-hidden">
       <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
         <div className="flex items-end gap-2">
-          <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">전체 게시물</h1>
+          <h1 className="text-lg font-semibold leading-none text-[var(--foreground)]">전체 학습지</h1>
           <span className="text-xs text-[var(--gray-500)] leading-none pb-0.5">
-            {items.length}개 게시물
+            {items.length}개 학습지
           </span>
         </div>
       </div>
@@ -69,7 +69,7 @@ export default function WorksheetGroupAllPage() {
       <div className="flex-1 overflow-y-auto p-4">
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-gray-500">
-            게시물이 없습니다.
+            학습지가 없습니다.
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full">

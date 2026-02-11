@@ -1,10 +1,13 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Eye, Calendar } from 'lucide-react';
+import { Eye, Calendar, Star } from 'lucide-react';
 import { BoardColorTag } from '@/components/ui/board-color-tag';
 import { SubjectColorTag } from '@/components/ui/subject-color-tag';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/contexts/auth-context';
 
 export interface WorksheetGroupItem {
   id: number;
@@ -22,6 +25,46 @@ interface WorksheetGroupListItemProps {
 
 export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    async function checkFavorite() {
+      if (!user) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('worksheet_group_favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('worksheet_group_id', item.id)
+        .single();
+      setIsFavorite(!!data);
+    }
+    checkFavorite();
+  }, [user, item.id]);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    const supabase = createClient();
+    if (isFavorite) {
+      await supabase
+        .from('worksheet_group_favorites')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('worksheet_group_id', item.id);
+      setIsFavorite(false);
+    } else {
+      await supabase
+        .from('worksheet_group_favorites')
+        .insert({ user_id: user.id, worksheet_group_id: item.id });
+      setIsFavorite(true);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,6 +125,12 @@ export function WorksheetGroupListItem({ item }: WorksheetGroupListItemProps) {
           </span>
         </div>
       </div>
+      <button
+        onClick={toggleFavorite}
+        className="shrink-0 p-2 hover:bg-gray-100 rounded-full transition-colors"
+      >
+        <Star className={`w-5 h-5 ${isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+      </button>
     </div>
   );
 }

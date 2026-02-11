@@ -506,7 +506,7 @@ export default function SolvePage() {
                     }
                   `}
                 >
-                  남은문제 풀기
+                  일부문제 풀기
                   <span className="block text-xs font-normal mt-0.5 opacity-70">
                     안 푼 문제만
                   </span>
@@ -516,7 +516,7 @@ export default function SolvePage() {
               {/* Quick count selection for partial mode */}
               {solveMode === 'partial' && (
                 <div className="mt-3 flex gap-2">
-                  {[5, 4, 3, 2, 1].map(num => {
+                  {[1, 2, 3, 4, 5].map(num => {
                     // Count unsolved problems
                     const unsolvedCount = worksheet?.selected_problem_ids?.filter(
                       id => !solvedProblemIds.has(id)
