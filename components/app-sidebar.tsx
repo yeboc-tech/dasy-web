@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 import { useAppStore } from '@/lib/zustand/localStorageStore';
@@ -21,6 +21,12 @@ interface NavGroup {
 }
 
 const navGroups: NavGroup[] = [
+  {
+    title: 'MY',
+    items: [
+      { label: '내 학습 현황', href: '/my/dashboard', icon: <Home className="w-4 h-4" /> },
+    ],
+  },
   {
     title: '기출문제 학습지',
     items: [
@@ -44,16 +50,17 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: 'MY',
+    title: '학습 결과',
     items: [
+      { label: '학습 캘린더', href: '/my/calendar', icon: <CalendarDays className="w-4 h-4" /> },
       {
-        label: '내 학습 현황',
-        href: '/my/dashboard',
-        icon: <Home className="w-4 h-4" />,
+        label: '상세 현황',
+        href: '/my/by-chapter',
+        icon: <ClipboardList className="w-4 h-4" />,
         subItems: [
-          { label: '단원별 학습 현황', href: '/my/by-chapter' },
-          { label: '난이도별 학습 현황', href: '/my/by-difficulty' },
-          { label: '시험별 학습 현황', href: '/my/by-exam' },
+          { label: '단원별 학습결과', href: '/my/by-chapter' },
+          { label: '난이도별 학습결과', href: '/my/by-difficulty' },
+          { label: '시험별 학습결과', href: '/my/by-exam' },
         ],
       },
       {
@@ -106,8 +113,8 @@ export function AppSidebar() {
     if (group.title === '제작') {
       return false;
     }
-    // 학생 모드: 설정은 로그인 시에만 표시
-    if (group.title === '설정') {
+    // 학생 모드: MY, 학습 결과, 설정은 로그인 시에만 표시
+    if (group.title === 'MY' || group.title === '학습 결과' || group.title === '설정') {
       return !!user;
     }
     return true;

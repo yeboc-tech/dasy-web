@@ -134,6 +134,12 @@ export default function SolveResultPage() {
     );
   }
 
+  // 제출된 문제 ID 세트
+  const submittedProblemIds = new Set(records.map(r => r.problem_id));
+  const answeredCount = records.length;
+  const wrongCount = answeredCount - result.correct_answer_count;
+  const skippedCount = result.total_problem_count - answeredCount;
+
   const scorePercent = result.max_score > 0
     ? Math.round((result.score / result.max_score) * 100)
     : 0;
@@ -187,9 +193,9 @@ export default function SolveResultPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid ${skippedCount > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                   <Check className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
@@ -198,16 +204,25 @@ export default function SolveResultPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                   <X className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
                   <p className="text-xs text-red-600">오답</p>
-                  <p className="text-lg font-semibold text-red-700">
-                    {result.total_problem_count - result.correct_answer_count}문제
-                  </p>
+                  <p className="text-lg font-semibold text-red-700">{wrongCount}문제</p>
                 </div>
               </div>
+              {skippedCount > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-base font-bold text-gray-400">-</span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">안 푼 문제</p>
+                    <p className="text-lg font-semibold text-gray-500">{skippedCount}문제</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -218,33 +233,42 @@ export default function SolveResultPage() {
               문제별 결과
             </h2>
             <div className="grid grid-cols-5 gap-2">
-              {records.map((record, index) => {
-                const correctAnswer = correctAnswers.get(record.problem_id);
-                const isCorrect = record.submit_answer !== null && record.submit_answer === correctAnswer;
-                const isUnanswered = record.submit_answer === null;
+              {(result.total_problem_ids || []).map((problemId, index) => {
+                const record = records.find(r => r.problem_id === problemId);
+                const correctAnswer = correctAnswers.get(problemId);
+                const isSkipped = !record;
+                const isCorrect = !isSkipped && record.submit_answer === correctAnswer;
 
                 return (
                   <div
-                    key={record.session_index}
+                    key={problemId}
                     className={`
                       relative p-2 rounded-lg border text-center
-                      ${isCorrect
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-red-50 border-red-200'
+                      ${isSkipped
+                        ? 'bg-gray-50 border-gray-200'
+                        : isCorrect
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-red-50 border-red-200'
                       }
                     `}
                   >
                     <p className="text-xs text-gray-500 mb-1">{index + 1}번</p>
-                    <p className={`text-sm font-semibold ${isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                      {isUnanswered ? '-' : record.submit_answer}
+                    <p className={`text-sm font-semibold ${
+                      isSkipped ? 'text-gray-400' : isCorrect ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {isSkipped ? '-' : record.submit_answer}
                     </p>
-                    {!isCorrect && correctAnswer && (
+                    {!isSkipped && !isCorrect && correctAnswer && (
                       <p className="text-xs text-gray-400 mt-0.5">
                         정답: {correctAnswer}
                       </p>
                     )}
-                    <div className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`}>
-                      {isCorrect ? (
+                    <div className={`absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center ${
+                      isSkipped ? 'bg-gray-300' : isCorrect ? 'bg-green-500' : 'bg-red-500'
+                    }`}>
+                      {isSkipped ? (
+                        <span className="text-[10px] font-bold text-white">-</span>
+                      ) : isCorrect ? (
                         <Check className="w-2.5 h-2.5 text-white" />
                       ) : (
                         <X className="w-2.5 h-2.5 text-white" />

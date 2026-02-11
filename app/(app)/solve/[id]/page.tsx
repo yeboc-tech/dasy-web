@@ -1,8 +1,9 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Loader, Clock, ListOrdered, PanelLeft, Check, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Clock, ListOrdered, PanelLeft, Monitor, Check, Circle } from 'lucide-react';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import { ExamTimer } from '@/components/solve/ExamTimer';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -13,6 +14,8 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
+import { getProblemImageUrl } from '@/lib/utils/s3Utils';
+import { getEditedContents } from '@/lib/supabase/services/clientServices';
 import { toast } from 'sonner';
 
 const SimplePDFViewer = dynamic(() => import('@/components/solve/SimplePDFViewer'), {
@@ -61,11 +64,27 @@ export default function SolvePage() {
   const [isStarting, setIsStarting] = useState(false);
   const sessionCreatingRef = useRef(false);
 
-  // OMR position from store
-  const { omrPosition, setOmrPosition, fetchSettings } = useUserAppSettingStore();
+  // Settings from store
+  const { omrPosition, setOmrPosition, solveMode: defaultSolveMode, fetchSettings } = useUserAppSettingStore();
+
+  // View mode: PDF or Tablet (initialized from store default)
+  const [viewMode, setViewMode] = useState<'pdf' | 'tablet'>('tablet');
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
+
+  // Tablet mode states
+  const [currentPage, setCurrentPage] = useState(0);
+  const [editedContentMap, setEditedContentMap] = useState<Map<string, string>>(new Map());
 
   // Previously solved problems (problem_id set)
   const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
+
+  // Sync viewMode with store default (only once, before exam starts)
+  useEffect(() => {
+    if (!viewModeInitialized && defaultSolveMode) {
+      setViewMode(defaultSolveMode);
+      setViewModeInitialized(true);
+    }
+  }, [defaultSolveMode, viewModeInitialized]);
 
   // Load worksheet data, PDF, and user settings
   useEffect(() => {
@@ -111,6 +130,22 @@ export default function SolvePage() {
         setSelectedProblemIndices(allIndices);
 
         setLoading(false);
+
+        // Preload edited content + problem images for tablet mode
+        try {
+          const editedMap = await getEditedContents(data.selected_problem_ids);
+          setEditedContentMap(editedMap);
+          data.selected_problem_ids.forEach((pid: string) => {
+            const img = new window.Image();
+            img.src = editedMap.get(pid) || getProblemImageUrl(pid);
+          });
+        } catch (err) {
+          console.error('Error fetching edited contents:', err);
+          data.selected_problem_ids.forEach((pid: string) => {
+            const img = new window.Image();
+            img.src = getProblemImageUrl(pid);
+          });
+        }
 
         // Get PDF (from cache or generate)
         const result = await getWorksheetPdf(
@@ -228,6 +263,7 @@ export default function SolvePage() {
       setSortedSelectedIndices(sortedIndices);
       setShowInstructionsDialog(false);
       setIsExamStarted(true);
+      if (viewMode === 'tablet') setCurrentPage(0);
 
     } catch (err) {
       console.error('Error starting exam:', err);
@@ -288,31 +324,34 @@ export default function SolvePage() {
         }
       }
 
-      // Calculate results and prepare records
+      // Calculate results and prepare records (안 푼 문제는 제외)
       let totalScore = 0;
       let correctCount = 0;
-      const records = problemIdsToSolve.map((problemId, index) => {
-        // Use sortedSelectedIndices to get the actual problem number (1-indexed in OMRSheet)
+      const records: { session_id: string; session_index: number; user_id: string; problem_id: string; submit_answer: number }[] = [];
+
+      problemIdsToSolve.forEach((problemId, index) => {
         const problemNumber = sortedSelectedIndices[index] + 1;
-        const userAnswer = answers[problemNumber] ?? null; // null if unanswered
+        const userAnswer = answers[problemNumber] ?? null;
+
+        // 안 푼 문제는 기록하지 않음
+        if (userAnswer === null) return;
+
         const correctAnswer = correctAnswerMap.get(problemId) ?? 0;
         const problemScore = scoreMap.get(problemId) ?? 2;
-
-        // Unanswered (null) is treated as wrong
-        const isCorrect = userAnswer !== null && userAnswer === correctAnswer;
+        const isCorrect = userAnswer === correctAnswer;
 
         if (isCorrect) {
           correctCount++;
           totalScore += problemScore;
         }
 
-        return {
+        records.push({
           session_id: sessionId,
           session_index: index,
           user_id: user.id,
           problem_id: problemId,
           submit_answer: userAnswer,
-        };
+        });
       });
 
       // Insert all records into solve_session_record
@@ -397,8 +436,7 @@ export default function SolvePage() {
             {getUnansweredCount() > 0 ? (
               <p className="text-sm text-gray-700">
                 <span className="text-red-500 font-semibold">{getUnansweredCount()}개</span>의
-                문제를 풀지 않았습니다.<br />
-                안 푼 문제는 <span className="text-red-500 font-semibold">오답 처리</span>됩니다.
+                안 푼 문제가 있습니다.
               </p>
             ) : (
               <p className="text-sm text-gray-700">
@@ -431,7 +469,7 @@ export default function SolvePage() {
       </Dialog>
 
       {/* Instructions Dialog */}
-      <Dialog open={showInstructionsDialog} onOpenChange={setShowInstructionsDialog}>
+      <Dialog open={showInstructionsDialog} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md" showCloseButton={false}>
           <DialogTitle className="text-lg font-semibold text-center">
             시험 유의사항
@@ -444,7 +482,7 @@ export default function SolvePage() {
               </li>
               <li className="flex gap-2">
                 <span className="text-[#FF00A1] font-medium">2.</span>
-                <span>{omrPosition === 'left' ? '왼쪽' : '오른쪽'} OMR 카드에서 답안을 마킹하세요.</span>
+                <span>{viewMode === 'pdf' ? `${omrPosition === 'left' ? '왼쪽' : '오른쪽'} OMR 카드에서 답안을 마킹하세요.` : '문제 상단의 OMR에서 답안을 마킹하세요.'}</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-[#FF00A1] font-medium">3.</span>
@@ -508,7 +546,7 @@ export default function SolvePage() {
                 >
                   일부문제 풀기
                   <span className="block text-xs font-normal mt-0.5 opacity-70">
-                    안 푼 문제만
+                    선택한 문제만
                   </span>
                 </button>
               </div>
@@ -630,8 +668,40 @@ export default function SolvePage() {
               )}
             </div>
 
-            {/* OMR Position Toggle */}
-            <div className="mt-3 flex items-center justify-between">
+            {/* View Mode Toggle */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Monitor className="w-4 h-4 text-gray-500" />
+                <p className="text-sm font-medium text-gray-700">풀기 모드</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setViewMode('tablet')}
+                  className={`p-3 rounded-lg border text-sm font-medium transition-colors text-center ${
+                    viewMode === 'tablet'
+                      ? 'border-[#FF00A1] bg-[#FFF0F7] text-[#FF00A1]'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  태블릿모드 풀기
+                  <span className="block text-xs font-normal mt-0.5 opacity-70">이미지 2문제씩</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('pdf')}
+                  className={`p-3 rounded-lg border text-sm font-medium transition-colors text-center ${
+                    viewMode === 'pdf'
+                      ? 'border-[#FF00A1] bg-[#FFF0F7] text-[#FF00A1]'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  PDF모드 풀기
+                  <span className="block text-xs font-normal mt-0.5 opacity-70">PDF + OMR 시트</span>
+                </button>
+              </div>
+            </div>
+
+            {/* OMR Position Toggle (PDF mode only) */}
+            {viewMode === 'pdf' && <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PanelLeft className="w-4 h-4 text-gray-500" />
                 <Label className="text-sm font-medium text-gray-700">
@@ -665,7 +735,7 @@ export default function SolvePage() {
                   우측
                 </button>
               </div>
-            </div>
+            </div>}
           </div>
           <div className="flex gap-2 pt-2">
             <CustomButton
@@ -705,88 +775,305 @@ export default function SolvePage() {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-lg font-semibold text-[var(--foreground)]">
-            풀기
-          </h1>
-          <span className="text-xs text-[var(--gray-500)]">
-            {actualProblemCount}문제
-          </span>
+          <h1 className="text-lg font-semibold text-[var(--foreground)]">풀기</h1>
+          <span className="text-xs text-[var(--gray-500)]">{actualProblemCount}문제</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Buttons will be added later */}
-        </div>
-      </div>
-
-      {/* Content - OMR and PDF */}
-      <div className={`flex-1 flex overflow-hidden bg-gray-100 ${omrPosition === 'right' ? 'flex-row-reverse' : ''}`}>
-        {/* OMR Sheet */}
-        <div className={`w-52 shrink-0 p-4 ${omrPosition === 'right' ? 'pl-0' : 'pr-0'} overflow-hidden flex flex-col gap-3`}>
-          {/* Submit Button */}
-          <CustomButton
-            variant="primary"
-            size="sm"
-            className="w-full"
-            onClick={() => setShowSubmitDialog(true)}
-            disabled={!isExamStarted || isSubmitting}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <Loader className="animate-spin w-4 h-4" />
-                제출 중...
-              </span>
-            ) : (
-              '제출하기'
-            )}
-          </CustomButton>
-
-          {/* Timer */}
-          <ExamTimer
-            totalSeconds={totalTimeSeconds}
-            enabled={timerEnabled}
-            isRunning={isExamStarted}
-            onTimeUp={handleTimeUp}
-          />
-
-          <OMRSheet
-            problemCount={problemCount}
-            answers={answers}
-            onAnswerChange={handleAnswerChange}
-            selectedProblemIndices={selectedProblemIndices}
-          />
-        </div>
-
-        {/* PDF Viewer - Right Side */}
-        <div className="flex-1 overflow-hidden">
-          {pdfLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="flex flex-col items-center gap-4">
-                <Loader className="animate-spin w-4 h-4" />
-                {pdfProgress.message && (
-                  <div className="w-64 text-center">
-                    <div className="text-xs text-gray-500 mb-2">{pdfProgress.message}</div>
-                    <div className="w-full h-1 bg-gray-200 rounded">
-                      <div
-                        className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
-                        style={{ width: `${pdfProgress.percent}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">{pdfProgress.percent}%</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : pdfUrl ? (
-            <SimplePDFViewer
-              pdfUrl={pdfUrl}
-              onError={(error) => console.error('PDF error:', error)}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <span className="text-gray-500">PDF를 불러올 수 없습니다.</span>
-            </div>
+          {viewMode === 'tablet' && (
+            <>
+              <ExamTimer
+                totalSeconds={totalTimeSeconds}
+                enabled={timerEnabled}
+                isRunning={isExamStarted}
+                onTimeUp={handleTimeUp}
+              />
+              <CustomButton
+                variant="primary"
+                size="sm"
+                onClick={() => setShowSubmitDialog(true)}
+                disabled={!isExamStarted || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader className="animate-spin w-4 h-4" />
+                    제출 중...
+                  </span>
+                ) : '제출하기'}
+              </CustomButton>
+            </>
           )}
         </div>
       </div>
+
+      {viewMode === 'pdf' ? (
+        /* PDF Mode - OMR and PDF */
+        <div className={`flex-1 flex overflow-hidden bg-gray-100 ${omrPosition === 'right' ? 'flex-row-reverse' : ''}`}>
+          {/* OMR Sheet */}
+          <div className={`w-52 shrink-0 p-4 ${omrPosition === 'right' ? 'pl-0' : 'pr-0'} overflow-hidden flex flex-col gap-3`}>
+            <CustomButton
+              variant="primary"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowSubmitDialog(true)}
+              disabled={!isExamStarted || isSubmitting}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader className="animate-spin w-4 h-4" />
+                  제출 중...
+                </span>
+              ) : '제출하기'}
+            </CustomButton>
+
+            <ExamTimer
+              totalSeconds={totalTimeSeconds}
+              enabled={timerEnabled}
+              isRunning={isExamStarted}
+              onTimeUp={handleTimeUp}
+            />
+
+            <OMRSheet
+              problemCount={problemCount}
+              answers={answers}
+              onAnswerChange={handleAnswerChange}
+              selectedProblemIndices={selectedProblemIndices}
+            />
+          </div>
+
+          {/* PDF Viewer */}
+          <div className="flex-1 overflow-hidden">
+            {pdfLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader className="animate-spin w-4 h-4" />
+                  {pdfProgress.message && (
+                    <div className="w-64 text-center">
+                      <div className="text-xs text-gray-500 mb-2">{pdfProgress.message}</div>
+                      <div className="w-full h-1 bg-gray-200 rounded">
+                        <div
+                          className="h-1 bg-[#FF00A1] rounded transition-all duration-300"
+                          style={{ width: `${pdfProgress.percent}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">{pdfProgress.percent}%</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : pdfUrl ? (
+              <SimplePDFViewer
+                pdfUrl={pdfUrl}
+                onError={(error) => console.error('PDF error:', error)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <span className="text-gray-500">PDF를 불러올 수 없습니다.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Tablet Mode - Two problems side by side */
+        <TabletContent
+          worksheet={worksheet}
+          problemCount={problemCount}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          answers={answers}
+          onAnswerChange={handleAnswerChange}
+          isExamStarted={isExamStarted}
+          selectedProblemIndices={selectedProblemIndices}
+          editedContentMap={editedContentMap}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Tablet mode content */
+function TabletContent({
+  worksheet,
+  problemCount,
+  currentPage,
+  setCurrentPage,
+  answers,
+  onAnswerChange,
+  isExamStarted,
+  selectedProblemIndices,
+  editedContentMap,
+}: {
+  worksheet: WorksheetData | null;
+  problemCount: number;
+  currentPage: number;
+  setCurrentPage: (fn: number | ((p: number) => number)) => void;
+  answers: {[problemNumber: number]: number};
+  onAnswerChange: (problemNumber: number, answer: number) => void;
+  isExamStarted: boolean;
+  selectedProblemIndices: Set<number>;
+  editedContentMap: Map<string, string>;
+}) {
+  const totalPages = Math.ceil(problemCount / 2);
+  const leftIdx = currentPage * 2;
+  const rightIdx = currentPage * 2 + 1;
+  const leftProblemId = worksheet?.selected_problem_ids?.[leftIdx];
+  const rightProblemId = rightIdx < problemCount ? worksheet?.selected_problem_ids?.[rightIdx] : null;
+
+  return (
+    <div className="flex-1 overflow-hidden bg-gray-100 flex flex-col">
+      <div className="flex-1 flex gap-4 p-4 overflow-hidden">
+        {/* Left problem */}
+        <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {leftProblemId ? (
+            <>
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
+                <span className="text-sm font-medium text-gray-700">{leftIdx + 1}번</span>
+                <InlineOMR
+                  problemNumber={leftIdx + 1}
+                  selectedAnswer={answers[leftIdx + 1]}
+                  onAnswerChange={onAnswerChange}
+                  disabled={!isExamStarted || !selectedProblemIndices.has(leftIdx)}
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 flex justify-center">
+                <ProblemImage problemId={leftProblemId} editedUrl={editedContentMap.get(leftProblemId)} />
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-400">문제 없음</div>
+          )}
+        </div>
+
+        {/* Right problem */}
+        <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {rightProblemId ? (
+            <>
+              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 shrink-0">
+                <span className="text-sm font-medium text-gray-700">{rightIdx + 1}번</span>
+                <InlineOMR
+                  problemNumber={rightIdx + 1}
+                  selectedAnswer={answers[rightIdx + 1]}
+                  onAnswerChange={onAnswerChange}
+                  disabled={!isExamStarted || !selectedProblemIndices.has(rightIdx)}
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 flex justify-center">
+                <ProblemImage problemId={rightProblemId} editedUrl={editedContentMap.get(rightProblemId)} />
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-400" />
+          )}
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="shrink-0 flex items-center justify-center gap-1 px-4 py-3 bg-white border-t border-gray-200">
+        <button
+          onClick={() => setCurrentPage((p: number) => Math.max(0, p - 1))}
+          disabled={currentPage === 0}
+          className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-1 overflow-x-auto px-1">
+          {Array.from({ length: totalPages }, (_, i) => {
+            const pageLeftIdx = i * 2;
+            const pageRightIdx = i * 2 + 1;
+            const leftAnswered = !!answers[pageLeftIdx + 1];
+            const rightAnswered = pageRightIdx < problemCount ? !!answers[pageRightIdx + 1] : true;
+            const allAnswered = leftAnswered && rightAnswered;
+
+            return (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i)}
+                className={`min-w-[32px] h-8 px-1 rounded-md text-sm font-medium transition-colors ${
+                  currentPage === i
+                    ? 'bg-[#FF00A1] text-white'
+                    : allAnswered
+                      ? 'bg-pink-50 text-[#FF00A1] hover:bg-pink-100'
+                      : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setCurrentPage((p: number) => Math.min(totalPages - 1, p + 1))}
+          disabled={currentPage === totalPages - 1}
+          className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Inline OMR - horizontal 5-choice selector */
+function InlineOMR({
+  problemNumber,
+  selectedAnswer,
+  onAnswerChange,
+  disabled,
+}: {
+  problemNumber: number;
+  selectedAnswer?: number;
+  onAnswerChange: (problemNumber: number, answer: number) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      {[1, 2, 3, 4, 5].map((option) => (
+        <button
+          key={option}
+          onClick={() => !disabled && onAnswerChange(problemNumber, option)}
+          disabled={disabled}
+          className={`w-7 h-7 rounded-full border text-xs font-medium transition-colors ${
+            disabled
+              ? 'bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed'
+              : selectedAnswer === option
+                ? 'bg-[#FF00A1] text-white border-[#FF00A1]'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-[#FF00A1] cursor-pointer'
+          }`}
+        >
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Problem image component with loading state */
+function ProblemImage({ problemId, editedUrl }: { problemId: string; editedUrl?: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const imageUrl = editedUrl || getProblemImageUrl(problemId);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+        이미지를 불러올 수 없습니다.
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full max-w-md">
+      {!loaded && (
+        <div className="flex items-center justify-center h-64">
+          <Loader className="animate-spin w-4 h-4 text-gray-400" />
+        </div>
+      )}
+      <img
+        src={imageUrl}
+        alt={problemId}
+        className={`w-full h-auto ${loaded ? '' : 'hidden'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+      />
     </div>
   );
 }

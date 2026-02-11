@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Loader, ChevronDown } from 'lucide-react';
+import { Loader, ChevronDown, TabletSmartphone, FileText } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
@@ -18,6 +18,7 @@ export default function AppSettingsPage() {
   const {
     suneungYear,
     currentGrade,
+    solveMode,
     omrPosition,
     problemRange,
     interestSubjectIds,
@@ -51,6 +52,13 @@ export default function AppSettingsPage() {
     if (!user) return;
     setSaving(true);
     await updateSettings(user.id, { current_grade: grade });
+    setSaving(false);
+  };
+
+  const handleSolveModeChange = async (mode: 'pdf' | 'tablet') => {
+    if (!user) return;
+    setSaving(true);
+    await updateSettings(user.id, { solve_mode: mode });
     setSaving(false);
   };
 
@@ -278,6 +286,50 @@ export default function AppSettingsPage() {
                 {filteredSubjects.length === 0 && (
                   <p className="text-sm text-gray-500">선택 가능한 과목이 없습니다.</p>
                 )}
+              </div>
+
+              {/* Solve Mode Setting */}
+              <div className="p-4 border-b border-[var(--border)]">
+                <h2 className="text-sm font-medium text-black mb-2">풀기 모드</h2>
+                <p className="text-sm text-[var(--gray-600)] mb-4">
+                  문제 풀이 시 기본 모드를 설정합니다.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSolveModeChange('tablet')}
+                    disabled={saving}
+                    className={`
+                      flex items-center gap-1.5
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${solveMode === 'tablet'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    <TabletSmartphone className="w-4 h-4 -rotate-90" />
+                    태블릿모드
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSolveModeChange('pdf')}
+                    disabled={saving}
+                    className={`
+                      flex items-center gap-1.5
+                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                      ${solveMode === 'pdf'
+                        ? 'bg-[#fff0f7] text-[#FF00A1]'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
+                  >
+                    <FileText className="w-4 h-4" />
+                    PDF모드
+                  </button>
+                </div>
               </div>
 
               {/* OMR Position Setting */}

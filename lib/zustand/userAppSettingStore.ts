@@ -4,12 +4,14 @@ import { createClient } from '@/lib/supabase/client';
 export type OmrPosition = 'left' | 'right';
 export type ProblemRange = 'recent3' | 'recent5' | 'total';
 export type CurrentGrade = 'g3' | 'g2' | 'g1';
+export type SolveMode = 'pdf' | 'tablet';
 
 interface UserAppSettingState {
   // State
   suneungYear: number | null;
   currentGrade: CurrentGrade;
   omrPosition: OmrPosition;
+  solveMode: SolveMode;
   problemRange: ProblemRange;
   interestSubjectIds: string[];
   loading: boolean;
@@ -19,6 +21,7 @@ interface UserAppSettingState {
   setSuneungYear: (year: number | null) => void;
   setCurrentGrade: (grade: CurrentGrade) => void;
   setOmrPosition: (position: OmrPosition) => void;
+  setSolveMode: (mode: SolveMode) => void;
   setProblemRange: (range: ProblemRange) => void;
   setInterestSubjectIds: (ids: string[]) => void;
 
@@ -30,6 +33,7 @@ interface UserAppSettingState {
     suneung_year: number;
     current_grade: CurrentGrade;
     omr_position: OmrPosition;
+    solve_mode: SolveMode;
     problem_range: ProblemRange;
     interest_subject_ids: string[];
   }>) => Promise<void>;
@@ -42,6 +46,7 @@ const initialState = {
   suneungYear: null as number | null,
   currentGrade: 'g3' as CurrentGrade,
   omrPosition: 'right' as OmrPosition,
+  solveMode: 'tablet' as SolveMode,
   problemRange: 'total' as ProblemRange,
   interestSubjectIds: [] as string[],
   loading: true,
@@ -54,6 +59,7 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
   setSuneungYear: (year) => set({ suneungYear: year }),
   setCurrentGrade: (grade) => set({ currentGrade: grade }),
   setOmrPosition: (position) => set({ omrPosition: position }),
+  setSolveMode: (mode) => set({ solveMode: mode }),
   setProblemRange: (range) => set({ problemRange: range }),
   setInterestSubjectIds: (ids) => set({ interestSubjectIds: ids }),
 
@@ -69,7 +75,7 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
 
       const { data: settings } = await supabase
         .from('user_app_setting')
-        .select('omr_position, interest_subject_ids, suneung_year, current_grade, problem_range')
+        .select('omr_position, solve_mode, interest_subject_ids, suneung_year, current_grade, problem_range')
         .eq('user_id', userId)
         .single();
 
@@ -78,6 +84,7 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
           suneungYear: settings.suneung_year || null,
           currentGrade: settings.current_grade || 'g3',
           omrPosition: settings.omr_position || 'right',
+          solveMode: settings.solve_mode || 'pdf',
           problemRange: settings.problem_range || 'total',
           interestSubjectIds: settings.interest_subject_ids || [],
           initialized: true,
@@ -120,6 +127,9 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
       }
       if (updates.omr_position !== undefined) {
         set({ omrPosition: updates.omr_position });
+      }
+      if (updates.solve_mode !== undefined) {
+        set({ solveMode: updates.solve_mode });
       }
       if (updates.problem_range !== undefined) {
         set({ problemRange: updates.problem_range });

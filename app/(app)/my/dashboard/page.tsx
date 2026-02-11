@@ -1,15 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Target, BookOpen, BarChart3, Sparkles, FileText, ChevronRight, Lightbulb } from 'lucide-react';
+import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { createClient } from '@/lib/supabase/client';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 
 export default function MyDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { interestSubjectIds, fetchSettings } = useUserAppSettingStore();
+  const [selectedTurn, setSelectedTurn] = useState(1);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -17,23 +21,111 @@ export default function MyDashboardPage() {
     }
   }, [user, authLoading, fetchSettings]);
 
+  // 최근 7일 풀이 수 조회
+  useEffect(() => {
+    if (!user) return;
+    async function fetchWeekly() {
+      const supabase = createClient();
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 6);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      const { data } = await supabase
+        .from('solve_session_record')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      const counts: Record<string, number> = {};
+      data?.forEach(r => {
+        const date = r.created_at.slice(0, 10); // YYYY-MM-DD
+        counts[date] = (counts[date] || 0) + 1;
+      });
+      setWeeklyCounts(counts);
+    }
+    fetchWeekly();
+  }, [user]);
+
+  useEffect(() => {
+    if (interestSubjectIds.length > 0 && !selectedSubject) {
+      setSelectedSubject(interestSubjectIds[0]);
+    }
+  }, [interestSubjectIds, selectedSubject]);
+
   // 연도 계산
   const currentYear = new Date().getFullYear();
   const recent5Start = currentYear - 5;
   const recent5End = currentYear - 1;
 
   // TODO: 실제 데이터로 교체
-  const currentYearData = [
-    { turn: 1, completed: 0, total: 50 },
-    { turn: 2, completed: 0, total: 50 },
-    { turn: 3, completed: 0, total: 50 },
-  ];
+  type TurnData = { turn: number; completed: number; total: number }[];
+  interface SubjectReviewData {
+    currentYear: TurnData;
+    recent3: TurnData;
+    recent5: TurnData;
+    total: TurnData;
+  }
 
-  const turnData = [
-    { turn: 1, completed: 45, total: 100 },
-    { turn: 2, completed: 20, total: 100 },
-    { turn: 3, completed: 5, total: 100 },
-  ];
+  const reviewDataBySubject: Record<string, SubjectReviewData> = {
+    '경제': {
+      currentYear: [{ turn: 1, completed: 3, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 25, total: 60 }, { turn: 2, completed: 8, total: 60 }, { turn: 3, completed: 2, total: 60 }],
+      recent5: [{ turn: 1, completed: 38, total: 95 }, { turn: 2, completed: 15, total: 95 }, { turn: 3, completed: 4, total: 95 }],
+      total: [{ turn: 1, completed: 42, total: 140 }, { turn: 2, completed: 18, total: 140 }, { turn: 3, completed: 5, total: 140 }],
+    },
+    '사회문화': {
+      currentYear: [{ turn: 1, completed: 5, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 30, total: 65 }, { turn: 2, completed: 12, total: 65 }, { turn: 3, completed: 3, total: 65 }],
+      recent5: [{ turn: 1, completed: 48, total: 100 }, { turn: 2, completed: 22, total: 100 }, { turn: 3, completed: 7, total: 100 }],
+      total: [{ turn: 1, completed: 55, total: 150 }, { turn: 2, completed: 25, total: 150 }, { turn: 3, completed: 8, total: 150 }],
+    },
+    '생활과윤리': {
+      currentYear: [{ turn: 1, completed: 2, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 20, total: 55 }, { turn: 2, completed: 6, total: 55 }, { turn: 3, completed: 1, total: 55 }],
+      recent5: [{ turn: 1, completed: 35, total: 90 }, { turn: 2, completed: 14, total: 90 }, { turn: 3, completed: 3, total: 90 }],
+      total: [{ turn: 1, completed: 40, total: 130 }, { turn: 2, completed: 16, total: 130 }, { turn: 3, completed: 4, total: 130 }],
+    },
+    '동아시아사': {
+      currentYear: [{ turn: 1, completed: 4, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 22, total: 58 }, { turn: 2, completed: 9, total: 58 }, { turn: 3, completed: 2, total: 58 }],
+      recent5: [{ turn: 1, completed: 40, total: 92 }, { turn: 2, completed: 18, total: 92 }, { turn: 3, completed: 5, total: 92 }],
+      total: [{ turn: 1, completed: 46, total: 135 }, { turn: 2, completed: 20, total: 135 }, { turn: 3, completed: 6, total: 135 }],
+    },
+    '세계사': {
+      currentYear: [{ turn: 1, completed: 1, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 18, total: 60 }, { turn: 2, completed: 5, total: 60 }, { turn: 3, completed: 1, total: 60 }],
+      recent5: [{ turn: 1, completed: 32, total: 95 }, { turn: 2, completed: 12, total: 95 }, { turn: 3, completed: 3, total: 95 }],
+      total: [{ turn: 1, completed: 37, total: 140 }, { turn: 2, completed: 14, total: 140 }, { turn: 3, completed: 4, total: 140 }],
+    },
+    '세계지리': {
+      currentYear: [{ turn: 1, completed: 6, total: 40 }, { turn: 2, completed: 2, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 28, total: 62 }, { turn: 2, completed: 10, total: 62 }, { turn: 3, completed: 3, total: 62 }],
+      recent5: [{ turn: 1, completed: 44, total: 98 }, { turn: 2, completed: 20, total: 98 }, { turn: 3, completed: 6, total: 98 }],
+      total: [{ turn: 1, completed: 50, total: 145 }, { turn: 2, completed: 22, total: 145 }, { turn: 3, completed: 7, total: 145 }],
+    },
+    '윤리와사상': {
+      currentYear: [{ turn: 1, completed: 3, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 24, total: 58 }, { turn: 2, completed: 7, total: 58 }, { turn: 3, completed: 2, total: 58 }],
+      recent5: [{ turn: 1, completed: 36, total: 92 }, { turn: 2, completed: 16, total: 92 }, { turn: 3, completed: 4, total: 92 }],
+      total: [{ turn: 1, completed: 44, total: 138 }, { turn: 2, completed: 19, total: 138 }, { turn: 3, completed: 5, total: 138 }],
+    },
+    '정치와법': {
+      currentYear: [{ turn: 1, completed: 4, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 26, total: 60 }, { turn: 2, completed: 11, total: 60 }, { turn: 3, completed: 3, total: 60 }],
+      recent5: [{ turn: 1, completed: 42, total: 96 }, { turn: 2, completed: 19, total: 96 }, { turn: 3, completed: 5, total: 96 }],
+      total: [{ turn: 1, completed: 48, total: 142 }, { turn: 2, completed: 21, total: 142 }, { turn: 3, completed: 6, total: 142 }],
+    },
+    '한국지리': {
+      currentYear: [{ turn: 1, completed: 5, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
+      recent3: [{ turn: 1, completed: 27, total: 60 }, { turn: 2, completed: 9, total: 60 }, { turn: 3, completed: 2, total: 60 }],
+      recent5: [{ turn: 1, completed: 41, total: 94 }, { turn: 2, completed: 17, total: 94 }, { turn: 3, completed: 4, total: 94 }],
+      total: [{ turn: 1, completed: 47, total: 138 }, { turn: 2, completed: 20, total: 138 }, { turn: 3, completed: 5, total: 138 }],
+    },
+  };
+
+  const defaultTurnData: TurnData = [{ turn: 1, completed: 0, total: 0 }, { turn: 2, completed: 0, total: 0 }, { turn: 3, completed: 0, total: 0 }];
+  const subjectReview = selectedSubject ? (reviewDataBySubject[selectedSubject] || null) : null;
 
   // 단원별 학습 분석 코멘트 (내가 푼 문제 기반)
   const chapterAnalysisComment: Record<string, string> = {
@@ -132,59 +224,156 @@ export default function MyDashboardPage() {
       {/* Top Bar */}
       <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
         <h1 className="text-lg font-semibold text-[var(--foreground)]">내 학습 현황</h1>
+        <div className="flex">
+          {[1, 2, 3].map((turn, i) => (
+            <button
+              key={turn}
+              onClick={() => setSelectedTurn(turn)}
+              className={`
+                px-3 py-1.5 text-xs font-medium transition-colors border border-gray-200
+                ${i === 0 ? 'rounded-l-lg' : ''}
+                ${i === 2 ? 'rounded-r-lg' : ''}
+                ${i > 0 ? '-ml-px' : ''}
+                ${selectedTurn === turn
+                  ? 'bg-[#FF00A1] text-white border-[#FF00A1] z-10 relative'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+                }
+              `}
+            >
+              {turn}턴
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* 이번년도 기출문제 복습현황 */}
-        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-[#FF00A1]" />
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">이번년도 기출문제 복습현황 ({currentYear})</h2>
+        {/* 관심 과목 선택 */}
+        {interestSubjectIds.length > 0 && (
+          <div className="flex">
+            {interestSubjectIds.map((subjectId, i) => (
+              <button
+                key={subjectId}
+                onClick={() => setSelectedSubject(subjectId)}
+                className={`
+                  flex-1 py-3 text-sm font-semibold transition-all border border-gray-200
+                  ${i === 0 ? 'rounded-l-lg' : ''}
+                  ${i === interestSubjectIds.length - 1 ? 'rounded-r-lg' : ''}
+                  ${i > 0 ? '-ml-px' : ''}
+                  ${selectedSubject === subjectId
+                    ? 'bg-[#FF00A1] text-white border-[#FF00A1] shadow-inner z-10 relative'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                  }
+                `}
+              >
+                {getSubjectLabel(subjectId) || subjectId}
+              </button>
+            ))}
           </div>
+        )}
 
-          <div className="space-y-4">
-            {currentYearData.map(({ turn, completed, total }) => {
-              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-              return (
-                <div key={turn} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[var(--foreground)]">{turn}턴</span>
-                    <span className="text-[var(--gray-500)]">{completed} / {total} ({percentage}%)</span>
+        {/* 7일 캘린더 (월~일 고정) */}
+        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
+          <div className="flex items-center justify-end mb-3">
+            <Link
+              href="/my/calendar"
+              className="flex items-center gap-0.5 text-xs text-gray-400 hover:text-[#FF00A1] transition-colors"
+            >
+              상세보기
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {(() => {
+              const today = new Date();
+              const todayDay = today.getDay(); // 0=일 ~ 6=토
+              // 이번 주 월요일 계산 (월=1)
+              const monday = new Date(today);
+              const diff = todayDay === 0 ? -6 : 1 - todayDay;
+              monday.setDate(today.getDate() + diff);
+
+              const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+
+              return dayNames.map((dayName, i) => {
+                const date = new Date(monday);
+                date.setDate(monday.getDate() + i);
+                const dateStr = date.toISOString().slice(0, 10);
+                const todayStr = today.toISOString().slice(0, 10);
+                const isToday = dateStr === todayStr;
+                const count = weeklyCounts[dateStr] || 0;
+                const isSaturday = i === 5;
+                const isSunday = i === 6;
+
+                const dayColor = isSaturday ? 'text-blue-500' : isSunday ? 'text-red-500' : 'text-gray-400';
+
+                return (
+                  <div
+                    key={dateStr}
+                    className={`
+                      flex flex-col items-center gap-1 py-2 rounded-lg
+                      ${isToday ? 'border-2 border-[#FF00A1]' : ''}
+                    `}
+                  >
+                    <span className={`text-[11px] font-medium ${dayColor}`}>
+                      {dayName}
+                    </span>
+                    <span className={`text-lg font-bold ${isSaturday ? 'text-blue-500' : isSunday ? 'text-red-500' : 'text-gray-700'}`}>
+                      {date.getDate()}
+                    </span>
+                    <span className={`
+                      text-[11px] font-medium
+                      ${count > 0 ? 'text-[var(--foreground)]' : 'text-red-400'}
+                    `}>
+                      {count > 0 ? `${count}문제` : dateStr < todayStr ? 'x' : isToday ? '-' : ''}
+                    </span>
                   </div>
-                  <div className="h-3 bg-[#FFF0F7] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
 
-        {/* 지난 5개년 기출문제 복습현황 */}
+        {/* 기출문제 복습현황 */}
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Target className="w-5 h-5 text-[#FF00A1]" />
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">지난 5개년 기출문제 복습현황 ({recent5Start} ~ {recent5End})</h2>
-          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: '이번년도', sub: `${currentYear}`, data: subjectReview?.currentYear || defaultTurnData },
+              { label: '지난 3개년', sub: `${currentYear - 3}~${currentYear - 1}`, data: subjectReview?.recent3 || defaultTurnData },
+              { label: '지난 5개년', sub: `${recent5Start}~${recent5End}`, data: subjectReview?.recent5 || defaultTurnData },
+              { label: '전체 기출문제', sub: '2013~2026', data: subjectReview?.total || defaultTurnData },
+            ].map(({ label, sub, data: turnArr }) => {
+              const d = turnArr.find(t => t.turn === selectedTurn);
+              const completed = d?.completed ?? 0;
+              const total = d?.total ?? 0;
+              const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+              const radius = 54;
+              const circumference = 2 * Math.PI * radius;
+              const offset = circumference - (circumference * percent) / 100;
 
-          <div className="space-y-4">
-            {turnData.map(({ turn, completed, total }) => {
-              const percentage = Math.round((completed / total) * 100);
               return (
-                <div key={turn} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-[var(--foreground)]">{turn}턴</span>
-                    <span className="text-[var(--gray-500)]">{completed} / {total} ({percentage}%)</span>
-                  </div>
-                  <div className="h-3 bg-[#FFF0F7] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
-                      style={{ width: `${percentage}%` }}
+                <div key={label} className="flex flex-col items-center gap-2">
+                  <svg width="140" height="140" viewBox="0 0 140 140">
+                    <circle cx="70" cy="70" r={radius} fill="none" stroke="#FFF0F7" strokeWidth="10" />
+                    <circle
+                      cx="70" cy="70" r={radius} fill="none"
+                      stroke={percent === 100 ? '#4ade80' : '#FF00A1'}
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={offset}
+                      transform="rotate(-90 70 70)"
+                      className="transition-all duration-500"
                     />
+                    <text x="70" y="66" textAnchor="middle" dominantBaseline="central" className="font-bold fill-[var(--foreground)]" style={{ fontSize: '24px' }}>
+                      {percent}%
+                    </text>
+                    <text x="70" y="88" textAnchor="middle" dominantBaseline="central" className="fill-gray-400" style={{ fontSize: '13px' }}>
+                      {completed}/{total}
+                    </text>
+                  </svg>
+                  <div className="text-center">
+                    <span className="text-xs font-medium text-gray-700 block">{label}</span>
+                    {sub && <span className="text-[11px] text-gray-400">{sub}</span>}
                   </div>
                 </div>
               );
@@ -199,47 +388,42 @@ export default function MyDashboardPage() {
             <h2 className="text-sm font-semibold text-[var(--foreground)]">단원별 기출 학습 현황</h2>
           </div>
 
-          {interestSubjectIds.length > 0 ? (
-            <div className="space-y-6">
-              {interestSubjectIds.map((subjectId) => {
-                const chapters = chapterProgressData[subjectId] || [];
-                const comment = chapterAnalysisComment[subjectId] || '';
-                return (
-                  <div key={subjectId}>
-                    <h3 className="text-sm font-medium text-[#FF00A1] mb-2">
-                      {getSubjectLabel(subjectId) || subjectId}
-                    </h3>
-                    {comment && (
-                      <p
-                        className="text-sm text-gray-600 leading-relaxed mb-3"
-                        dangerouslySetInnerHTML={{ __html: comment }}
-                      />
-                    )}
-                    <div className="space-y-2">
-                      {chapters.map((item, idx) => {
-                        const progressPercent = Math.round((item.solved / item.total) * 100);
-                        return (
-                          <div key={idx} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-gray-700 truncate flex-1 mr-2">{item.chapter}</span>
-                              <span className="text-gray-500 whitespace-nowrap">
-                                {item.solved}/{item.total} · 정답률 {item.accuracy}%
-                              </span>
-                            </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
-                                style={{ width: `${progressPercent}%` }}
-                              />
-                            </div>
+          {selectedSubject ? (
+            (() => {
+              const chapters = chapterProgressData[selectedSubject] || [];
+              const comment = chapterAnalysisComment[selectedSubject] || '';
+              return (
+                <div>
+                  {comment && (
+                    <p
+                      className="text-sm text-gray-600 leading-relaxed mb-3"
+                      dangerouslySetInnerHTML={{ __html: comment }}
+                    />
+                  )}
+                  <div className="space-y-2">
+                    {chapters.map((item, idx) => {
+                      const progressPercent = Math.round((item.solved / item.total) * 100);
+                      return (
+                        <div key={idx} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-700 truncate flex-1 mr-2">{item.chapter}</span>
+                            <span className="text-gray-500 whitespace-nowrap">
+                              {item.solved}/{item.total} · 정답률 {item.accuracy}%
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })()
           ) : (
             <div className="text-sm text-gray-400 py-8 text-center">
               관심 과목을 설정해주세요.
@@ -304,22 +488,13 @@ export default function MyDashboardPage() {
             <h2 className="text-sm font-semibold text-[var(--foreground)]">과목별 기출문제 TIP</h2>
           </div>
 
-          {interestSubjectIds.length > 0 ? (
-            <div className="space-y-4">
-              {interestSubjectIds.map((subjectId) => (
-                <div key={subjectId} className="space-y-2">
-                  <h3 className="text-sm font-medium text-[#FF00A1]">
-                    {getSubjectLabel(subjectId) || subjectId}
-                  </h3>
-                  <p
-                    className="text-sm text-gray-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{
-                      __html: chapterAnalysis[subjectId] || '분석 데이터를 준비 중입니다.'
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
+          {selectedSubject ? (
+            <p
+              className="text-sm text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: chapterAnalysis[selectedSubject] || '분석 데이터를 준비 중입니다.'
+              }}
+            />
           ) : (
             <div className="text-sm text-gray-400 py-8 text-center">
               관심 과목을 설정해주세요.

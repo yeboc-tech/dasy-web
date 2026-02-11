@@ -6,7 +6,7 @@ import { Loader, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { useSsotChapters } from '@/lib/hooks/useSsotChapters';
-import { useChapterProblemCounts } from '@/lib/hooks/useChapterProblemCounts';
+import { useChapterSolvedCounts } from '@/lib/hooks/useChapterSolvedCounts';
 import type { ChapterTreeItem } from '@/lib/types';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 
@@ -15,14 +15,15 @@ export default function ByChapterPage() {
   const { user, loading: authLoading } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  const { interestSubjectIds, loading, fetchSettings } = useUserAppSettingStore();
+  const { interestSubjectIds, problemRange, loading, fetchSettings } = useUserAppSettingStore();
+  const [selectedRange, setSelectedRange] = useState<'recent3' | 'recent5' | 'total' | null>(null);
+  const activeRange = selectedRange || problemRange || 'total';
 
   // ssot에서 단원 정보 가져오기
   const { chapters, loading: chaptersLoading, error: chaptersError } = useSsotChapters(selectedSubject || '');
 
-  // 단원별 문제 개수 가져오기
-  const { getCount, loading: countsLoading } = useChapterProblemCounts();
+  // 단원별 풀이 현황 가져오기
+  const { data: solvedCounts, loading: solvedLoading } = useChapterSolvedCounts(user?.id, selectedSubject, activeRange);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -68,23 +69,10 @@ export default function ByChapterPage() {
     });
   };
 
-  // 과목 ID에서 문제 개수 조회용 키 추출
-  const getCountSubjectKey = (subjectId: string): string => {
-    // 통합사회_1, 통합사회_2는 그대로 사용
-    if (subjectId.startsWith('통합사회_')) {
-      return subjectId;
-    }
-    // 나머지는 과목명만 사용 (예: 경제, 사회문화 등)
-    return subjectId;
-  };
-
   const renderTreeItem = (item: ChapterTreeItem, level: number = 0) => {
     const isExpanded = expandedItems.has(item.id);
     const hasChildren = item.children && item.children.length > 0;
-
-    // 문제 개수 조회 (해당 ID에 개수가 있으면 표시)
-    const subjectKey = selectedSubject ? getCountSubjectKey(selectedSubject) : '';
-    const count = subjectKey ? getCount(subjectKey, item.id) : null;
+    const info = solvedCounts[item.id];
 
     return (
       <div key={item.id}>
@@ -97,9 +85,9 @@ export default function ByChapterPage() {
           style={{ paddingLeft: `${12 + level * 24}px` }}
           onClick={() => hasChildren && toggleExpanded(item.id)}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {hasChildren ? (
-              <span className="w-5 h-5 flex items-center justify-center text-gray-400">
+              <span className="w-5 h-5 flex items-center justify-center text-gray-400 shrink-0">
                 {isExpanded ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
@@ -107,18 +95,27 @@ export default function ByChapterPage() {
                 )}
               </span>
             ) : (
-              <span className="w-5 h-5" />
+              <span className="w-5 h-5 shrink-0" />
             )}
-            <span className={`text-sm ${level === 0 ? 'text-[var(--foreground)]' : 'text-gray-600'}`}>
+            <span className={`text-sm truncate ${level === 0 ? 'text-[var(--foreground)]' : 'text-gray-600'}`}>
               {item.label}
             </span>
           </div>
 
-          {/* 문제 개수 표시 (3개년 / 5개년 / 전체) */}
-          {count && (
-            <span className="text-xs text-gray-400 pr-2">
-              {count.recent3} / {count.recent5} / {count.total}
-            </span>
+          {info && info.total > 0 && (
+            <div className="flex items-center gap-2 shrink-0 ml-3">
+              <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    info.percent === 100 ? 'bg-green-400' : 'bg-[#FF00A1]'
+                  }`}
+                  style={{ width: `${info.percent}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-400 tabular-nums w-14 text-right">
+                {info.solved}/{info.total}
+              </span>
+            </div>
           )}
         </div>
 
@@ -174,28 +171,54 @@ export default function ByChapterPage() {
         <h1 className="text-lg font-semibold text-[var(--foreground)]">단원별 학습 현황</h1>
       </div>
 
-      {/* 과목 탭 */}
-      <div className="flex gap-1 px-4 pt-3 pb-2 bg-white border-b border-[var(--border)]">
-        {interestSubjectIds.map((subjectId) => (
-          <button
-            key={subjectId}
-            onClick={() => setSelectedSubject(subjectId)}
-            className={`
-              px-4 py-2 text-sm font-medium rounded-lg transition-colors
-              ${selectedSubject === subjectId
-                ? 'bg-[#FF00A1] text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }
-            `}
-          >
-            {getSubjectLabel(subjectId) || subjectId}
-          </button>
-        ))}
+      {/* 과목 탭 + 범위 선택 */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 bg-white border-b border-[var(--border)]">
+        <div className="flex gap-1">
+          {interestSubjectIds.map((subjectId) => (
+            <button
+              key={subjectId}
+              onClick={() => setSelectedSubject(subjectId)}
+              className={`
+                px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                ${selectedSubject === subjectId
+                  ? 'bg-[#FF00A1] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }
+              `}
+            >
+              {getSubjectLabel(subjectId) || subjectId}
+            </button>
+          ))}
+        </div>
+        <div className="flex">
+          {([
+            { key: 'recent3', label: '3개년' },
+            { key: 'recent5', label: '5개년' },
+            { key: 'total', label: '전체' },
+          ] as const).map(({ key, label }, i, arr) => (
+            <button
+              key={key}
+              onClick={() => setSelectedRange(key)}
+              className={`
+                px-3 py-1.5 text-xs font-medium transition-colors border border-gray-200
+                ${i === 0 ? 'rounded-l-lg' : ''}
+                ${i === arr.length - 1 ? 'rounded-r-lg' : ''}
+                ${i > 0 ? '-ml-px' : ''}
+                ${activeRange === key
+                  ? 'bg-[#FF00A1] text-white border-[#FF00A1] z-10 relative'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+                }
+              `}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 단원 트리 */}
       <div className="flex-1 overflow-y-auto p-4 bg-white">
-        {chaptersLoading ? (
+        {chaptersLoading || solvedLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader className="animate-spin w-5 h-5 text-gray-400" />
           </div>

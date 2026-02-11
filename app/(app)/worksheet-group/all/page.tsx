@@ -67,7 +67,7 @@ export default function WorksheetGroupAllPage() {
       setItems(groups.map(g => ({
         ...g,
         subjects: [...new Set(
-          (g.worksheet_ids || []).map(id => subjectMap.get(id)).filter(Boolean)
+          (g.worksheet_ids || []).map((id: string) => subjectMap.get(id)).filter(Boolean)
         )] as string[],
       })));
       setLoading(false);
