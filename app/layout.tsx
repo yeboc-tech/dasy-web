@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KIDARI - 통합사회 학습지 제작 도구",
+  title: "KIDARI - 사회탐구 기출문제",
   description: "통합사회 기출문제로 맞춤형 학습지를 제작하세요. AI 기반 문제 선별과 PDF 생성으로 효율적인 학습을 지원합니다.",
   keywords: ["통합사회", "기출문제", "학습지", "문제집", "고등학교", "사회", "교육", "KIDARI"],
   authors: [{ name: "Minlab" }],
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "KIDARI - 통합사회 학습지 제작 도구",
+    title: "KIDARI - 사회탐구 기출문제",
     description: "통합사회 기출문제로 맞춤형 학습지를 제작하세요. AI 기반 문제 선별과 PDF 생성으로 효율적인 학습을 지원합니다.",
     url: "https://tong.kidari.ai",
     siteName: "KIDARI",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KIDARI - 통합사회 학습지 제작 도구",
+    title: "KIDARI - 사회탐구 기출문제",
     description: "통합사회 기출문제로 맞춤형 학습지를 제작하세요.",
   },
   robots: {
