@@ -1,5 +1,18 @@
 # 프로젝트 문서
 
+## 코드 컨벤션
+
+### 페이지 컴포넌트 분리
+- `page.tsx`는 라우팅 진입점으로만 사용하고, 실제 UI 로직은 별도 컴포넌트로 분리한다
+- 파일명: `{PageName}Page.tsx` (PascalCase)
+- `page.tsx`에서는 해당 컴포넌트를 import하여 re-export만 수행
+- 예시:
+  ```
+  app/(app)/worksheet-group/
+  ├── page.tsx                    ← re-export만
+  ├── WorksheetGroupPage.tsx      ← 실제 UI 로직
+  ```
+
 ## 과목 관리
 
 ### 기준: `lib/ssot/SUBJECTS.ts` → `lib/utils/subjectUtils.ts`
