@@ -9,14 +9,14 @@ import { getSubjectsByYear, TONGHAP_SUBJECT_IDS } from '@/lib/utils/subjectUtils
 
 // 올해부터 5년간 수능 연도 생성
 const currentYear = new Date().getFullYear();
-const suneungYears = Array.from({ length: 5 }, (_, i) => currentYear + i);
+const targetSuneungYears = Array.from({ length: 5 }, (_, i) => currentYear + i);
 
 export function AppSettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const [saving, setSaving] = useState(false);
 
   const {
-    suneungYear,
+    targetSuneungYear,
     currentGrade,
     solveMode,
     omrPosition,
@@ -45,13 +45,6 @@ export function AppSettingsPage() {
       await updateSettings(user.id, { suneung_year: year, interest_subject_ids: [] });
     }
 
-    setSaving(false);
-  };
-
-  const handleCurrentGradeChange = async (grade: 'g3' | 'g2' | 'g1') => {
-    if (!user) return;
-    setSaving(true);
-    await updateSettings(user.id, { current_grade: grade });
     setSaving(false);
   };
 
@@ -98,8 +91,8 @@ export function AppSettingsPage() {
 
   // 수능 연도에 따라 과목 필터링 (하드코딩된 과목 사용)
   const filteredSubjects = useMemo(() => {
-    return getSubjectsByYear(suneungYear);
-  }, [suneungYear]);
+    return getSubjectsByYear(targetSuneungYear);
+  }, [targetSuneungYear]);
 
   const selectedSubjects = new Set(interestSubjectIds);
 
@@ -127,7 +120,7 @@ export function AppSettingsPage() {
                 </p>
                 <div className="relative w-48">
                   <select
-                    value={suneungYear || ''}
+                    value={targetSuneungYear || ''}
                     onChange={(e) => handleSuneungYearChange(Number(e.target.value))}
                     disabled={saving}
                     className={`
@@ -138,7 +131,7 @@ export function AppSettingsPage() {
                     `}
                   >
                     <option value="" disabled>연도 선택</option>
-                    {suneungYears.map((year) => (
+                    {targetSuneungYears.map((year) => (
                       <option key={year} value={year}>
                         {year}학년도 수능
                       </option>
@@ -148,55 +141,27 @@ export function AppSettingsPage() {
                 </div>
               </div>
 
-              {/* Current Grade Setting */}
+              {/* Current Grade (computed from targetSuneungYear) */}
               <div className="p-4 border-b border-[var(--border)]">
-                <h2 className="text-sm font-medium text-black mb-4">현재 학년</h2>
+                <h2 className="text-sm font-medium text-black mb-2">현재 학년</h2>
+                <p className="text-sm text-[var(--gray-600)] mb-4">
+                  수능 목표 연도에 따라 자동으로 설정됩니다.
+                </p>
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleCurrentGradeChange('g3')}
-                    disabled={saving}
-                    className={`
-                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      ${currentGrade === 'g3'
-                        ? 'bg-[#fff0f7] text-[#FF00A1]'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }
-                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    고3
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCurrentGradeChange('g2')}
-                    disabled={saving}
-                    className={`
-                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      ${currentGrade === 'g2'
-                        ? 'bg-[#fff0f7] text-[#FF00A1]'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }
-                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    고2
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCurrentGradeChange('g1')}
-                    disabled={saving}
-                    className={`
-                      px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-                      ${currentGrade === 'g1'
-                        ? 'bg-[#fff0f7] text-[#FF00A1]'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }
-                      ${saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    고1
-                  </button>
+                  {(['고3', '고2', '고1'] as const).map((grade) => (
+                    <span
+                      key={grade}
+                      className={`
+                        px-4 py-2.5 rounded-lg text-sm font-medium
+                        ${currentGrade === grade
+                          ? 'bg-[#fff0f7] text-[#FF00A1]'
+                          : 'bg-gray-100 text-gray-400'
+                        }
+                      `}
+                    >
+                      {grade}
+                    </span>
+                  ))}
                 </div>
               </div>
 

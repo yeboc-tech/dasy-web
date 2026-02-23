@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader, ChevronDown } from 'lucide-react';
 import { fetchWorksheetGroups } from '@/lib/api/worksheetGroup';
 import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
@@ -9,6 +9,7 @@ import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 export function WorksheetGroupByChapterPage() {
   const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [othersOpen, setOthersOpen] = useState(false);
   const { interestSubjectIds } = useUserAppSettingStore();
 
   useEffect(() => {
@@ -21,15 +22,24 @@ export function WorksheetGroupByChapterPage() {
     });
   }, []);
 
-  const sortedItems = [...items].sort((a, b) => {
-    const aSubject = a.subjects[0] || '';
-    const bSubject = b.subjects[0] || '';
-    const aIsInterest = interestSubjectIds.includes(aSubject);
-    const bIsInterest = interestSubjectIds.includes(bSubject);
+  const { myItems, otherItems } = useMemo(() => {
+    const my: WorksheetGroupItem[] = [];
+    const other: WorksheetGroupItem[] = [];
 
-    if (aIsInterest !== bIsInterest) return aIsInterest ? -1 : 1;
-    return aSubject.localeCompare(bSubject, 'ko');
-  });
+    for (const item of items) {
+      const isInterest = item.subjects.some(s => interestSubjectIds.includes(s));
+      if (interestSubjectIds.length > 0 && isInterest) {
+        my.push(item);
+      } else {
+        other.push(item);
+      }
+    }
+
+    const sort = (arr: WorksheetGroupItem[]) =>
+      arr.sort((a, b) => (a.subjects[0] || '').localeCompare(b.subjects[0] || '', 'ko'));
+
+    return { myItems: sort(my), otherItems: sort(other) };
+  }, [items, interestSubjectIds]);
 
   if (loading) {
     return (
@@ -51,15 +61,32 @@ export function WorksheetGroupByChapterPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {sortedItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-gray-500">
             학습지가 없습니다.
           </div>
         ) : (
           <div className="flex flex-col gap-2 w-full">
-            {sortedItems.map((item) => (
+            {myItems.map((item) => (
               <WorksheetGroupListItem key={item.id} item={item} />
             ))}
+
+            {otherItems.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOthersOpen(!othersOpen)}
+                  className="flex items-center gap-1.5 py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <ChevronDown className={`w-4 h-4 transition-transform ${othersOpen ? 'rotate-180' : ''}`} />
+                  다른과목 학습지 보기 ({otherItems.length})
+                </button>
+
+                {othersOpen && otherItems.map((item) => (
+                  <WorksheetGroupListItem key={item.id} item={item} />
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>

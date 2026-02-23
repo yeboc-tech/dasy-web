@@ -5,12 +5,13 @@ import { Loader } from 'lucide-react';
 import { fetchWorksheetGroups } from '@/lib/api/worksheetGroup';
 import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
 import { SUBJECTS_2026 } from '@/lib/ssot/SUBJECTS';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 
 const VIRTUAL_ITEMS: (WorksheetGroupItem & { href: string })[] = [
   {
     id: -1,
     image_url: null,
-    title: '단원별 학습지',
+    title: '사회탐구 단원별 학습지',
     view_count: 0,
     created_at: new Date().toISOString(),
     tags: ['단원별'],
@@ -20,7 +21,7 @@ const VIRTUAL_ITEMS: (WorksheetGroupItem & { href: string })[] = [
   {
     id: -2,
     image_url: null,
-    title: '난이도별 학습지',
+    title: '사회탐구 난이도별 학습지',
     view_count: 0,
     created_at: new Date().toISOString(),
     tags: ['난이도별'],
@@ -32,16 +33,20 @@ const VIRTUAL_ITEMS: (WorksheetGroupItem & { href: string })[] = [
 export function WorksheetGroupAllPage() {
   const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { interestSubjectIds } = useUserAppSettingStore();
 
   useEffect(() => {
-    fetchWorksheetGroups({ excludeTags: ['단원별', '난이도별'] }).then(groups => {
+    fetchWorksheetGroups({
+      excludeTags: ['단원별', '난이도별'],
+      subjects: interestSubjectIds.length > 0 ? interestSubjectIds : undefined,
+    }).then(groups => {
       setItems(groups.map(g => ({
         ...g,
         subjects: [...new Set(g.worksheets.map(w => w.subject_id).filter(Boolean))] as string[],
       })));
       setLoading(false);
     });
-  }, []);
+  }, [interestSubjectIds]);
 
   const allItems = [...VIRTUAL_ITEMS, ...items];
 

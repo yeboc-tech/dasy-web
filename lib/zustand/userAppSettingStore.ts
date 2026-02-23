@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { createClient } from '@/lib/supabase/client';
+import { getGradeFromSuneungYear } from '@/lib/utils/gradeUtils';
 
 export type OmrPosition = 'left' | 'right';
 export type ProblemRange = 'recent3' | 'recent5' | 'total';
-export type CurrentGrade = 'g3' | 'g2' | 'g1';
+export type CurrentGrade = '고3' | '고2' | '고1';
 export type SolveMode = 'pdf' | 'tablet';
 
 interface UserAppSettingState {
   // State
-  suneungYear: number | null;
+  targetSuneungYear: number | null;
   currentGrade: CurrentGrade;
   omrPosition: OmrPosition;
   solveMode: SolveMode;
@@ -18,8 +19,7 @@ interface UserAppSettingState {
   initialized: boolean;
 
   // Actions
-  setSuneungYear: (year: number | null) => void;
-  setCurrentGrade: (grade: CurrentGrade) => void;
+  setTargetSuneungYear: (year: number | null) => void;
   setOmrPosition: (position: OmrPosition) => void;
   setSolveMode: (mode: SolveMode) => void;
   setProblemRange: (range: ProblemRange) => void;
@@ -31,7 +31,6 @@ interface UserAppSettingState {
   // Update to Supabase
   updateSettings: (userId: string, updates: Partial<{
     suneung_year: number;
-    current_grade: CurrentGrade;
     omr_position: OmrPosition;
     solve_mode: SolveMode;
     problem_range: ProblemRange;
@@ -43,8 +42,8 @@ interface UserAppSettingState {
 }
 
 const initialState = {
-  suneungYear: null as number | null,
-  currentGrade: 'g3' as CurrentGrade,
+  targetSuneungYear: null as number | null,
+  currentGrade: '고3' as CurrentGrade,
   omrPosition: 'right' as OmrPosition,
   solveMode: 'tablet' as SolveMode,
   problemRange: 'total' as ProblemRange,
@@ -56,8 +55,10 @@ const initialState = {
 export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => ({
   ...initialState,
 
-  setSuneungYear: (year) => set({ suneungYear: year }),
-  setCurrentGrade: (grade) => set({ currentGrade: grade }),
+  setTargetSuneungYear: (year) => set({
+    targetSuneungYear: year,
+    currentGrade: year ? getGradeFromSuneungYear(year) : '고3',
+  }),
   setOmrPosition: (position) => set({ omrPosition: position }),
   setSolveMode: (mode) => set({ solveMode: mode }),
   setProblemRange: (range) => set({ problemRange: range }),
@@ -75,14 +76,15 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
 
       const { data: settings } = await supabase
         .from('user_app_setting')
-        .select('omr_position, solve_mode, interest_subject_ids, suneung_year, current_grade, problem_range')
+        .select('omr_position, solve_mode, interest_subject_ids, suneung_year, problem_range')
         .eq('user_id', userId)
         .single();
 
       if (settings) {
+        const targetSuneungYear = settings.suneung_year || null;
         set({
-          suneungYear: settings.suneung_year || null,
-          currentGrade: settings.current_grade || 'g3',
+          targetSuneungYear,
+          currentGrade: targetSuneungYear ? getGradeFromSuneungYear(targetSuneungYear) : '고3',
           omrPosition: settings.omr_position || 'right',
           solveMode: settings.solve_mode || 'pdf',
           problemRange: settings.problem_range || 'total',
@@ -120,10 +122,10 @@ export const useUserAppSettingStore = create<UserAppSettingState>((set, get) => 
 
       // Update local state
       if (updates.suneung_year !== undefined) {
-        set({ suneungYear: updates.suneung_year });
-      }
-      if (updates.current_grade !== undefined) {
-        set({ currentGrade: updates.current_grade });
+        set({
+          targetSuneungYear: updates.suneung_year,
+          currentGrade: getGradeFromSuneungYear(updates.suneung_year),
+        });
       }
       if (updates.omr_position !== undefined) {
         set({ omrPosition: updates.omr_position });

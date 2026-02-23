@@ -138,16 +138,6 @@ function extractGrade(problemId: string): string | null {
   return null;
 }
 
-// CurrentGrade를 problem_id 형식으로 변환 (g3 -> 고3)
-function gradeToKorean(grade: CurrentGrade): string {
-  switch (grade) {
-    case 'g3': return '고3';
-    case 'g2': return '고2';
-    case 'g1': return '고1';
-    default: return '고3';
-  }
-}
-
 // 학습 목표에 따른 연도 범위 계산
 function getYearRange(problemRange: ProblemRange): { minYear: number; maxYear: number } | null {
   const currentYear = new Date().getFullYear();
@@ -340,7 +330,6 @@ export async function fetchTodayProblem(params: {
   error: Error | null;
 }> {
   const { interestSubjectIds, problemRange, currentGrade } = params;
-  const gradeKorean = gradeToKorean(currentGrade);
 
   if (interestSubjectIds.length === 0) {
     return { data: null, error: new Error('관심 과목이 설정되지 않았습니다.') };
@@ -391,7 +380,7 @@ export async function fetchTodayProblem(params: {
             supabase
               .from('accuracy_rate')
               .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
-              .like('problem_id', `${subject}_${gradeKorean}_${year}_%`)
+              .like('problem_id', `${subject}_${currentGrade}_${year}_%`)
           );
         }
       } else {
@@ -400,7 +389,7 @@ export async function fetchTodayProblem(params: {
           supabase
             .from('accuracy_rate')
             .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
-            .like('problem_id', `${subject}_${gradeKorean}_%`)
+            .like('problem_id', `${subject}_${currentGrade}_%`)
         );
       }
     }
@@ -427,7 +416,7 @@ export async function fetchTodayProblem(params: {
     }
 
     if (allProblems.length === 0) {
-      return { data: null, error: new Error(`${gradeKorean} 학년의 문제가 없습니다.`) };
+      return { data: null, error: new Error(`${currentGrade} 학년의 문제가 없습니다.`) };
     }
 
     // 4. 안 푼 문제 필터링 (학년과 연도는 이미 쿼리에서 필터링됨)
