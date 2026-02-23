@@ -1,0 +1,67 @@
+[
+  {
+    "system_partial_id": "2013_10_학평",
+    "ebs_id": "2016_11_학평",
+    "actual_date": null
+  },
+  {
+    "system_partial_id": "2014_10_학평",
+    "ebs_id": "2016_11_학평",
+    "actual_date": null
+  },
+  {
+    "system_partial_id": "2015_10_학평",
+    "ebs_id": "2016_11_학평",
+    "actual_date": null
+  },
+  {
+    "system_partial_id": "2016_10_학평",
+    "ebs_id": "2016_11_학평",
+    "actual_date": "2016.11.23"
+  },
+  {
+    "system_partial_id": "2017_10_학평",
+    "ebs_id": "2017_11_학평",
+    "actual_date": "2017.11.29"
+  },
+  {
+    "system_partial_id": "2018_10_학평",
+    "ebs_id": "2018_11_학평",
+    "actual_date": "2018.11.21"
+  },
+  {
+    "system_partial_id": "2019_10_학평",
+    "ebs_id": "2019_11_학평",
+    "actual_date": "2019.11.20"
+  },
+  {
+    "system_partial_id": "2020_10_학평",
+    "ebs_id": "2020_11_학평",
+    "actual_date": "2020.11.18"
+  },
+  {
+    "system_partial_id": "2021_09_학평",
+    "ebs_id": "2021_09_학평",
+    "actual_date": "2021.08.31"
+  },
+  {
+    "system_partial_id": "2021_10_학평",
+    "ebs_id": "2021_11_학평",
+    "actual_date": "2021.11.24"
+  },
+  {
+    "system_partial_id": "2022_09_학평",
+    "ebs_id": "2022_09_학평",
+    "actual_date": "2022.08.31"
+  },
+  {
+    "system_partial_id": "2022_10_학평",
+    "ebs_id": "2022_11_학평",
+    "actual_date": "2022.11.23"
+  },
+  {
+    "system_partial_id": "2023_10_학평",
+    "ebs_id": "2023_11_학평",
+    "actual_date": "2023.12.19"
+  }
+]
