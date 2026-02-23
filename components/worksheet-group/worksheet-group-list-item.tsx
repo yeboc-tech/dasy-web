@@ -17,6 +17,7 @@ export interface WorksheetGroupItem {
   created_at: string;
   tags: string[] | null;
   subjects: string[];
+  targetGrades?: string[];
 }
 
 interface WorksheetGroupListItemProps {
@@ -100,10 +101,15 @@ export function WorksheetGroupListItem({ item, href, hideFavorite }: WorksheetGr
         )}
       </div>
       <div className="flex-1 min-w-0">
-        {item.tags && item.tags.length > 0 && (
+        {(item.tags?.length || item.targetGrades?.length) && (
           <div className="flex flex-wrap gap-1 mb-1">
-            {item.tags.map((tag) => (
+            {item.tags?.map((tag) => (
               <BoardColorTag key={tag} tag={tag} />
+            ))}
+            {item.targetGrades?.map((grade) => (
+              <span key={grade} className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-50 text-amber-700">
+                {grade}
+              </span>
             ))}
           </div>
         )}
