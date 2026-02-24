@@ -14,7 +14,7 @@ export interface WorksheetGroupItem {
   id: number;
   image_url: string | null;
   title: string;
-  view_count: number;
+  view_count: number | null;
   created_at: string;
   tags: string[] | null;
   subjects: string[];
@@ -131,7 +131,7 @@ export function WorksheetGroupListItem({ item, href, hideFavorite }: WorksheetGr
           </span>
           <span className="flex items-center gap-1">
             <Eye className="w-3 h-3" />
-            {item.view_count}
+            {item.view_count ?? '-'}
           </span>
         </div>
       </div>

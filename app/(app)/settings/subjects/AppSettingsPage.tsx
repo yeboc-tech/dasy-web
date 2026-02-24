@@ -37,12 +37,17 @@ export function AppSettingsPage() {
     if (!user) return;
     setSaving(true);
 
-    if (year >= 2027) {
-      // 2027년 이후: 통합사회 자동 선택
-      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: TONGHAP_SUBJECT_IDS });
+    const oldIsPost2027 = targetSuneungYear !== null && targetSuneungYear >= 2027;
+    const newIsPost2027 = year >= 2027;
+    const crossesBoundary = oldIsPost2027 !== newIsPost2027;
+
+    if (crossesBoundary) {
+      // 과목 체계가 변경되므로 리셋
+      const newSubjects = newIsPost2027 ? TONGHAP_SUBJECT_IDS : [];
+      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: newSubjects });
     } else {
-      // 2026년: 빈 배열로 초기화
-      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: [] });
+      // 같은 과목 체계 내 변경이므로 관심과목 유지
+      await updateSettings(user.id, { suneung_year: year });
     }
 
     setSaving(false);

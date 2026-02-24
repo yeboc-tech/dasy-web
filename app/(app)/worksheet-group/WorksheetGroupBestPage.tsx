@@ -13,7 +13,7 @@ export function WorksheetGroupBestPage() {
     fetchWorksheetGroups({ isBest: true }).then(groups => {
       setItems(groups.map(g => ({
         ...g,
-        subjects: [...new Set(g.worksheets.map(w => w.subject_id).filter(Boolean))] as string[],
+        subjects: [...new Set(g.worksheets.flatMap(w => w.subject_ids))],
       })));
       setLoading(false);
     });

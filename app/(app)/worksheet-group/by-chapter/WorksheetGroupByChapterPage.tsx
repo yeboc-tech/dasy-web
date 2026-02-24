@@ -9,7 +9,7 @@ import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 function toListItem(g: WorksheetGroup): WorksheetGroupItem {
   return {
     ...g,
-    subjects: [...new Set(g.worksheets.map(w => w.subject_id).filter(Boolean))] as string[],
+    subjects: [...new Set(g.worksheets.flatMap(w => w.subject_ids))],
     targetGrades: [...new Set(g.worksheets.flatMap(w => w.target_grades))],
   };
 }
@@ -34,7 +34,7 @@ export function WorksheetGroupByChapterPage() {
     const otherSubject: WorksheetGroupItem[] = [];
 
     for (const g of groups) {
-      const subjects = g.worksheets.map(w => w.subject_id).filter(Boolean) as string[];
+      const subjects = g.worksheets.flatMap(w => w.subject_ids);
       const grades = g.worksheets.flatMap(w => w.target_grades);
       const isMySubject = interestSubjectIds.length > 0 && subjects.some(s => interestSubjectIds.includes(s));
       const isMyGrade = grades.includes(currentGrade);

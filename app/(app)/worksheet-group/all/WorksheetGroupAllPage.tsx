@@ -4,51 +4,57 @@ import { useState, useEffect } from 'react';
 import { Loader } from 'lucide-react';
 import { fetchWorksheetGroups } from '@/lib/api/worksheetGroup';
 import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
-import { SUBJECTS_2026 } from '@/lib/ssot/SUBJECTS';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { getSubjectIdsByYear } from '@/lib/utils/subjectUtils';
 
-const VIRTUAL_ITEMS: (WorksheetGroupItem & { href: string })[] = [
-  {
-    id: -1,
-    image_url: null,
-    title: '사회탐구 단원별 학습지',
-    view_count: 0,
-    created_at: new Date().toISOString(),
-    tags: ['단원별'],
-    subjects: SUBJECTS_2026.map(s => s.id),
-    href: '/worksheet-group/by-chapter',
-  },
-  {
-    id: -2,
-    image_url: null,
-    title: '사회탐구 난이도별 학습지',
-    view_count: 0,
-    created_at: new Date().toISOString(),
-    tags: ['난이도별'],
-    subjects: SUBJECTS_2026.map(s => s.id),
-    href: '/worksheet-group/by-difficulty',
-  },
-];
+function buildVirtualItems(subjects: string[]): (WorksheetGroupItem & { href: string })[] {
+  return [
+    {
+      id: -1,
+      image_url: null,
+      title: '사회탐구 단원별 학습지',
+      view_count: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      tags: ['단원별'],
+      subjects,
+      href: '/worksheet-group/by-chapter',
+    },
+    {
+      id: -2,
+      image_url: null,
+      title: '사회탐구 난이도별 학습지',
+      view_count: null,
+      created_at: '2026-01-01T00:00:00.000Z',
+      tags: ['난이도별'],
+      subjects,
+      href: '/worksheet-group/by-difficulty',
+    },
+  ];
+}
 
 export function WorksheetGroupAllPage() {
   const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { interestSubjectIds } = useUserAppSettingStore();
+  const { interestSubjectIds, targetSuneungYear } = useUserAppSettingStore();
 
   useEffect(() => {
+    const filterSubjects = interestSubjectIds.length > 0
+      ? interestSubjectIds
+      : getSubjectIdsByYear(targetSuneungYear);
     fetchWorksheetGroups({
       excludeTags: ['단원별', '난이도별'],
-      subjects: interestSubjectIds.length > 0 ? interestSubjectIds : undefined,
+      subjects: filterSubjects,
     }).then(groups => {
       setItems(groups.map(g => ({
         ...g,
-        subjects: [...new Set(g.worksheets.map(w => w.subject_id).filter(Boolean))] as string[],
+        subjects: [...new Set(g.worksheets.flatMap(w => w.subject_ids))],
       })));
       setLoading(false);
     });
-  }, [interestSubjectIds]);
+  }, [interestSubjectIds, targetSuneungYear]);
 
-  const allItems = [...VIRTUAL_ITEMS, ...items];
+  const virtualItems = buildVirtualItems(getSubjectIdsByYear(targetSuneungYear));
+  const allItems = [...virtualItems, ...items];
 
   if (loading) {
     return (
@@ -81,7 +87,7 @@ export function WorksheetGroupAllPage() {
                 key={item.id}
                 item={item}
                 {...(item.id < 0 && {
-                  href: VIRTUAL_ITEMS.find(v => v.id === item.id)?.href,
+                  href: virtualItems.find(v => v.id === item.id)?.href,
                   hideFavorite: true,
                 })}
               />

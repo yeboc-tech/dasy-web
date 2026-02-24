@@ -61,11 +61,11 @@ export async function fetchWorksheetGroups(
 
   const allWsIds = groups.flatMap(g => g.worksheet_ids || [])
 
-  const worksheetMap = new Map<string, { id: string; subject_id: string | null; target_grades: string[] }>()
+  const worksheetMap = new Map<string, { id: string; subject_ids: string[]; target_grades: string[] }>()
   if (allWsIds.length > 0) {
     const { data: worksheets } = await supabase
       .from('worksheets')
-      .select('id, subject_id, target_grades')
+      .select('id, subject_ids, target_grades')
       .in('id', allWsIds)
     for (const w of worksheets || []) {
       worksheetMap.set(w.id, w)
@@ -76,13 +76,13 @@ export async function fetchWorksheetGroups(
     ...g,
     worksheets: (g.worksheet_ids || [])
       .map(id => worksheetMap.get(id))
-      .filter((w): w is { id: string; subject_id: string | null; target_grades: string[] } => !!w),
+      .filter((w): w is { id: string; subject_ids: string[]; target_grades: string[] } => !!w),
   }))
 
   if (filter.subjects) {
     const subjectSet = new Set(filter.subjects)
     result = result.filter(g =>
-      g.worksheets.some(w => w.subject_id && subjectSet.has(w.subject_id))
+      g.worksheets.some(w => w.subject_ids.length === 0 || w.subject_ids.some(s => subjectSet.has(s)))
     )
   }
 

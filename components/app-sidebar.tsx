@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 import { useAppStore } from '@/lib/zustand/localStorageStore';
-import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
+import { useUserAccountStore, getUserTypeLabel } from '@/lib/zustand/userAccountStore';
 
 interface NavItem {
   label: string;
@@ -104,7 +104,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
   const { mode, toggleMode } = useAppStore();
-  const { nickname, subscriptionType, point, fetchAccount } = useUserAccountStore();
+  const { nickname, subscriptionType, userType, point, fetchAccount } = useUserAccountStore();
 
   useEffect(() => {
     if (user?.id) fetchAccount(user.id);
@@ -141,6 +141,7 @@ export function AppSidebar() {
                   ? 'bg-amber-100 text-amber-700'
                   : 'bg-gray-100 text-gray-500'
               }`}>{subscriptionType}</span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{getUserTypeLabel(userType)}</span>
             </div>
             <div className="flex items-center gap-1 mt-1">
               <img src="/images/point_badge.png" alt="" className="w-4 h-4" />
