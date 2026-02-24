@@ -24,7 +24,7 @@ export function GradingAnimation({ isCorrect, onComplete }: GradingAnimationProp
     // 애니메이션 완료 후 콜백
     const timer = setTimeout(() => {
       onComplete?.();
-    }, 400);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, [onComplete]);

@@ -32,6 +32,8 @@ export function MySubscriptionPage() {
   const { subscriptionType } = useUserAccountStore();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [depositorInputs, setDepositorInputs] = useState<Record<string, string>>({});
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -47,6 +49,23 @@ export function MySubscriptionPage() {
     };
     fetchSubmissions();
   }, [user]);
+
+  const handleSubmitDepositor = async (subId: string) => {
+    const name = depositorInputs[subId]?.trim();
+    if (!name) return;
+    setSubmittingId(subId);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('user_subscription')
+      .update({ depositor_name: name })
+      .eq('id', subId);
+    setSubmittingId(null);
+    if (!error) {
+      setSubmissions((prev) =>
+        prev.map((s) => s.id === subId ? { ...s, depositor_name: name } : s)
+      );
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('ko-KR', {
@@ -177,6 +196,35 @@ export function MySubscriptionPage() {
                           <p className="text-red-500">거절 사유 : {sub.reject_reason}</p>
                         )}
                       </div>
+                      {/* 입금 대기중: 계좌 정보 + 입금자명 입력 */}
+                      {isWaitingDeposit && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <p>계좌번호 : <span className="font-medium">1002-890-007769 우리은행</span></p>
+                            <p>예금주 : <span className="font-medium">김도윤</span></p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-3">
+                            <input
+                              type="text"
+                              value={depositorInputs[sub.id] || ''}
+                              onChange={(e) => setDepositorInputs((prev) => ({ ...prev, [sub.id]: e.target.value }))}
+                              placeholder="입금자명을 입력하세요"
+                              className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF00A1] focus:border-transparent flex-1 max-w-xs"
+                            />
+                            <button
+                              disabled={!depositorInputs[sub.id]?.trim() || submittingId === sub.id}
+                              onClick={() => handleSubmitDepositor(sub.id)}
+                              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                                depositorInputs[sub.id]?.trim() && submittingId !== sub.id
+                                  ? 'bg-[var(--foreground)] text-white hover:bg-gray-800 cursor-pointer'
+                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {submittingId === sub.id ? '제출 중...' : '제출하기'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

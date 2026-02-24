@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ProblemSolverDialog } from '@/components/ProblemSolverDialog';
+import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { fetchTodayProblem } from '@/lib/api/SupabaseRpc';
@@ -61,7 +61,7 @@ export function TodayProblemDialog({ open, onOpenChange }: TodayProblemDialogPro
   }
 
   return (
-    <ProblemSolverDialog
+    <OneProblemSolverDialog
       open={open}
       onOpenChange={onOpenChange}
       mode="today"

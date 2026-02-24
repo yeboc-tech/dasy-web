@@ -103,7 +103,7 @@ export async function getMyProblemAnalysis(): Promise<{
 // 오늘의 문제 타입
 export interface TodayProblem {
   problemId: string;
-  subject: string;
+  subjectId: string;
   correctAnswer: string | null;
   difficulty: string | null;
   score: number | null;
@@ -205,7 +205,7 @@ export async function fetchProblemById(problemId: string): Promise<{
     return {
       data: {
         problemId: problemData.problem_id,
-        subject,
+        subjectId: subject,
         correctAnswer: problemData.correct_answer,
         difficulty: problemData.difficulty,
         score: problemData.score,
@@ -466,7 +466,7 @@ export async function fetchTodayProblem(params: {
     return {
       data: {
         problemId: selectedProblem.problem_id,
-        subject,
+        subjectId: subject,
         correctAnswer: selectedProblem.correct_answer,
         difficulty: selectedProblem.difficulty,
         score: selectedProblem.score,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { ProblemSolverDialog } from '@/components/ProblemSolverDialog';
+import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { fetchWrongAnswerProblem } from '@/lib/api/SupabaseRpc';
 
 interface WrongAnswerReviewDialogProps {
@@ -27,7 +27,7 @@ export function WrongAnswerReviewDialog({ open, onOpenChange }: WrongAnswerRevie
   }, []);
 
   return (
-    <ProblemSolverDialog
+    <OneProblemSolverDialog
       open={open}
       onOpenChange={onOpenChange}
       mode="review"

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject, fetchProblemById } from '@/lib/api/SupabaseRpc';
 import { useSelectedSubjectStore } from '@/lib/zustand/selectedSubjectStore';
-import { ProblemSolverDialog } from '@/components/ProblemSolverDialog';
+import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 function getRelativeTime(dateStr: string | null): string {
@@ -402,7 +402,7 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
       </div>
       {/* 다시 풀기 다이얼로그 */}
       {resolveProblemId && (
-        <ProblemSolverDialog
+        <OneProblemSolverDialog
           open={resolveDialogOpen}
           onOpenChange={setResolveDialogOpen}
           mode="resolve"
