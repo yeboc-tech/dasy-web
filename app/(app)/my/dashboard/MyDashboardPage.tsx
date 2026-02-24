@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { createClient } from '@/lib/supabase/client';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
+import { DashboardStatistics, SolveRecordDTO } from '@/lib/service/DashboardStatistics';
+import { EXAM_DATA_YEAR_RANGE } from '@/lib/constants/examConstants';
 
 export function MyDashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -14,6 +16,7 @@ export function MyDashboardPage() {
   const [selectedTurn, setSelectedTurn] = useState(1);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<DashboardStatistics | null>(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -21,31 +24,70 @@ export function MyDashboardPage() {
     }
   }, [user, authLoading, fetchSettings]);
 
-  // 최근 7일 풀이 수 조회
+  // 풀이 기록 + accuracy_rate 조인 데이터 fetch
   useEffect(() => {
     if (!user) return;
-    async function fetchWeekly() {
+    async function fetchSolveRecords() {
       const supabase = createClient();
-      const today = new Date();
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(today.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
 
-      const { data } = await supabase
+      // 1. 전체 풀이 기록
+      const { data: records } = await supabase
         .from('user_problem_solve_record')
-        .select('created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', sevenDaysAgo.toISOString());
+        .select('problem_id, submit_answer, created_at')
+        .eq('user_id', user!.id);
 
-      const counts: Record<string, number> = {};
-      data?.forEach(r => {
-        const date = r.created_at.slice(0, 10); // YYYY-MM-DD
-        counts[date] = (counts[date] || 0) + 1;
+      if (!records || records.length === 0) {
+        setStats(new DashboardStatistics([]));
+        return;
+      }
+
+      // 2. 해당 problem_id들의 accuracy_rate 정보
+      const problemIds = [...new Set(records.map(r => r.problem_id))];
+      const { data: accuracyData } = await supabase
+        .from('accuracy_rate')
+        .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+        .in('problem_id', problemIds);
+
+      const accuracyMap = new Map(
+        (accuracyData || []).map(a => [a.problem_id, a])
+      );
+
+      // 3. DTO 조인
+      const dtos: SolveRecordDTO[] = records.map(r => {
+        const acc = accuracyMap.get(r.problem_id);
+        return {
+          problemId: r.problem_id,
+          submitAnswer: r.submit_answer,
+          createdAt: r.created_at,
+          correctAnswer: acc?.correct_answer ?? null,
+          difficulty: acc?.difficulty ?? null,
+          score: acc?.score ?? null,
+          accuracyRate: acc?.accuracy_rate ?? null,
+        };
       });
-      setWeeklyCounts(counts);
+
+      setStats(new DashboardStatistics(dtos));
     }
-    fetchWeekly();
+    fetchSolveRecords();
   }, [user]);
+
+  // 주간 캘린더용 (stats에서 파생)
+  useEffect(() => {
+    if (!stats) return;
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const counts: Record<string, number> = {};
+    stats.getRecords().forEach(r => {
+      const date = r.createdAt.slice(0, 10);
+      if (date >= sevenDaysAgo.toISOString().slice(0, 10)) {
+        counts[date] = (counts[date] || 0) + 1;
+      }
+    });
+    setWeeklyCounts(counts);
+  }, [stats]);
 
   useEffect(() => {
     if (interestSubjectIds.length > 0 && !selectedSubject) {
@@ -57,75 +99,14 @@ export function MyDashboardPage() {
   const currentYear = new Date().getFullYear();
   const recent5Start = currentYear - 5;
   const recent5End = currentYear - 1;
+  const allStart = Math.min(...Object.values(EXAM_DATA_YEAR_RANGE).map(r => r.start));
+  const allEnd = Math.max(...Object.values(EXAM_DATA_YEAR_RANGE).map(r => r.end));
 
-  // TODO: 실제 데이터로 교체
-  type TurnData = { turn: number; completed: number; total: number }[];
-  interface SubjectReviewData {
-    currentYear: TurnData;
-    recent3: TurnData;
-    recent5: TurnData;
-    total: TurnData;
-  }
-
-  const reviewDataBySubject: Record<string, SubjectReviewData> = {
-    '경제': {
-      currentYear: [{ turn: 1, completed: 3, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 25, total: 60 }, { turn: 2, completed: 8, total: 60 }, { turn: 3, completed: 2, total: 60 }],
-      recent5: [{ turn: 1, completed: 38, total: 95 }, { turn: 2, completed: 15, total: 95 }, { turn: 3, completed: 4, total: 95 }],
-      total: [{ turn: 1, completed: 42, total: 140 }, { turn: 2, completed: 18, total: 140 }, { turn: 3, completed: 5, total: 140 }],
-    },
-    '사회문화': {
-      currentYear: [{ turn: 1, completed: 5, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 30, total: 65 }, { turn: 2, completed: 12, total: 65 }, { turn: 3, completed: 3, total: 65 }],
-      recent5: [{ turn: 1, completed: 48, total: 100 }, { turn: 2, completed: 22, total: 100 }, { turn: 3, completed: 7, total: 100 }],
-      total: [{ turn: 1, completed: 55, total: 150 }, { turn: 2, completed: 25, total: 150 }, { turn: 3, completed: 8, total: 150 }],
-    },
-    '생활과윤리': {
-      currentYear: [{ turn: 1, completed: 2, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 20, total: 55 }, { turn: 2, completed: 6, total: 55 }, { turn: 3, completed: 1, total: 55 }],
-      recent5: [{ turn: 1, completed: 35, total: 90 }, { turn: 2, completed: 14, total: 90 }, { turn: 3, completed: 3, total: 90 }],
-      total: [{ turn: 1, completed: 40, total: 130 }, { turn: 2, completed: 16, total: 130 }, { turn: 3, completed: 4, total: 130 }],
-    },
-    '동아시아사': {
-      currentYear: [{ turn: 1, completed: 4, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 22, total: 58 }, { turn: 2, completed: 9, total: 58 }, { turn: 3, completed: 2, total: 58 }],
-      recent5: [{ turn: 1, completed: 40, total: 92 }, { turn: 2, completed: 18, total: 92 }, { turn: 3, completed: 5, total: 92 }],
-      total: [{ turn: 1, completed: 46, total: 135 }, { turn: 2, completed: 20, total: 135 }, { turn: 3, completed: 6, total: 135 }],
-    },
-    '세계사': {
-      currentYear: [{ turn: 1, completed: 1, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 18, total: 60 }, { turn: 2, completed: 5, total: 60 }, { turn: 3, completed: 1, total: 60 }],
-      recent5: [{ turn: 1, completed: 32, total: 95 }, { turn: 2, completed: 12, total: 95 }, { turn: 3, completed: 3, total: 95 }],
-      total: [{ turn: 1, completed: 37, total: 140 }, { turn: 2, completed: 14, total: 140 }, { turn: 3, completed: 4, total: 140 }],
-    },
-    '세계지리': {
-      currentYear: [{ turn: 1, completed: 6, total: 40 }, { turn: 2, completed: 2, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 28, total: 62 }, { turn: 2, completed: 10, total: 62 }, { turn: 3, completed: 3, total: 62 }],
-      recent5: [{ turn: 1, completed: 44, total: 98 }, { turn: 2, completed: 20, total: 98 }, { turn: 3, completed: 6, total: 98 }],
-      total: [{ turn: 1, completed: 50, total: 145 }, { turn: 2, completed: 22, total: 145 }, { turn: 3, completed: 7, total: 145 }],
-    },
-    '윤리와사상': {
-      currentYear: [{ turn: 1, completed: 3, total: 40 }, { turn: 2, completed: 0, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 24, total: 58 }, { turn: 2, completed: 7, total: 58 }, { turn: 3, completed: 2, total: 58 }],
-      recent5: [{ turn: 1, completed: 36, total: 92 }, { turn: 2, completed: 16, total: 92 }, { turn: 3, completed: 4, total: 92 }],
-      total: [{ turn: 1, completed: 44, total: 138 }, { turn: 2, completed: 19, total: 138 }, { turn: 3, completed: 5, total: 138 }],
-    },
-    '정치와법': {
-      currentYear: [{ turn: 1, completed: 4, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 26, total: 60 }, { turn: 2, completed: 11, total: 60 }, { turn: 3, completed: 3, total: 60 }],
-      recent5: [{ turn: 1, completed: 42, total: 96 }, { turn: 2, completed: 19, total: 96 }, { turn: 3, completed: 5, total: 96 }],
-      total: [{ turn: 1, completed: 48, total: 142 }, { turn: 2, completed: 21, total: 142 }, { turn: 3, completed: 6, total: 142 }],
-    },
-    '한국지리': {
-      currentYear: [{ turn: 1, completed: 5, total: 40 }, { turn: 2, completed: 1, total: 40 }, { turn: 3, completed: 0, total: 40 }],
-      recent3: [{ turn: 1, completed: 27, total: 60 }, { turn: 2, completed: 9, total: 60 }, { turn: 3, completed: 2, total: 60 }],
-      recent5: [{ turn: 1, completed: 41, total: 94 }, { turn: 2, completed: 17, total: 94 }, { turn: 3, completed: 4, total: 94 }],
-      total: [{ turn: 1, completed: 47, total: 138 }, { turn: 2, completed: 20, total: 138 }, { turn: 3, completed: 5, total: 138 }],
-    },
-  };
-
-  const defaultTurnData: TurnData = [{ turn: 1, completed: 0, total: 0 }, { turn: 2, completed: 0, total: 0 }, { turn: 3, completed: 0, total: 0 }];
-  const subjectReview = selectedSubject ? (reviewDataBySubject[selectedSubject] || null) : null;
+  // 선택된 과목 + 턴에 대한 복습 현황
+  const reviewStats = useMemo(() => {
+    if (!stats || !selectedSubject) return null;
+    return stats.getReviewStats(selectedSubject, selectedTurn);
+  }, [stats, selectedSubject, selectedTurn]);
 
   // 단원별 학습 분석 코멘트 (내가 푼 문제 기반)
   const chapterAnalysisComment: Record<string, string> = {
@@ -222,7 +203,7 @@ export function MyDashboardPage() {
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Top Bar */}
-      <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
+      <div className="h-14 flex items-center justify-between px-4 shrink-0 bg-white">
         <h1 className="text-lg font-semibold text-[var(--foreground)]">내 학습 현황</h1>
         <div className="flex">
           {[1, 2, 3].map((turn, i) => (
@@ -246,31 +227,32 @@ export function MyDashboardPage() {
         </div>
       </div>
 
+      {/* 관심 과목 선택 (고정 영역) */}
+      {interestSubjectIds.length > 0 && (
+        <div className="flex px-4 pb-3 pt-2 shrink-0 bg-white border-b border-[var(--border)]">
+          {interestSubjectIds.map((subjectId, i) => (
+            <button
+              key={subjectId}
+              onClick={() => setSelectedSubject(subjectId)}
+              className={`
+                flex-1 py-3 text-sm font-semibold transition-all border border-gray-200
+                ${i === 0 ? 'rounded-l-lg' : ''}
+                ${i === interestSubjectIds.length - 1 ? 'rounded-r-lg' : ''}
+                ${i > 0 ? '-ml-px' : ''}
+                ${selectedSubject === subjectId
+                  ? 'bg-[#FF00A1] text-white border-[#FF00A1] shadow-inner z-10 relative'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+                }
+              `}
+            >
+              {getSubjectLabel(subjectId) || subjectId}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* 관심 과목 선택 */}
-        {interestSubjectIds.length > 0 && (
-          <div className="flex">
-            {interestSubjectIds.map((subjectId, i) => (
-              <button
-                key={subjectId}
-                onClick={() => setSelectedSubject(subjectId)}
-                className={`
-                  flex-1 py-3 text-sm font-semibold transition-all border border-gray-200
-                  ${i === 0 ? 'rounded-l-lg' : ''}
-                  ${i === interestSubjectIds.length - 1 ? 'rounded-r-lg' : ''}
-                  ${i > 0 ? '-ml-px' : ''}
-                  ${selectedSubject === subjectId
-                    ? 'bg-[#FF00A1] text-white border-[#FF00A1] shadow-inner z-10 relative'
-                    : 'bg-white text-gray-500 hover:bg-gray-50'
-                  }
-                `}
-              >
-                {getSubjectLabel(subjectId) || subjectId}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* 7일 캘린더 (월~일 고정) */}
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
@@ -337,14 +319,11 @@ export function MyDashboardPage() {
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: '이번년도', sub: `${currentYear}`, data: subjectReview?.currentYear || defaultTurnData },
-              { label: '지난 3개년', sub: `${currentYear - 3}~${currentYear - 1}`, data: subjectReview?.recent3 || defaultTurnData },
-              { label: '지난 5개년', sub: `${recent5Start}~${recent5End}`, data: subjectReview?.recent5 || defaultTurnData },
-              { label: '전체 기출문제', sub: '2013~2026', data: subjectReview?.total || defaultTurnData },
-            ].map(({ label, sub, data: turnArr }) => {
-              const d = turnArr.find(t => t.turn === selectedTurn);
-              const completed = d?.completed ?? 0;
-              const total = d?.total ?? 0;
+              { label: '이번년도', sub: `${currentYear}`, completed: reviewStats?.thisYear.completed ?? 0, total: reviewStats?.thisYear.total ?? 0 },
+              { label: '지난 3개년', sub: `${currentYear - 3}~${currentYear - 1}`, completed: reviewStats?.recent3.completed ?? 0, total: reviewStats?.recent3.total ?? 0 },
+              { label: '지난 5개년', sub: `${recent5Start}~${recent5End}`, completed: reviewStats?.recent5.completed ?? 0, total: reviewStats?.recent5.total ?? 0 },
+              { label: '전체 기출문제', sub: `${allStart}~${allEnd}`, completed: reviewStats?.all.completed ?? 0, total: reviewStats?.all.total ?? 0 },
+            ].map(({ label, sub, completed, total }) => {
               const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
               const radius = 54;
               const circumference = 2 * Math.PI * radius;
