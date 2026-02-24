@@ -2,20 +2,36 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CustomButton } from '@/components/custom-button';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { useAuthActions } from '@/lib/hooks/use-auth';
 import { AuthBlockerProvider } from '@/lib/contexts/auth-blocker-context';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { TodayProblemDialog, useTodayProblemDialog } from '@/components/TodayProblemDialog';
 import { WrongAnswerReviewDialog } from '@/components/WrongAnswerReviewDialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { signOut } = useAuthActions();
   const { showDialog, setShowDialog } = useTodayProblemDialog();
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  const handleTodayProblemClick = () => {
+    if (!user) {
+      setShowLoginDialog(true);
+    } else {
+      setShowDialog(true);
+    }
+  };
+
+  const handleReviewClick = () => {
+    if (!user) {
+      setShowLoginDialog(true);
+    } else {
+      setShowReviewDialog(true);
+    }
+  };
 
   return (
     <AuthBlockerProvider>
@@ -24,6 +40,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* 오답복습 다이얼로그 */}
       <WrongAnswerReviewDialog open={showReviewDialog} onOpenChange={setShowReviewDialog} />
+
+      {/* 로그인 안내 다이얼로그 */}
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogTitle className="sr-only">로그인 필요</DialogTitle>
+          <div className="flex flex-col items-center py-4 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-[var(--gray-100)] flex items-center justify-center">
+              <Lock className="w-6 h-6 text-[var(--gray-600)]" />
+            </div>
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
+              로그인이 필요합니다
+            </h2>
+            <p className="text-sm text-[var(--gray-600)] text-center">
+              이 기능을 이용하려면 로그인해주세요
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <Link href="/auth/signin" onClick={() => setShowLoginDialog(false)}>
+                <CustomButton variant="outline" size="sm">
+                  로그인
+                </CustomButton>
+              </Link>
+              <Link href="/auth/signup" onClick={() => setShowLoginDialog(false)}>
+                <CustomButton variant="secondary" size="sm">
+                  회원가입
+                </CustomButton>
+              </Link>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundColor: 'var(--app-bg)' }}>
         {/* Top Navbar */}
@@ -41,7 +87,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex gap-2 items-center">
             {/* 오늘의 문제 버튼 */}
             <button
-              onClick={() => setShowDialog(true)}
+              onClick={handleTodayProblemClick}
               className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
             >
               오늘의 문제
@@ -49,39 +95,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* 오답복습 버튼 */}
             <button
-              onClick={() => setShowReviewDialog(true)}
+              onClick={handleReviewClick}
               className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
             >
               오답복습
             </button>
 
-            {loading ? (
-              <div className="w-8 h-8 flex items-center justify-center">
-                <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-              </div>
-            ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="w-8 h-8 rounded-md bg-[var(--gray-200)] text-[var(--gray-900)] flex items-center justify-center text-sm font-medium hover:bg-[var(--gray-300)] transition-colors cursor-pointer">
-                    {user.email?.[0].toUpperCase() || 'U'}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white">
-                  <div className="px-2 py-1.5 text-sm text-[var(--gray-500)]">
-                    {user.email}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors">
-                      내 프로필
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut} className="cursor-pointer hover:bg-[var(--gray-100)] transition-colors">
-                    로그아웃
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
+            {!loading && !user && (
               <>
                 <Link href="/auth/signin">
                   <CustomButton variant="outline" size="sm">

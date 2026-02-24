@@ -222,13 +222,13 @@ body {
 .grading-x-line1 {
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  animation: draw-x-line 0.25s ease-out forwards;
+  animation: draw-x-line 0.4s ease-out forwards;
 }
 
 .grading-x-line2 {
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  animation: draw-x-line 0.25s ease-out 0.15s forwards;
+  animation: draw-x-line 0.4s ease-out 0.15s forwards;
 }
 
 @keyframes draw-x-line {
