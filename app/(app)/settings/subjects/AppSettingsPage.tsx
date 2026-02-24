@@ -5,7 +5,17 @@ import { Loader, ChevronDown, TabletSmartphone, FileText } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
-import { getSubjectsByYear, TONGHAP_SUBJECT_IDS } from '@/lib/utils/subjectUtils';
+import { getSubjectsByYear } from '@/lib/utils/subjectUtils';
+import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
+import { PlanCards } from '@/components/plan/PlanCards';
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogPortal,
+} from '@/components/ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 // 올해부터 5년간 수능 연도 생성
 const currentYear = new Date().getFullYear();
@@ -14,6 +24,8 @@ const targetSuneungYears = Array.from({ length: 5 }, (_, i) => currentYear + i);
 export function AppSettingsPage() {
   const { user, loading: authLoading } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const { subscriptionType } = useUserAccountStore();
 
   const {
     targetSuneungYear,
@@ -43,8 +55,7 @@ export function AppSettingsPage() {
 
     if (crossesBoundary) {
       // 과목 체계가 변경되므로 리셋
-      const newSubjects = newIsPost2027 ? TONGHAP_SUBJECT_IDS : [];
-      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: newSubjects });
+      await updateSettings(user.id, { suneung_year: year, interest_subject_ids: [] });
     } else {
       // 같은 과목 체계 내 변경이므로 관심과목 유지
       await updateSettings(user.id, { suneung_year: year });
@@ -74,6 +85,8 @@ export function AppSettingsPage() {
     setSaving(false);
   };
 
+  const maxSubjects = subscriptionType === 'PRO' ? Infinity : 1;
+
   const toggleSubject = async (subjectId: string) => {
     if (!user) return;
 
@@ -82,8 +95,8 @@ export function AppSettingsPage() {
     if (newSelected.has(subjectId)) {
       newSelected.delete(subjectId);
     } else {
-      // 최대 2개까지만 선택 가능
-      if (newSelected.size >= 2) {
+      if (newSelected.size >= maxSubjects) {
+        setShowPlanDialog(true);
         return;
       }
       newSelected.add(subjectId);
@@ -345,6 +358,29 @@ export function AppSettingsPage() {
           )}
         </div>
       </div>
+      {/* Plan Upgrade Dialog */}
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogPortal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50" />
+          <DialogPrimitive.Content className="fixed top-[50%] left-[50%] z-50 w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] rounded-lg bg-gray-50 p-8 shadow-lg">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-xl font-bold text-center">더 많은 과목을 학습하려면 업그레이드하세요</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 text-center">
+                FREE 플랜에서는 1개 과목만 학습할 수 있습니다
+              </DialogDescription>
+            </DialogHeader>
+            <PlanCards />
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setShowPlanDialog(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
     </ProtectedRoute>
   );
 }
