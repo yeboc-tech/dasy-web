@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { PlanCards } from '@/components/plan/PlanCards';
+import { PurchaseFlow } from '@/components/plan/PurchaseFlow';
 
-export function PlanPage() {
+export function SubscriptionPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
@@ -22,6 +23,10 @@ export function PlanPage() {
 
         <div className="max-w-4xl w-full">
           <PlanCards />
+        </div>
+
+        <div className="max-w-4xl w-full mt-10">
+          <PurchaseFlow />
         </div>
       </div>
     </div>

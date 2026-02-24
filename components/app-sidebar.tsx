@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays } from 'lucide-react';
+import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays, CreditCard } from 'lucide-react';
+import Avatar from 'boring-avatars';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
@@ -89,6 +90,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '앱 설정', href: '/settings/subjects', icon: <Settings className="w-4 h-4" /> },
       { label: '계정 관리', href: '/profile', icon: <User className="w-4 h-4" /> },
+      { label: '구독 관리', href: '/profile/subscription', icon: <CreditCard className="w-4 h-4" /> },
     ],
   },
   {
@@ -104,7 +106,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
   const { mode, toggleMode } = useAppStore();
-  const { nickname, subscriptionType, userType, point, fetchAccount } = useUserAccountStore();
+  const { nickname, subscriptionType, userType, point, profileJson, fetchAccount } = useUserAccountStore();
 
   useEffect(() => {
     if (user?.id) fetchAccount(user.id);
@@ -129,27 +131,68 @@ export function AppSidebar() {
 
   return (
     <aside className="w-64 h-full bg-transparent flex flex-col pt-2 px-1 pb-1">
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto">
+      {/* Fixed Top Section */}
+      <div className="shrink-0 pb-2">
         {user && nickname && (
-          <div className="px-3 py-3 mb-2">
-            <p className="text-sm text-[var(--gray-500)]">환영합니다!</p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm"><span className="font-semibold text-[var(--foreground)]">{nickname}</span><span className="text-[var(--gray-500)]"> 님</span></span>
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                subscriptionType === 'PRO'
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-gray-100 text-gray-500'
-              }`}>{subscriptionType}</span>
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{getUserTypeLabel(userType)}</span>
-            </div>
-            <div className="flex items-center gap-1 mt-1">
-              <img src="/images/point_badge.png" alt="" className="w-4 h-4" />
-              <span className="text-xs text-[var(--gray-500)]">{point.toLocaleString()} P</span>
+          <div className="px-3 py-3 mb-2 flex items-center gap-3">
+            <Avatar
+              name={profileJson.name}
+              variant={profileJson.variant as any}
+              size={40}
+              colors={profileJson.colors}
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm"><span className="font-semibold text-[var(--foreground)]">{nickname}</span><span className="text-[var(--gray-500)]"> 님</span></span>
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                  subscriptionType === 'PRO'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>{subscriptionType}</span>
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                <img src="/images/point_badge.png" alt="" className="w-4 h-4" />
+                <span className="text-xs text-[var(--gray-500)]">{point.toLocaleString()} P</span>
+              </div>
             </div>
           </div>
         )}
-        {visibleNavGroups.map((group, groupIndex) => (
+        {visibleNavGroups.filter(g => g.title === 'MY').map((group) => (
+          <div key={group.title}>
+            {group.title && (
+              <div className="px-2 mb-2">
+                <span className="text-xs font-medium text-[var(--gray-500)]">{group.title}</span>
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={dismissAuthBlocker}
+                    className={`
+                      flex items-center gap-2 px-2 h-8 rounded-md text-sm transition-colors cursor-pointer
+                      ${isActive
+                        ? 'bg-[var(--gray-200)] text-[var(--foreground)] font-medium'
+                        : 'text-[var(--gray-600)] hover:bg-[var(--gray-200)] hover:text-[var(--foreground)]'
+                      }
+                    `}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Scrollable Navigation */}
+      <nav className="flex-1 overflow-y-auto">
+        {visibleNavGroups.filter(g => g.title !== 'MY').map((group, groupIndex) => (
           <div key={group.title || `group-${groupIndex}`} className={groupIndex > 0 ? 'mt-4' : ''}>
             {/* Group Title - subtle and small (only if title exists) */}
             {group.title && (

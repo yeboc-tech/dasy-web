@@ -11,6 +11,8 @@ import { CustomButton } from '@/components/custom-button'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { useUserAccountStore } from '@/lib/zustand/userAccountStore'
+import { RefreshCw } from 'lucide-react'
+import Avatar from 'boring-avatars'
 import {
   Dialog,
   DialogDescription,
@@ -68,6 +70,18 @@ export function AccountForm() {
   const [nickname, setNickname] = useState('')
   const [nicknameLoading, setNicknameLoading] = useState(false)
   const [nicknameMessage, setNicknameMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const { profileJson, setProfileJson } = useUserAccountStore()
+
+  const handleRandomizeAvatar = async () => {
+    if (!user?.id) return
+    const randomName = Math.random().toString(36).substring(2, 10)
+    const newProfile = { ...profileJson, name: randomName }
+    setProfileJson(newProfile)
+    await supabase
+      .from('user_account')
+      .update({ profile_json: newProfile })
+      .eq('id', user.id)
+  }
 
   const {
     register,
@@ -165,6 +179,29 @@ export function AccountForm() {
 
   return (
     <div>
+      {/* Profile Image Section */}
+      <div className="px-4 pb-4">
+        <h2 className="text-sm font-medium text-black pt-4 mb-4">프로필 이미지</h2>
+        <div className="flex items-center gap-3">
+          <Avatar
+            name={profileJson.name}
+            variant={profileJson.variant as any}
+            size={64}
+            colors={profileJson.colors}
+          />
+          <button
+            type="button"
+            onClick={handleRandomizeAvatar}
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[var(--border)]" />
+
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Account Information Section */}
         <div className="px-4 pb-4">
@@ -239,6 +276,7 @@ export function AccountForm() {
               <Input
                 id="currentPassword"
                 type="password"
+                autoComplete="current-password"
                 {...register('currentPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />
@@ -254,6 +292,7 @@ export function AccountForm() {
               <Input
                 id="newPassword"
                 type="password"
+                autoComplete="new-password"
                 {...register('newPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />
@@ -269,6 +308,7 @@ export function AccountForm() {
               <Input
                 id="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 {...register('confirmPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />

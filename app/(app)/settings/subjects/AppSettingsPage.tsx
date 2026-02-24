@@ -8,6 +8,7 @@ import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getSubjectsByYear } from '@/lib/utils/subjectUtils';
 import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
 import { PlanCards } from '@/components/plan/PlanCards';
+import { PurchaseFlow } from '@/components/plan/PurchaseFlow';
 import {
   Dialog,
   DialogDescription,
@@ -238,11 +239,11 @@ export function AppSettingsPage() {
               {/* Interest Subjects Setting */}
               <div className="p-4 border-b border-[var(--border)]">
                 <h2 className="text-sm font-medium text-black mb-2">학습 과목</h2>
-                <p className="text-sm text-[var(--gray-600)] mb-4">
-                  학습할 과목을 선택하세요 (최대 2개).
+                <p className="text-sm text-[var(--gray-600)] mb-1">
+                  학습할 과목을 선택하세요.
                 </p>
-
-                <div className="flex flex-wrap gap-3">
+                <p className="text-xs text-gray-400 mb-3">한번 더 클릭하면 선택해제 됩니다</p>
+                <div className="flex flex-wrap gap-2">
                   {filteredSubjects.map((subject) => {
                     const isSelected = selectedSubjects.has(subject.id);
                     return (
@@ -370,7 +371,10 @@ export function AppSettingsPage() {
               </DialogDescription>
             </DialogHeader>
             <PlanCards />
-            <div className="flex justify-center mt-6">
+            <div className="mt-6">
+              <PurchaseFlow />
+            </div>
+            <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowPlanDialog(false)}
                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
