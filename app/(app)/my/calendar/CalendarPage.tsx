@@ -24,7 +24,7 @@ export function CalendarPage() {
     async function fetchTotal() {
       const supabase = createClient();
       const { data } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .select('created_at')
         .eq('user_id', user!.id);
 
@@ -48,7 +48,7 @@ export function CalendarPage() {
       const end = new Date(year, month + 1, 0, 23, 59, 59);
 
       const { data } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .select('created_at')
         .eq('user_id', user.id)
         .gte('created_at', start.toISOString())

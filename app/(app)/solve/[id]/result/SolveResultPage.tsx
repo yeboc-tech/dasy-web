@@ -70,7 +70,7 @@ export function SolveResultPage() {
 
         // Load session records
         const { data: recordData, error: recordError } = await supabase
-          .from('solve_session_record')
+          .from('user_problem_solve_record')
           .select('session_id, session_index, problem_id, submit_answer')
           .eq('session_id', sessionId)
           .order('session_index', { ascending: true });

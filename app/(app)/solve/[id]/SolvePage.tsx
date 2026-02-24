@@ -101,7 +101,7 @@ export function SolvePage() {
 
           // Load previously solved problems for this user
           const { data: solvedRecords } = await supabase
-            .from('solve_session_record')
+            .from('user_problem_solve_record')
             .select('problem_id')
             .eq('user_id', user.id);
 
@@ -356,9 +356,9 @@ export function SolvePage() {
         });
       });
 
-      // Insert all records into solve_session_record
+      // Insert all records into user_problem_solve_record
       const { error: recordError } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .insert(records);
 
       if (recordError) {

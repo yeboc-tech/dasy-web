@@ -65,9 +65,9 @@ export function useChapterSolvedCounts(
       // 2. 사용자 풀이 기록 조회
       const solved = new Set<string>();
 
-      // solve_session_record
+      // user_problem_solve_record
       const { data: sessionRecords } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .select('problem_id')
         .eq('user_id', userId!)
         .like('problem_id', `${subjectId}_%`);

@@ -93,7 +93,7 @@ export function OneProblemSolverDialog({
 
     // 오늘 이미 푼 문제 수 확인하여 session_index 결정
     const { data: existingRecords } = await supabase
-      .from('solve_session_record')
+      .from('user_problem_solve_record')
       .select('session_index')
       .eq('session_id', sessionId)
       .eq('user_id', user.id)
@@ -105,7 +105,7 @@ export function OneProblemSolverDialog({
       : 0;
 
     await supabase
-      .from('solve_session_record')
+      .from('user_problem_solve_record')
       .insert({
         session_id: sessionId,
         session_index: nextIndex,

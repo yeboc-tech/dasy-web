@@ -32,7 +32,7 @@ export function MyDashboardPage() {
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
       const { data } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .select('created_at')
         .eq('user_id', user.id)
         .gte('created_at', sevenDaysAgo.toISOString());

@@ -73,7 +73,7 @@ export function SolveNewPage() {
           fetchSettings(user.id);
 
           const { data: solvedRecords } = await supabase
-            .from('solve_session_record')
+            .from('user_problem_solve_record')
             .select('problem_id')
             .eq('user_id', user.id);
 
@@ -272,7 +272,7 @@ export function SolveNewPage() {
       });
 
       const { error: recordError } = await supabase
-        .from('solve_session_record')
+        .from('user_problem_solve_record')
         .insert(records);
 
       if (recordError) {

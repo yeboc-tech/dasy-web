@@ -239,7 +239,7 @@ export async function fetchWrongAnswerProblem(params?: {
 
     // 2. 사용자가 푼 모든 문제 기록 가져오기 (created_at 내림차순)
     const { data: solveRecords, error: solveError } = await supabase
-      .from('solve_session_record')
+      .from('user_problem_solve_record')
       .select('problem_id, submit_answer, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
@@ -346,7 +346,7 @@ export async function fetchTodayProblem(params: {
 
     // 2. 사용자가 푼 문제 ID 목록 가져오기
     const { data: solvedRecords, error: solvedError } = await supabase
-      .from('solve_session_record')
+      .from('user_problem_solve_record')
       .select('problem_id')
       .eq('user_id', user.id);
 
