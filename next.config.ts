@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/tongkidari/worksheets/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.y3c.kr',
+        port: '',
+        pathname: '/tongkidari/worksheet-groups/**',
+      },
     ],
   },
 };

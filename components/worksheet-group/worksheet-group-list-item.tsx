@@ -8,6 +8,7 @@ import { BoardColorTag } from '@/components/ui/board-color-tag';
 import { SubjectColorTag } from '@/components/ui/subject-color-tag';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { ImageUrlResolver } from '@/lib/entity/ImageUrlResolver';
 
 export interface WorksheetGroupItem {
   id: number;
@@ -84,10 +85,10 @@ export function WorksheetGroupListItem({ item, href, hideFavorite }: WorksheetGr
       onClick={() => router.push(href || `/worksheet-group/${item.id}`)}
       className="w-full flex items-center gap-4 p-4 bg-white border border-[var(--border)] rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
     >
-      <div className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+      <div className="relative shrink-0 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center" style={{ width: 96, aspectRatio: '1 / 1.41' }}>
         {item.image_url ? (
           <Image
-            src={item.image_url}
+            src={ImageUrlResolver.resolve(item.image_url)!}
             alt={item.title}
             fill
             className="object-cover"

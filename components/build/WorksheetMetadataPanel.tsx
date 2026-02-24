@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Plus, X, Upload, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { getCdnUrl } from '@/lib/utils/s3Utils';
+import { ImageUrlResolver } from '@/lib/entity/ImageUrlResolver';
 import {
   Select,
   SelectContent,
@@ -208,7 +208,7 @@ export default function WorksheetMetadataPanel({
   };
 
   // Display URL: preview (local file) > full URL from path (saved)
-  const displayUrl = thumbnailPreview || (thumbnailPath ? getCdnUrl(thumbnailPath) : null);
+  const displayUrl = thumbnailPreview || ImageUrlResolver.resolve(thumbnailPath);
   // Internal IDs for drag-and-drop stability (derived from sortRules prop)
   const [internalIds, setInternalIds] = useState<Map<number, string>>(new Map());
 

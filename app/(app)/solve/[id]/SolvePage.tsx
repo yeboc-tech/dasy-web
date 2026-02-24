@@ -13,6 +13,7 @@ import { CustomButton } from '@/components/custom-button';
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { TimeLimitCalculator } from '@/lib/entity/TimeLimitCalculator';
 import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
 import { getProblemImageUrl } from '@/lib/utils/s3Utils';
 import { getEditedContents } from '@/lib/supabase/services/clientServices';
@@ -33,6 +34,7 @@ interface WorksheetData {
   author: string;
   selected_problem_ids: string[];
   created_at: string;
+  custom_time_limit_s?: number | null;
 }
 
 export function SolvePage() {
@@ -112,7 +114,7 @@ export function SolvePage() {
         // Load worksheet data
         const { data, error } = await supabase
           .from('worksheets')
-          .select('id, title, author, selected_problem_ids, created_at')
+          .select('id, title, author, selected_problem_ids, created_at, custom_time_limit_s')
           .eq('id', worksheetId)
           .single();
 
@@ -413,8 +415,8 @@ export function SolvePage() {
   // Calculate actual problem count based on solve mode
   const actualProblemCount = selectedProblemIndices.size;
 
-  // Calculate total time in seconds
-  const totalTimeSeconds = actualProblemCount * 90;
+  const customTimeLimit = worksheet?.custom_time_limit_s;
+  const totalTimeSeconds = TimeLimitCalculator.calculate(actualProblemCount, customTimeLimit);
 
   if (loading) {
     return (
@@ -663,7 +665,7 @@ export function SolvePage() {
               </div>
               {timerEnabled && actualProblemCount > 0 && (
                 <p className="text-xs text-gray-500 mt-2">
-                  제한 시간: {formatTime(totalTimeSeconds)} ({actualProblemCount}문제 × 90초)
+                  제한 시간: {formatTime(totalTimeSeconds)}{!customTimeLimit && ` (${actualProblemCount}문제 × 90초)`}
                 </p>
               )}
             </div>

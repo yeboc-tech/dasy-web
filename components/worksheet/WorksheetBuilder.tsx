@@ -1637,8 +1637,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       if (thumbnailPath) {
         try {
           // Download original thumbnail from CDN
-          const { getCdnUrl } = await import('@/lib/utils/s3Utils');
-          const thumbnailUrl = getCdnUrl(thumbnailPath);
+          const { ImageUrlResolver } = await import('@/lib/entity/ImageUrlResolver');
+          const thumbnailUrl = ImageUrlResolver.resolve(thumbnailPath)!;
           const response = await fetch(thumbnailUrl);
 
           if (response.ok) {

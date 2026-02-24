@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { CustomButton } from '@/components/custom-button';
 import { createClient } from '@/lib/supabase/client';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { TimeLimitCalculator } from '@/lib/entity/TimeLimitCalculator';
 import { getProblemImageUrl } from '@/lib/utils/s3Utils';
 import { getEditedContents } from '@/lib/supabase/services/clientServices';
 import { toast } from 'sonner';
@@ -22,6 +23,7 @@ interface WorksheetData {
   author: string;
   selected_problem_ids: string[];
   created_at: string;
+  custom_time_limit_s?: number | null;
 }
 
 export function SolveNewPage() {
@@ -82,7 +84,7 @@ export function SolveNewPage() {
 
         const { data, error } = await supabase
           .from('worksheets')
-          .select('id, title, author, selected_problem_ids, created_at')
+          .select('id, title, author, selected_problem_ids, created_at, custom_time_limit_s')
           .eq('id', worksheetId)
           .single();
 
@@ -316,7 +318,8 @@ export function SolveNewPage() {
 
   const problemCount = worksheet?.selected_problem_ids?.length ?? 0;
   const actualProblemCount = selectedProblemIndices.size;
-  const totalTimeSeconds = actualProblemCount * 90;
+  const customTimeLimit = worksheet?.custom_time_limit_s;
+  const totalTimeSeconds = TimeLimitCalculator.calculate(actualProblemCount, customTimeLimit);
 
   // Pagination: 2 problems per page
   const totalPages = Math.ceil(problemCount / 2);
@@ -517,7 +520,7 @@ export function SolveNewPage() {
               </div>
               {timerEnabled && actualProblemCount > 0 && (
                 <p className="text-xs text-gray-500 mt-2">
-                  제한 시간: {formatTime(totalTimeSeconds)} ({actualProblemCount}문제 × 90초)
+                  제한 시간: {formatTime(totalTimeSeconds)}{!customTimeLimit && ` (${actualProblemCount}문제 × 90초)`}
                 </p>
               )}
             </div>
