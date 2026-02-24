@@ -12,7 +12,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
   const isAuthPage = pathname?.startsWith('/auth')
   const isDataPage = pathname?.startsWith('/data')
-  const isAdminPage = pathname?.startsWith('/admin')
   const isQuickAnswersPage = pathname?.includes('/quick-answers')
 
   // App routes now have their own layout with sidebar
@@ -23,7 +22,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
                     pathname?.startsWith('/my-worksheets') ||
                     pathname?.startsWith('/feedback')
 
-  if (isAuthPage || isDataPage || isAdminPage || isQuickAnswersPage || isAppRoute) {
+  if (isAuthPage || isDataPage || isQuickAnswersPage || isAppRoute) {
     // These pages have their own layouts: full screen without navbar/banner
     return (
       <div className="min-h-screen">

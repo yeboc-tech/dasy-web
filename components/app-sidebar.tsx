@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays } from 'lucide-react';
+import { useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useAuthBlocker } from '@/lib/contexts/auth-blocker-context';
 import { useAppStore } from '@/lib/zustand/localStorageStore';
+import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
 
 interface NavItem {
   label: string;
@@ -102,6 +104,11 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { dismissAuthBlocker } = useAuthBlocker();
   const { mode, toggleMode } = useAppStore();
+  const { nickname, subscriptionType, point, fetchAccount } = useUserAccountStore();
+
+  useEffect(() => {
+    if (user?.id) fetchAccount(user.id);
+  }, [user?.id, fetchAccount]);
 
   // Filter nav groups based on mode and auth
   const visibleNavGroups = navGroups.filter((group) => {
@@ -124,6 +131,23 @@ export function AppSidebar() {
     <aside className="w-64 h-full bg-transparent flex flex-col pt-2 px-1 pb-1">
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto">
+        {user && nickname && (
+          <div className="px-3 py-3 mb-2">
+            <p className="text-sm text-[var(--gray-500)]">환영합니다!</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm"><span className="font-semibold text-[var(--foreground)]">{nickname}</span><span className="text-[var(--gray-500)]"> 님</span></span>
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                subscriptionType === 'PRO'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-gray-100 text-gray-500'
+              }`}>{subscriptionType}</span>
+            </div>
+            <div className="flex items-center gap-1 mt-1">
+              <img src="/images/point_badge.png" alt="" className="w-4 h-4" />
+              <span className="text-xs text-[var(--gray-500)]">{point.toLocaleString()} P</span>
+            </div>
+          </div>
+        )}
         {visibleNavGroups.map((group, groupIndex) => (
           <div key={group.title || `group-${groupIndex}`} className={groupIndex > 0 ? 'mt-4' : ''}>
             {/* Group Title - subtle and small (only if title exists) */}
