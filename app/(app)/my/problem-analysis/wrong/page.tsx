@@ -14,6 +14,7 @@ export default function WrongAnswerAnalysisPage() {
       title="내 오답 문제 분석"
       filterFn={filterWrong}
       emptyMessage="오답 문제가 없습니다."
+      showReport={false}
     />
   );
 }

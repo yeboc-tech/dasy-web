@@ -3,11 +3,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject, fetchProblemById } from '@/lib/api/SupabaseRpc';
 import { useSelectedSubjectStore } from '@/lib/zustand/selectedSubjectStore';
 import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
+import { HelpTooltip } from '@/components/HelpTooltip';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 function getRelativeTime(dateStr: string | null): string {
@@ -31,9 +33,10 @@ interface ProblemAnalysisTableProps {
   title: string;
   filterFn?: (items: ProblemAnalysis[]) => ProblemAnalysis[];
   emptyMessage?: string;
+  showReport?: boolean;
 }
 
-export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemAnalysisTableProps) {
+export function ProblemAnalysisTable({ title, filterFn, emptyMessage, showReport = true }: ProblemAnalysisTableProps) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [dataBySubject, setDataBySubject] = useState<ProblemAnalysisBySubject | null>(null);
@@ -42,6 +45,8 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
 
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [resolveProblemId, setResolveProblemId] = useState<string | null>(null);
+
+  const [allChapterPaths, setAllChapterPaths] = useState<string[]>([]);
 
   const { interestSubjectIds, loading: settingsLoading, fetchSettings } = useUserAppSettingStore();
 
@@ -56,6 +61,32 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
       setSelectedSubject(interestSubjectIds[0]);
     }
   }, [interestSubjectIds, selectedSubject]);
+
+  useEffect(() => {
+    async function fetchAllChapters() {
+      if (!selectedSubject) return;
+      const supabase = createClient();
+      const { data: tagData } = await supabase
+        .from('problem_tags')
+        .select('tag_labels, problem_id')
+        .eq('type', `단원_사회탐구_${selectedSubject}`)
+        .order('problem_id');
+
+      if (tagData) {
+        const seen = new Set<string>();
+        const paths: string[] = [];
+        for (const row of tagData) {
+          const key = (row.tag_labels as string[]).join(' > ');
+          if (!seen.has(key)) {
+            seen.add(key);
+            paths.push(key);
+          }
+        }
+        setAllChapterPaths(paths);
+      }
+    }
+    fetchAllChapters();
+  }, [selectedSubject]);
 
   useEffect(() => {
     async function fetchData() {
@@ -94,10 +125,9 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
   const stats = useMemo(() => {
     const totalProblems = data.length;
     const totalAttempts = data.reduce((sum, item) => sum + item.solveCount, 0);
-    const allOxRecords = data.map((item) => item.oxRecord).join('');
-    const correctCount = (allOxRecords.match(/O/g) || []).length;
-    const wrongCount = (allOxRecords.match(/X/g) || []).length;
-    const overallAccuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
+    const correctCount = data.filter((item) => item.oxRecord.slice(-1) === 'O').length;
+    const wrongCount = totalProblems - correctCount;
+    const overallAccuracy = totalProblems > 0 ? Math.round((correctCount / totalProblems) * 100) : 0;
 
     const difficultyDistribution = data.reduce((acc, item) => {
       const key = item.difficulty || '미분류';
@@ -105,20 +135,24 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
       return acc;
     }, {} as Record<string, number>);
 
-    const tagDistribution = data.reduce((acc, item) => {
+    const chapterMap: Record<string, { total: number; wrong: number }> = {};
+    data.forEach((item) => {
       if (item.tags) {
-        item.tags.forEach((tag) => {
-          acc[tag] = (acc[tag] || 0) + 1;
-        });
+        const key = item.tags.join(' > ');
+        if (!chapterMap[key]) chapterMap[key] = { total: 0, wrong: 0 };
+        chapterMap[key].total += 1;
+        if (item.oxRecord.slice(-1) === 'X') chapterMap[key].wrong += 1;
       }
-      return acc;
-    }, {} as Record<string, number>);
-    const sortedTags = Object.entries(tagDistribution).sort((a, b) => b[1] - a[1]);
+    });
 
-    const problemsWithScore = data.filter((item) => item.score !== null);
-    const averageScore = problemsWithScore.length > 0
-      ? Math.round(problemsWithScore.reduce((sum, item) => sum + (item.score || 0), 0) / problemsWithScore.length * 10) / 10
-      : null;
+    const mostSolved = Object.entries(chapterMap)
+      .sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0]))
+      .slice(0, 3);
+
+    const mostWrong = Object.entries(chapterMap)
+      .filter(([, s]) => s.wrong > 0)
+      .sort((a, b) => b[1].wrong - a[1].wrong || a[0].localeCompare(b[0]))
+      .slice(0, 3);
 
     return {
       totalProblems,
@@ -127,10 +161,18 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
       wrongCount,
       overallAccuracy,
       difficultyDistribution,
-      sortedTags,
-      averageScore,
+      mostSolved,
+      mostWrong,
+      solvedChapterKeys: new Set(Object.keys(chapterMap)),
     };
   }, [data]);
+
+  const unstudiedChapters = useMemo(() => {
+    return allChapterPaths
+      .filter((path) => !stats.solvedChapterKeys.has(path))
+      .sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }))
+      .slice(0, 3);
+  }, [allChapterPaths, stats.solvedChapterKeys]);
 
   const fetchResolveProblem = useCallback(async () => {
     if (!resolveProblemId) return { data: null, error: new Error('문제 ID가 없습니다.') };
@@ -209,83 +251,123 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
       </div>
 
       {/* 전체 레포트 */}
-      {data.length > 0 && (
+      {showReport && data.length > 0 && (
         <div className="p-4 border-b border-[var(--border)] bg-white space-y-6">
           {/* 풀이 통계 */}
           <div>
             <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">풀이 통계</h2>
             <div className="flex gap-6">
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">푼 문제 수</span>
-                <span className="text-xl font-semibold text-[var(--foreground)]">{stats.totalProblems}개</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">풀이 횟수</span>
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-[var(--gray-500)] flex items-center gap-1">
+                  풀이 횟수
+                  <HelpTooltip>
+                    문제를 푼 총 횟수입니다.<br />
+                    같은 문제를 2번 풀면 2회로 집계됩니다.
+                  </HelpTooltip>
+                </span>
                 <span className="text-xl font-semibold text-[var(--foreground)]">{stats.totalAttempts}회</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">전체 정답률</span>
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-[var(--gray-500)] flex items-center gap-1">
+                  푼 문제 수
+                  <HelpTooltip>
+                    풀어본 고유 문제의 개수입니다.<br />
+                    같은 문제를 여러 번 풀어도 1개로 집계됩니다.
+                  </HelpTooltip>
+                </span>
+                <span className="text-xl font-semibold text-[var(--foreground)]">{stats.totalProblems}개</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-[var(--gray-500)] flex items-center gap-1">
+                  전체 정답률
+                  <HelpTooltip>
+                    각 문제의 가장 최근 풀이 결과를 기준으로 계산합니다.<br />
+                    최근에 모두 맞혔다면 100%가 됩니다.
+                  </HelpTooltip>
+                </span>
                 <span className="text-xl font-semibold text-[var(--foreground)]">{stats.overallAccuracy}%</span>
               </div>
             </div>
           </div>
 
-          {/* 성적 관련 */}
+
+          {/* 난이도별 분포 바 차트 */}
+          {Object.keys(stats.difficultyDistribution).length > 0 && (() => {
+            const difficultyOrder = ['하', '중하', '중', '중상', '상', '최상'];
+            const maxCount = Math.max(...difficultyOrder.map((d) => stats.difficultyDistribution[d] || 0), 1);
+            return (
+              <div>
+                <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">난이도별 분포</h2>
+                <div className="flex items-end gap-3" style={{ width: 200, height: 100 }}>
+                  {difficultyOrder.map((difficulty) => {
+                    const count = stats.difficultyDistribution[difficulty] || 0;
+                    const heightPercent = (count / maxCount) * 100;
+                    return (
+                      <div key={difficulty} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                        <span className="text-xs font-semibold text-[var(--foreground)]">{count}</span>
+                        <div
+                          className="w-full rounded-t-md bg-[#FF00A1] min-h-[2px]"
+                          style={{ height: `${heightPercent}%` }}
+                        />
+                        <span className="text-xs text-[var(--gray-500)] mt-1">{difficulty}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* 단원별 분포 */}
           <div>
-            <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">성적</h2>
-            <div className="flex gap-6">
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">평균 배점</span>
-                <span className="text-xl font-semibold text-[var(--foreground)]">
-                  {stats.averageScore !== null ? `${stats.averageScore}점` : '-'}
-                </span>
+            <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">단원별 분포</h2>
+            <div className="grid grid-cols-3">
+              <div className="pr-5">
+                <h3 className="text-xs font-medium text-blue-600 mb-2">많이 푼 단원</h3>
+                {stats.mostSolved.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {stats.mostSolved.map(([name, s]) => (
+                      <div key={name} className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 truncate">{name}</span>
+                        <span className="text-xs font-semibold text-gray-600 shrink-0">{s.total}개</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">데이터가 없습니다.</p>
+                )}
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">맞힌 횟수</span>
-                <span className="text-xl font-semibold text-green-600">{stats.correctCount}회</span>
+              <div className="px-5 border-l border-gray-200">
+                <h3 className="text-xs font-medium text-red-600 mb-2">오답이 많은 단원</h3>
+                {stats.mostWrong.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {stats.mostWrong.map(([name, s]) => (
+                      <div key={name} className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 truncate">{name}</span>
+                        <span className="text-xs font-semibold text-gray-600 shrink-0">{s.wrong}개</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">데이터가 없습니다.</p>
+                )}
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs text-[var(--gray-500)]">틀린 횟수</span>
-                <span className="text-xl font-semibold text-red-600">{stats.wrongCount}회</span>
+              <div className="pl-5 border-l border-gray-200">
+                <h3 className="text-xs font-medium text-yellow-600 mb-2">학습이 필요한 단원</h3>
+                {unstudiedChapters.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {unstudiedChapters.map((name) => (
+                      <div key={name}>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">{name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">모든 단원을 학습했습니다!</p>
+                )}
               </div>
             </div>
           </div>
-
-          {/* 난이도별 분포 */}
-          {Object.keys(stats.difficultyDistribution).length > 0 && (
-            <div>
-              <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">난이도별 분포</h2>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(stats.difficultyDistribution).map(([difficulty, count]) => (
-                  <div
-                    key={difficulty}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg"
-                  >
-                    <span className="text-sm text-[var(--foreground)]">{difficulty}</span>
-                    <span className="text-sm font-semibold text-[var(--gray-600)]">{count}개</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 단원별 분포 */}
-          {stats.sortedTags.length > 0 && (
-            <div>
-              <h2 className="text-sm font-medium text-[var(--foreground)] mb-3">단원별 분포</h2>
-              <div className="flex flex-wrap gap-2">
-                {stats.sortedTags.map(([tag, count]) => (
-                  <div
-                    key={tag}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg"
-                  >
-                    <span className="text-sm text-[var(--foreground)]">{tag}</span>
-                    <span className="text-sm font-semibold text-[var(--gray-600)]">{count}개</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -352,19 +434,10 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage }: ProblemA
                   </td>
                   <td className="p-4 align-middle">
                     {item.tags ? (
-                      <div className="flex flex-wrap gap-1">
-                        {item.tags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      '-'
-                    )}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
+                        {item.tags.join(' > ')}
+                      </span>
+                    ) : '-'}
                   </td>
                   <td className="p-4 align-middle text-center">
                     {item.solveCount}
