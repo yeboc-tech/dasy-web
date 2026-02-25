@@ -44,3 +44,5 @@ docs/
 .devcontainer/
 .claude
 .mcp.json.env
+
+scripts

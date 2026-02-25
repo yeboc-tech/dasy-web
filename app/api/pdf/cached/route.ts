@@ -10,18 +10,22 @@ const S3_BUCKET = 'cdn.y3c.kr';
 const S3_REGION = 'ap-northeast-2';
 const PDF_PATH = 'tongkidari/worksheets/pdf';
 
-// Initialize S3 client
-const s3 = new AWS.S3({
-  region: S3_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
+// Initialize S3 client (lazy to avoid build-time errors)
+function getS3() {
+  return new AWS.S3({
+    region: S3_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  });
+}
 
-// Create Supabase admin client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create Supabase admin client (lazy to avoid build-time errors)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 /**
  * Check if a cached PDF exists and is valid
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get worksheet updated_at
-    const { data: worksheet, error: wsError } = await supabaseAdmin
+    const { data: worksheet, error: wsError } = await getSupabaseAdmin()
       .from('worksheets')
       .select('updated_at')
       .eq('id', worksheetId)
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Look up cache entry
-    const { data: cacheEntry, error } = await supabaseAdmin
+    const { data: cacheEntry, error } = await getSupabaseAdmin()
       .from('worksheet_pdf_cache')
       .select('cdn_path, created_at')
       .eq('worksheet_id', worksheetId)
@@ -98,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify worksheet exists
-    const { data: worksheet, error: wsError } = await supabaseAdmin
+    const { data: worksheet, error: wsError } = await getSupabaseAdmin()
       .from('worksheets')
       .select('id')
       .eq('id', worksheetId)
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if already cached
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from('worksheet_pdf_cache')
       .select('id')
       .eq('worksheet_id', worksheetId)
@@ -122,7 +126,7 @@ export async function POST(request: NextRequest) {
     const cdnPath = `${PDF_PATH}/${worksheetId}.pdf`;
 
     // Upload to S3
-    await s3.putObject({
+    await getS3().putObject({
       Bucket: S3_BUCKET,
       Key: cdnPath,
       Body: pdfBuffer,
@@ -134,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       // Update existing entry
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('worksheet_pdf_cache')
         .update({
           cdn_path: cdnPath,
@@ -144,7 +148,7 @@ export async function POST(request: NextRequest) {
         .eq('id', existing.id);
     } else {
       // Create new cache entry
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('worksheet_pdf_cache')
         .insert({
           worksheet_id: worksheetId,
@@ -176,7 +180,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get cache entry
-    const { data: cacheEntry } = await supabaseAdmin
+    const { data: cacheEntry } = await getSupabaseAdmin()
       .from('worksheet_pdf_cache')
       .select('id, cdn_path')
       .eq('worksheet_id', worksheetId)
@@ -185,7 +189,7 @@ export async function DELETE(request: NextRequest) {
     if (cacheEntry) {
       // Delete from S3
       try {
-        await s3.deleteObject({
+        await getS3().deleteObject({
           Bucket: S3_BUCKET,
           Key: cacheEntry.cdn_path,
         }).promise();
@@ -194,7 +198,7 @@ export async function DELETE(request: NextRequest) {
       }
 
       // Delete from database
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('worksheet_pdf_cache')
         .delete()
         .eq('id', cacheEntry.id);
