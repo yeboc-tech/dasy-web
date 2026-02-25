@@ -451,22 +451,27 @@ export default function TaggedSubjectFilters({ subject, dialogFilters }: TaggedS
             </AccordionContent>
           </AccordionItem>
 
-          {/* 학년 Section - Only 고3 available for economy */}
+          {/* 학년 Section */}
           <AccordionItem value="grade" className="border-none">
             <AccordionTrigger className="hover:no-underline">
               <span>학년</span>
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={() => {
-                    setSelectedGrades(['고3']);
-                  }}
-                  variant="outline"
-                  className="h-auto rounded-md px-4 py-1.5 text-sm font-medium border-black text-black bg-gray-100"
-                >
-                  고3
-                </Button>
+                {['고3', '고2', '고1'].map((grade) => (
+                  <Button
+                    key={grade}
+                    onClick={() => handleGradeToggle(grade)}
+                    variant="outline"
+                    className={`h-auto rounded-md px-4 py-1.5 text-sm font-medium ${
+                      selectedGrades.includes(grade)
+                        ? 'border-black text-black bg-gray-100'
+                        : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {grade}
+                  </Button>
+                ))}
               </div>
             </AccordionContent>
           </AccordionItem>

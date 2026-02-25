@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label'
 import { CustomButton } from '@/components/custom-button'
 import { useAuth } from '@/lib/contexts/auth-context'
 import { createClient } from '@/lib/supabase/client'
+import { useUserAccountStore } from '@/lib/zustand/userAccountStore'
+import { RefreshCw } from 'lucide-react'
+import Avatar from 'boring-avatars'
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -65,6 +67,21 @@ export function AccountForm() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null)
+  const [nickname, setNickname] = useState('')
+  const [nicknameLoading, setNicknameLoading] = useState(false)
+  const [nicknameMessage, setNicknameMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const { profileJson, setProfileJson } = useUserAccountStore()
+
+  const handleRandomizeAvatar = async () => {
+    if (!user?.id) return
+    const randomName = Math.random().toString(36).substring(2, 10)
+    const newProfile = { ...profileJson, name: randomName }
+    setProfileJson(newProfile)
+    await supabase
+      .from('user_account')
+      .update({ profile_json: newProfile })
+      .eq('id', user.id)
+  }
 
   const {
     register,
@@ -80,6 +97,36 @@ export function AccountForm() {
       setValue('email', user.email)
     }
   }, [user, setValue])
+
+  useEffect(() => {
+    if (!user?.id) return
+    const fetchNickname = async () => {
+      const { data } = await supabase
+        .from('user_account')
+        .select('nickname')
+        .eq('id', user.id)
+        .single()
+      if (data?.nickname) setNickname(data.nickname)
+    }
+    fetchNickname()
+  }, [user?.id, supabase])
+
+  const handleNicknameSave = async () => {
+    if (!user?.id) return
+    setNicknameLoading(true)
+    setNicknameMessage(null)
+    const { error } = await supabase
+      .from('user_account')
+      .update({ nickname })
+      .eq('id', user.id)
+    setNicknameLoading(false)
+    if (error) {
+      setNicknameMessage({ type: 'error', text: '닉네임 저장 중 오류가 발생했습니다' })
+    } else {
+      useUserAccountStore.getState().setNickname(nickname)
+      setNicknameMessage({ type: 'success', text: '닉네임이 저장되었습니다' })
+    }
+  }
 
   const onSubmit = async (data: AccountFormData) => {
     // If no password change requested, do nothing
@@ -132,6 +179,29 @@ export function AccountForm() {
 
   return (
     <div>
+      {/* Profile Image Section */}
+      <div className="px-4 pb-4">
+        <h2 className="text-sm font-medium text-black pt-4 mb-4">프로필 이미지</h2>
+        <div className="flex items-center gap-3">
+          <Avatar
+            name={profileJson.name}
+            variant={profileJson.variant as "pixel" | "bauhaus" | "ring" | "beam" | "sunset" | "marble" | "geometric" | "abstract"}
+            size={64}
+            colors={profileJson.colors}
+          />
+          <button
+            type="button"
+            onClick={handleRandomizeAvatar}
+            className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[var(--border)]" />
+
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Account Information Section */}
         <div className="px-4 pb-4">
@@ -158,6 +228,43 @@ export function AccountForm() {
         {/* Divider */}
         <div className="border-t border-[var(--border)]" />
 
+        {/* Nickname Section */}
+        <div className="px-4 pb-4">
+          <h2 className="text-sm font-medium text-black pt-4 mb-4">닉네임</h2>
+          <div className="space-y-4 max-w-md">
+            <div className="space-y-3">
+              <Label htmlFor="nickname" className="text-xs font-medium text-black">
+                닉네임
+              </Label>
+              <Input
+                id="nickname"
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                placeholder="닉네임을 입력해주세요"
+                className="focus-visible:ring-0 border-gray-300"
+              />
+            </div>
+            {nicknameMessage && (
+              <div className={`text-xs ${nicknameMessage.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {nicknameMessage.text}
+              </div>
+            )}
+            <CustomButton
+              type="button"
+              disabled={nicknameLoading}
+              variant="outline"
+              size="sm"
+              onClick={handleNicknameSave}
+            >
+              {nicknameLoading ? '저장 중...' : '닉네임 저장'}
+            </CustomButton>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-[var(--border)]" />
+
         {/* Password Change Section */}
         <div className="px-4 pb-4">
           <h2 className="text-sm font-medium text-black pt-4 mb-4">비밀번호 변경</h2>
@@ -169,6 +276,7 @@ export function AccountForm() {
               <Input
                 id="currentPassword"
                 type="password"
+                autoComplete="current-password"
                 {...register('currentPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />
@@ -184,6 +292,7 @@ export function AccountForm() {
               <Input
                 id="newPassword"
                 type="password"
+                autoComplete="new-password"
                 {...register('newPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />
@@ -199,6 +308,7 @@ export function AccountForm() {
               <Input
                 id="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 {...register('confirmPassword')}
                 className="focus-visible:ring-0 border-gray-300"
               />

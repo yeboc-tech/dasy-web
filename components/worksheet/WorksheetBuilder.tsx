@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { CornerDownLeft, ChevronLeft, Loader, RefreshCw } from 'lucide-react';
 import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, preloadPdfMake, warmupPdfWorker, getCachedLogoBase64, getCachedQrBase64, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
+import { checkPdfCache, uploadPdfToCache } from '@/lib/pdf/pdfCache';
+import { getCdnUrl } from '@/lib/utils/s3Utils';
 import PDFViewer from '@/components/pdf/PDFViewer';
 import { OMRSheet } from '@/components/solve/OMRSheet';
 import dynamic from 'next/dynamic';
@@ -60,9 +62,10 @@ interface WorksheetBuilderProps {
   worksheetId?: string;
   autoPdf?: boolean;
   solveId?: string;
+  initialSolveMode?: boolean;
 }
 
-export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: WorksheetBuilderProps) {
+export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initialSolveMode }: WorksheetBuilderProps) {
   const router = useRouter();
   const {
     selectedChapters,
@@ -95,6 +98,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
   const [viewMode, setViewMode] = useState<'worksheet' | 'addProblems' | 'pdfGeneration' | 'solve'>(autoPdf ? 'pdfGeneration' : 'addProblems');
   const [pdfProgress, setPdfProgress] = useState<{ stage: string; percent: number }>(autoPdf ? { stage: '준비 중...', percent: 0 } : { stage: '', percent: 0 });
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfCached, setPdfCached] = useState<boolean | null>(null); // null = not checked, true = cached, false = not cached
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfElapsedTime, setPdfElapsedTime] = useState(0);
   const pdfElapsedTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -199,9 +203,26 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     getCachedQrBase64().catch(() => {});
   }, []);
 
+  // Check if PDF is cached when worksheet loads
+  useEffect(() => {
+    if (!worksheetId) {
+      setPdfCached(false);
+      return;
+    }
+
+    checkPdfCache(worksheetId).then((result) => {
+      setPdfCached(result.cached);
+    }).catch(() => {
+      setPdfCached(false);
+    });
+  }, [worksheetId]);
+
   // Prefetch problem/answer images when worksheet loads for faster PDF generation
+  // Skip if PDF is already cached (no need to load images)
   useEffect(() => {
     if (worksheetProblems.length === 0) return;
+    if (pdfCached === null) return; // Wait for cache check
+    if (pdfCached === true) return; // Skip prefetch if cached
 
     // Prefetch all images via image-proxy to warm up browser cache
     const prefetchImage = (url: string) => {
@@ -222,7 +243,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       const answerUrl = editedContentsMap?.get(answerId) || getAnswerImageUrl(p.id);
       prefetchImage(answerUrl);
     });
-  }, [worksheetProblems, editedContentsMap]);
+  }, [worksheetProblems, editedContentsMap, pdfCached]);
 
   // Set default sorting to 연습 preset for new worksheets
   // Track the last mode for which sorting was initialized
@@ -404,6 +425,21 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       return () => clearTimeout(timer);
     }
   }, [autoPdf, worksheetLoading, worksheetProblems.length]);
+
+  // Track if initialSolveMode has been triggered to prevent re-triggering
+  const initialSolveModeTriggeredRef = useRef(false);
+
+  // Auto-enter solve mode when initialSolveMode is true and worksheet is loaded
+  useEffect(() => {
+    if (initialSolveMode && !worksheetLoading && worksheetProblems.length > 0 && !initialSolveModeTriggeredRef.current) {
+      initialSolveModeTriggeredRef.current = true;
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        handleEnterSolveMode();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [initialSolveMode, worksheetLoading, worksheetProblems.length]);
 
   // Load solve data when solveId is provided (from clicking solve history)
   const solveLoadedRef = useRef(false);
@@ -1601,8 +1637,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
       if (thumbnailPath) {
         try {
           // Download original thumbnail from CDN
-          const { getCdnUrl } = await import('@/lib/utils/s3Utils');
-          const thumbnailUrl = getCdnUrl(thumbnailPath);
+          const { ImageUrlResolver } = await import('@/lib/entity/ImageUrlResolver');
+          const thumbnailUrl = ImageUrlResolver.resolve(thumbnailPath)!;
           const response = await fetch(thumbnailUrl);
 
           if (response.ok) {
@@ -1662,6 +1698,23 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
     }, 100);
 
     try {
+      // Check cache first (only if worksheet is saved)
+      if (worksheetId) {
+        setPdfProgress({ stage: '캐시 확인 중...', percent: 5 });
+        const cacheResult = await checkPdfCache(worksheetId);
+
+        if (cacheResult.cached && cacheResult.cdnPath) {
+          const cachedUrl = getCdnUrl(cacheResult.cdnPath);
+          setPdfUrl(cachedUrl);
+          setPdfProgress({ stage: '캐시에서 로드 완료!', percent: 100 });
+
+          if (pdfElapsedTimerRef.current) {
+            clearInterval(pdfElapsedTimerRef.current);
+            pdfElapsedTimerRef.current = null;
+          }
+          return;
+        }
+      }
       const problemImageUrls = worksheetProblems.map(p => {
         const editedUrl = editedContentsMap?.get(p.id);
         return editedUrl || getProblemImageUrl(p.id);
@@ -1772,6 +1825,22 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId }: Work
 
       const blob = await generatePdfWithWorker(docDefinition, () => {});
       clearInterval(pdfGenInterval);
+
+      // Upload to cache if worksheet is saved (background, don't block)
+      if (worksheetId) {
+        setPdfProgress({ stage: '캐시 업로드 중...', percent: 96 });
+        uploadPdfToCache(worksheetId, blob)
+          .then((result) => {
+            if (result.success && result.cdnPath) {
+              const cdnUrl = getCdnUrl(result.cdnPath);
+              setPdfUrl(cdnUrl);
+              setPdfCached(true);
+            }
+          })
+          .catch(() => {
+            // Keep using blob URL on failure
+          });
+      }
 
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);

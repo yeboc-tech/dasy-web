@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+.*/
+
 # dependencies
 /node_modules
 /.pnp
@@ -36,3 +38,9 @@ next-env.d.ts
 # Google Cloud credentials
 public/dasy-472223-a4d004db3ad5.json
 .env.local
+
+data/
+docs/
+.devcontainer/
+.claude
+.mcp.json.env

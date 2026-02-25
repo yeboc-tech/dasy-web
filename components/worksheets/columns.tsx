@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Globe, Lock, MoreHorizontal, Trash2, FileSearch, ClipboardList } from "lucide-react"
 import Image from "next/image"
-import { getCdnUrl } from "@/lib/utils/s3Utils"
+import { ImageUrlResolver } from "@/lib/entity/ImageUrlResolver"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +46,7 @@ export const createPublicWorksheetsColumns = (
           style={{ width: THUMBNAIL_WIDTH, height: THUMBNAIL_HEIGHT }}
         >
           <Image
-            src={getCdnUrl(thumbnailPath)}
+            src={ImageUrlResolver.resolve(thumbnailPath)!}
             alt="썸네일"
             fill
             className="object-cover"
@@ -132,7 +132,7 @@ export const createMyWorksheetsColumns = (
           style={{ width: THUMBNAIL_WIDTH, height: THUMBNAIL_HEIGHT }}
         >
           <Image
-            src={getCdnUrl(thumbnailPath)}
+            src={ImageUrlResolver.resolve(thumbnailPath)!}
             alt="썸네일"
             fill
             className="object-cover"

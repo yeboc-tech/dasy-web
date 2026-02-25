@@ -1,7 +1,5 @@
-'use client';
-
-import WorksheetBuilder from '@/components/worksheet/WorksheetBuilder';
+import { MyDashboardPage } from './my/dashboard/MyDashboardPage';
 
 export default function HomePage() {
-  return <WorksheetBuilder />;
+  return <MyDashboardPage />;
 }

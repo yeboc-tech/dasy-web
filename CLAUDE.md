@@ -1,0 +1,49 @@
+# 프로젝트 문서
+
+## 코드 컨벤션
+
+### 페이지 컴포넌트 분리
+- `page.tsx`는 라우팅 진입점으로만 사용하고, 실제 UI 로직은 별도 컴포넌트로 분리한다
+- 파일명: `{PageName}Page.tsx` (PascalCase)
+- `page.tsx`에서는 해당 컴포넌트를 import하여 re-export만 수행
+- 예시:
+  ```
+  app/(app)/worksheet-group/
+  ├── page.tsx                    ← re-export만
+  ├── WorksheetGroupPage.tsx      ← 실제 UI 로직
+  ```
+
+## 과목 관리
+
+### 기준: `lib/ssot/SUBJECTS.ts` → `lib/utils/subjectUtils.ts`
+- 과목 데이터 원본: `lib/ssot/SUBJECTS.ts` (SSOT)
+- 과목 유틸 함수: `lib/utils/subjectUtils.ts` (SSOT를 import하여 사용)
+- DB `subjects` 테이블은 사용하지 않음
+- id: "경제", "사회문화", "생활과윤리" 등 (띄어쓰기/특문 없음) → `accuracy_rate` problem_id 접두사와 일치
+- label: "경제", "사회·문화", "생활과 윤리" 등 (표시용)
+
+### 수능 연도별 과목 필터링
+- **2026학년도**: 기존 9개 과목 (경제, 동아시아사, 사회문화, 생활과윤리, 세계사, 세계지리, 윤리와사상, 정치와법, 한국지리)
+- **2027학년도 이후**: 통합사회 1, 통합사회 2만 선택 가능
+- 유틸 함수: `isAvailableSubject()`, `getSubjectsByYear()` 참고
+
+## 문제 데이터
+
+### accuracy_rate 테이블
+- problem_id 형식: `{과목}_{학년}_{년도}_{월}_{시험유형}_{번호}_문제`
+- 예: `경제_고3_2025_09_모평_1_문제`
+- 컬럼: problem_id, correct_answer, difficulty, score, accuracy_rate
+
+### 유효한 시험유형 (월_시험유형)
+- **고1**: 03_학평, 06_학평, 09_학평, 10_학평
+- **고2**: 03_학평, 06_학평, 09_학평, 10_학평
+- **고3**: 03_학평, 04_학평, 06_모평, 07_학평, 09_모평, 10_학평, 11_수능
+
+### 데이터 범위
+- **고1**: 2018-2025 (통합사회만), 2025년 06/09/10_학평은 25문제
+- **고2**: 2016-2025 (9개 과목), 경제만 2013-2015 추가 데이터 있음 (정리 필요)
+- **고3**: 2016-2025 (9개 과목 + 법과정치→정치와법 통합 필요)
+
+### 풀이 기록
+- `user_problem_solve_record` 테이블: 오늘의 문제, 오답복습, 다시풀기 기록
+- `solves` 테이블: 학습지 기반 풀이 기록 (JSONB)

@@ -22,10 +22,13 @@ const signupSchema = z.object({
 
 type SignupFormData = z.infer<typeof signupSchema>
 
+type UserType = 'STUDENT' | 'TEACHER'
+
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [userType, setUserType] = useState<UserType>('STUDENT')
   const { signUp } = useAuthActions()
 
   const {
@@ -41,7 +44,7 @@ export function SignupForm() {
     setError(null)
 
     try {
-      await signUp(data.email, data.password)
+      await signUp(data.email, data.password, userType)
       setSuccess(true)
     } catch (err) {
       setError((err as Error).message || '회원가입 중 오류가 발생했습니다')
@@ -112,6 +115,34 @@ export function SignupForm() {
           {errors.confirmPassword && (
             <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
           )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>사용자 유형</Label>
+          <div className="flex rounded-md border border-input overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setUserType('STUDENT')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                userType === 'STUDENT'
+                  ? 'bg-black text-white'
+                  : 'bg-white text-muted-foreground hover:bg-gray-50'
+              }`}
+            >
+              학생
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserType('TEACHER')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors border-l border-input ${
+                userType === 'TEACHER'
+                  ? 'bg-black text-white'
+                  : 'bg-white text-muted-foreground hover:bg-gray-50'
+              }`}
+            >
+              선생님
+            </button>
+          </div>
         </div>
 
         {error && (
