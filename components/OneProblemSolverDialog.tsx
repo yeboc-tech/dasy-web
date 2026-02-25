@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GradingAnimation } from '@/components/GradingAnimation';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { TodayProblem } from '@/lib/api/SupabaseRpc';
+import { RecommendedProblem } from '@/lib/service/OneProblemRecommender';
 import { createClient } from '@/lib/supabase/client';
 
 export type ProblemMode = 'today' | 'review' | 'resolve';
@@ -17,7 +17,7 @@ interface OneProblemSolverDialogProps {
   title: string;
   // 문제 로딩 함수 (과목 필터 옵션 지원)
   fetchProblem: (subjectFilter?: string) => Promise<{
-    data: TodayProblem | null;
+    data: RecommendedProblem | null;
     error: Error | null;
   }>;
   // 오늘 하루 보지 않기 옵션 표시 여부
@@ -41,7 +41,7 @@ export function OneProblemSolverDialog({
 
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hideToday, setHideToday] = useState(false);
-  const [problem, setProblem] = useState<TodayProblem | null>(null);
+  const [problem, setProblem] = useState<RecommendedProblem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);

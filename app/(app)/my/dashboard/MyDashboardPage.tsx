@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb } from 'lucide-react';
-import { TodayProblemDialog } from '@/components/TodayProblemDialog';
+import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
+import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { createClient } from '@/lib/supabase/client';
@@ -20,12 +21,14 @@ import { EXAM_DATA_YEAR_RANGE } from '@/lib/constants/examConstants';
 
 export function MyDashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const { interestSubjectIds, fetchSettings } = useUserAppSettingStore();
+  const { interestSubjectIds, problemRange, fetchSettings } = useUserAppSettingStore();
   const [selectedTurn, setSelectedTurn] = useState(1);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<DashboardStatistics | null>(null);
-  const [showTodayProblem, setShowTodayProblem] = useState(false);
+  const [chapterDialogOpen, setChapterDialogOpen] = useState(false);
+  const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
+  const [chapterYearRange, setChapterYearRange] = useState<'recent3' | 'recent5' | 'total'>(problemRange);
   const [chapterTree, setChapterTree] = useState<SsotChapterTree | null>(null);
   const [chapterCounts, setChapterCounts] = useState<Record<string, ChapterCountEntry> | null>(null);
   const [problemTagMap, setProblemTagMap] = useState<Map<string, string>>(new Map());
@@ -35,6 +38,11 @@ export function MyDashboardPage() {
       fetchSettings(user.id);
     }
   }, [user, authLoading, fetchSettings]);
+
+  // 설정 로드 후 chapterYearRange 동기화
+  useEffect(() => {
+    setChapterYearRange(problemRange);
+  }, [problemRange]);
 
   // 풀이 기록 + accuracy_rate 조인 데이터 fetch
   useEffect(() => {
@@ -180,8 +188,8 @@ export function MyDashboardPage() {
   // 대단원별 학습 진행 현황 (실제 데이터)
   const chapterProgressList = useMemo<ChapterProgress[]>(() => {
     if (!stats || !selectedSubject || !chapterTree || !chapterCounts) return [];
-    return stats.getChapterProgress(selectedSubject, chapterTree, chapterCounts, problemTagMap);
-  }, [stats, selectedSubject, chapterTree, chapterCounts, problemTagMap]);
+    return stats.getChapterProgress(selectedSubject, chapterTree, chapterCounts, problemTagMap, chapterYearRange);
+  }, [stats, selectedSubject, chapterTree, chapterCounts, problemTagMap, chapterYearRange]);
 
   // 학습 분석 코멘트 (실제 데이터 기반 자동 생성)
   const chapterComment = useMemo(() => {
@@ -211,6 +219,34 @@ export function MyDashboardPage() {
 
     return comment;
   }, [chapterProgressList]);
+
+  const { currentGrade } = useUserAppSettingStore();
+
+  // 단원별 플래시카드: fetchByChapter 호출
+  const handleChapterFetchProblem = useCallback(async () => {
+    if (!selectedSubject || !selectedChapterId) {
+      return { data: null, error: new Error('과목 또는 단원이 선택되지 않았습니다.') };
+    }
+    return OneProblemRecommender.fetchByChapter({
+      subjectId: selectedSubject,
+      chapterId: selectedChapterId,
+      currentGrade,
+      problemRange: chapterYearRange,
+    });
+  }, [selectedSubject, selectedChapterId, currentGrade, chapterYearRange]);
+
+  const getChapterSessionId = useCallback(() => {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `chapter-${yy}${mm}${dd}`;
+  }, []);
+
+  const handleChapterFlashCard = (chapterId: string) => {
+    setSelectedChapterId(chapterId);
+    setChapterDialogOpen(true);
+  };
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -374,9 +410,35 @@ export function MyDashboardPage() {
 
         {/* 단원별 기출 학습 현황 */}
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="w-5 h-5 text-[#FF00A1]" />
-            <h2 className="text-sm font-semibold text-[var(--foreground)]">단원별 기출 학습 현황</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[#FF00A1]" />
+              <h2 className="text-sm font-semibold text-[var(--foreground)]">단원별 기출 학습 현황</h2>
+            </div>
+            <div className="flex">
+              {([
+                { value: 'recent3', label: '3개년' },
+                { value: 'recent5', label: '5개년' },
+                { value: 'total', label: '전체' },
+              ] as const).map(({ value, label }, i) => (
+                <button
+                  key={value}
+                  onClick={() => setChapterYearRange(value)}
+                  className={`
+                    px-2.5 py-1 text-xs font-medium transition-colors border border-gray-200
+                    ${i === 0 ? 'rounded-l-lg' : ''}
+                    ${i === 2 ? 'rounded-r-lg' : ''}
+                    ${i > 0 ? '-ml-px' : ''}
+                    ${chapterYearRange === value
+                      ? 'bg-[#FF00A1] text-white border-[#FF00A1] z-10 relative'
+                      : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {selectedSubject ? (
@@ -396,11 +458,11 @@ export function MyDashboardPage() {
                         <div className="flex items-center gap-1 truncate flex-1 mr-2">
                           <span className="text-gray-700 truncate">{item.chapter}</span>
                           <button
-                            onClick={() => setShowTodayProblem(true)}
+                            onClick={() => handleChapterFlashCard(item.chapterId)}
                             className="shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
-                            title="오늘의 문제"
+                            title="단원별 문제 풀기"
                           >
-                            <Image src="/images/flash-card.png" alt="오늘의 문제" width={14} height={14} />
+                            <Image src="/images/flash-card.png" alt="단원별 문제 풀기" width={14} height={14} />
                           </button>
                         </div>
                         <span className="text-gray-500 whitespace-nowrap">
@@ -503,7 +565,14 @@ export function MyDashboardPage() {
         </div>
       </div>
 
-      <TodayProblemDialog open={showTodayProblem} onOpenChange={setShowTodayProblem} />
+      <OneProblemSolverDialog
+        open={chapterDialogOpen}
+        onOpenChange={setChapterDialogOpen}
+        mode="today"
+        title="단원별 문제 풀기"
+        fetchProblem={handleChapterFetchProblem}
+        getSessionId={getChapterSessionId}
+      />
     </div>
   );
 }

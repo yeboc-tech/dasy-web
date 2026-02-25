@@ -6,7 +6,8 @@ import { Loader } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
-import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject, fetchProblemById } from '@/lib/api/SupabaseRpc';
+import { getMyProblemAnalysis, ProblemAnalysis, ProblemAnalysisBySubject } from '@/lib/api/SupabaseRpc';
+import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
 import { useSelectedSubjectStore } from '@/lib/zustand/selectedSubjectStore';
 import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { HelpTooltip } from '@/components/HelpTooltip';
@@ -176,7 +177,7 @@ export function ProblemAnalysisTable({ title, filterFn, emptyMessage, showReport
 
   const fetchResolveProblem = useCallback(async () => {
     if (!resolveProblemId) return { data: null, error: new Error('문제 ID가 없습니다.') };
-    return fetchProblemById(resolveProblemId);
+    return OneProblemRecommender.fetchProblemById(resolveProblemId);
   }, [resolveProblemId]);
 
   const resolveSessionId = useCallback(() => {

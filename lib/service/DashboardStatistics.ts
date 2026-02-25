@@ -156,11 +156,24 @@ export class DashboardStatistics {
     chapterTree: SsotChapterTree,
     chapterCounts: Record<string, ChapterCountEntry>,
     problemTagMap: Map<string, string>,
+    yearRange: 'recent3' | 'recent5' | 'total' = 'total',
   ): ChapterProgress[] {
-    // 과목별 레코드만 필터
-    const subjectRecords = this.records.filter(
-      (r) => this.parseProblemId(r.problemId).subject === subject,
-    );
+    // 연도 범위 계산
+    const currentYear = new Date().getFullYear();
+    let minYear = 0;
+    if (yearRange === 'recent3') {
+      minYear = currentYear - 2;
+    } else if (yearRange === 'recent5') {
+      minYear = currentYear - 4;
+    }
+
+    // 과목별 레코드만 필터 (+ 연도 범위)
+    const subjectRecords = this.records.filter((r) => {
+      const parsed = this.parseProblemId(r.problemId);
+      if (parsed.subject !== subject) return false;
+      if (minYear > 0 && parsed.year < minYear) return false;
+      return true;
+    });
 
     // 문제별 최신 풀이 결과 (정답 여부)
     const latestByProblem = new Map<string, { correct: boolean }>();
@@ -188,12 +201,12 @@ export class DashboardStatistics {
         subChapterIds.push(majorChapter.id);
       }
 
-      // total: SSOT 중단원 카운트 합산
+      // total: SSOT 중단원 카운트 합산 (연도 범위에 따라 다른 필드 사용)
       let total = 0;
       for (const subId of subChapterIds) {
         const count = chapterCounts[subId];
         if (count) {
-          total += count.total;
+          total += count[yearRange === 'recent3' ? 'recent3' : yearRange === 'recent5' ? 'recent5' : 'total'];
         }
       }
 

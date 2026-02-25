@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
-import { fetchWrongAnswerProblem } from '@/lib/api/SupabaseRpc';
+import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
 
 interface WrongAnswerReviewDialogProps {
   open: boolean;
@@ -12,7 +12,7 @@ interface WrongAnswerReviewDialogProps {
 export function WrongAnswerReviewDialog({ open, onOpenChange }: WrongAnswerReviewDialogProps) {
   // 오답 문제 가져오기 함수
   const handleFetchProblem = useCallback(async (subjectFilter?: string) => {
-    return await fetchWrongAnswerProblem({
+    return await OneProblemRecommender.fetchWrongAnswerProblem({
       subjectFilter,
     });
   }, []);

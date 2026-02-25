@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { useAuth } from '@/lib/contexts/auth-context';
-import { fetchTodayProblem } from '@/lib/api/SupabaseRpc';
+import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
 
 interface TodayProblemDialogProps {
   open: boolean;
@@ -38,7 +38,7 @@ export function TodayProblemDialog({ open, onOpenChange }: TodayProblemDialogPro
       return { data: null, error: new Error('앱 설정에서 학습 과목을 선택해주세요.') };
     }
 
-    return await fetchTodayProblem({
+    return await OneProblemRecommender.fetchTodayProblem({
       // 과목 필터가 있으면 해당 과목만, 없으면 전체 관심 과목
       interestSubjectIds: subjectFilter ? [subjectFilter] : interestSubjectIds,
       problemRange,
