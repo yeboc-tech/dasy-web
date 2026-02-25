@@ -157,7 +157,7 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/worksheet-group')}
+          onClick={() => router.back()}
           className="flex items-center gap-1 -ml-2"
         >
           <ArrowLeft className="w-4 h-4" />

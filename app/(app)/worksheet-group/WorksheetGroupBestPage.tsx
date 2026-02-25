@@ -4,20 +4,26 @@ import { useState, useEffect } from 'react';
 import { Loader } from 'lucide-react';
 import { fetchWorksheetGroups } from '@/lib/api/worksheetGroup';
 import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { getSubjectIdsByYear } from '@/lib/utils/subjectUtils';
 
 export function WorksheetGroupBestPage() {
   const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { interestSubjectIds, targetSuneungYear } = useUserAppSettingStore();
 
   useEffect(() => {
-    fetchWorksheetGroups({ isBest: true }).then(groups => {
+    const filterSubjects = interestSubjectIds.length > 0
+      ? interestSubjectIds
+      : getSubjectIdsByYear(targetSuneungYear);
+    fetchWorksheetGroups({ isBest: true, subjects: filterSubjects }).then(groups => {
       setItems(groups.map(g => ({
         ...g,
         subjects: [...new Set(g.worksheets.flatMap(w => w.subject_ids))],
       })));
       setLoading(false);
     });
-  }, []);
+  }, [interestSubjectIds, targetSuneungYear]);
 
   if (loading) {
     return (

@@ -35,7 +35,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '전체 학습지', href: '/worksheet-group/all', icon: <List className="w-4 h-4" /> },
       { label: '즐겨찾는 학습지', href: '/worksheet-group/favorites', icon: <Star className="w-4 h-4" /> },
-      { label: '베스트', href: '/worksheet-group', icon: <ThumbsUp className="w-4 h-4" /> },
+      { label: '베스트', href: '/worksheet-group/best', icon: <ThumbsUp className="w-4 h-4" /> },
       { label: '단원별 학습지', href: '/worksheet-group/by-chapter', icon: <BookOpen className="w-4 h-4" /> },
       { label: '난이도별 학습지', href: '/worksheet-group/by-difficulty', icon: <BookOpen className="w-4 h-4" /> },
       {

@@ -6,12 +6,15 @@ import { Loader } from 'lucide-react';
 import { fetchWorksheetGroups } from '@/lib/api/worksheetGroup';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { WorksheetGroupListItem, WorksheetGroupItem } from '@/components/worksheet-group/worksheet-group-list-item';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
+import { getSubjectIdsByYear } from '@/lib/utils/subjectUtils';
 
 export function WorksheetGroupFavoritesPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<WorksheetGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { interestSubjectIds, targetSuneungYear } = useUserAppSettingStore();
 
   useEffect(() => {
     if (authLoading) return;
@@ -20,14 +23,17 @@ export function WorksheetGroupFavoritesPage() {
       return;
     }
 
-    fetchWorksheetGroups({ userId: user.id }).then(groups => {
+    const filterSubjects = interestSubjectIds.length > 0
+      ? interestSubjectIds
+      : getSubjectIdsByYear(targetSuneungYear);
+    fetchWorksheetGroups({ userId: user.id, subjects: filterSubjects }).then(groups => {
       setItems(groups.map(g => ({
         ...g,
         subjects: [...new Set(g.worksheets.flatMap(w => w.subject_ids))],
       })));
       setLoading(false);
     });
-  }, [user, authLoading]);
+  }, [user, authLoading, interestSubjectIds, targetSuneungYear]);
 
   if (authLoading || loading) {
     return (

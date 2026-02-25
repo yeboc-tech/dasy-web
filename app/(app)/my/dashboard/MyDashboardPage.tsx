@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb } from 'lucide-react';
+import { TodayProblemDialog } from '@/components/TodayProblemDialog';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { createClient } from '@/lib/supabase/client';
@@ -23,6 +25,7 @@ export function MyDashboardPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<DashboardStatistics | null>(null);
+  const [showTodayProblem, setShowTodayProblem] = useState(false);
   const [chapterTree, setChapterTree] = useState<SsotChapterTree | null>(null);
   const [chapterCounts, setChapterCounts] = useState<Record<string, ChapterCountEntry> | null>(null);
   const [problemTagMap, setProblemTagMap] = useState<Map<string, string>>(new Map());
@@ -390,7 +393,16 @@ export function MyDashboardPage() {
                   return (
                     <div key={item.chapterId} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-700 truncate flex-1 mr-2">{item.chapter}</span>
+                        <div className="flex items-center gap-1 truncate flex-1 mr-2">
+                          <span className="text-gray-700 truncate">{item.chapter}</span>
+                          <button
+                            onClick={() => setShowTodayProblem(true)}
+                            className="shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
+                            title="오늘의 문제"
+                          >
+                            <Image src="/images/flash-card.png" alt="오늘의 문제" width={14} height={14} />
+                          </button>
+                        </div>
                         <span className="text-gray-500 whitespace-nowrap">
                           {item.solved}/{item.total} · 정답률 {item.accuracy}%
                         </span>
@@ -490,6 +502,8 @@ export function MyDashboardPage() {
           */}
         </div>
       </div>
+
+      <TodayProblemDialog open={showTodayProblem} onOpenChange={setShowTodayProblem} />
     </div>
   );
 }
