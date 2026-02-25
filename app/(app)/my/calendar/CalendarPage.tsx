@@ -5,6 +5,32 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { createClient } from '@/lib/supabase/client';
 
+function TallyMarks({ count }: { count: number }) {
+  const groups = Math.floor(count / 5);
+  const remainder = count % 5;
+
+  return (
+    <div className="flex flex-wrap gap-1 justify-center px-0.5">
+      {Array.from({ length: groups }, (_, g) => (
+        <svg key={`g${g}`} width="16" height="12" viewBox="0 0 16 12">
+          <line x1="2" y1="0" x2="2" y2="12" stroke="#FF00A1" strokeWidth="1.5" />
+          <line x1="5.5" y1="0" x2="5.5" y2="12" stroke="#FF00A1" strokeWidth="1.5" />
+          <line x1="9" y1="0" x2="9" y2="12" stroke="#FF00A1" strokeWidth="1.5" />
+          <line x1="12.5" y1="0" x2="12.5" y2="12" stroke="#FF00A1" strokeWidth="1.5" />
+          <line x1="0" y1="10" x2="14.5" y2="2" stroke="#FF00A1" strokeWidth="1.5" />
+        </svg>
+      ))}
+      {remainder > 0 && (
+        <svg width={remainder * 3.5} height="12" viewBox={`0 0 ${remainder * 3.5} 12`}>
+          {Array.from({ length: remainder }, (_, i) => (
+            <line key={i} x1={i * 3.5 + 1} y1="0" x2={i * 3.5 + 1} y2="12" stroke="#FF00A1" strokeWidth="1.5" />
+          ))}
+        </svg>
+      )}
+    </div>
+  );
+}
+
 export function CalendarPage() {
   const { user } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -110,40 +136,6 @@ export function CalendarPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* 전체 요약 */}
-        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <h2 className="text-sm font-semibold text-[var(--foreground)] mb-3">
-            전체 요약
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalStats.solved}</p>
-              <p className="text-xs text-gray-500 mt-1">풀이한 문제 수</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalStats.days}</p>
-              <p className="text-xs text-gray-500 mt-1">학습한 일수</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 월간 요약 */}
-        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
-          <h2 className="text-sm font-semibold text-[var(--foreground)] mb-3">
-            {month + 1}월 요약
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-[var(--foreground)]">{totalSolved}</p>
-              <p className="text-xs text-gray-500 mt-1">풀이한 문제 수</p>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold text-[var(--foreground)]">{activeDays}</p>
-              <p className="text-xs text-gray-500 mt-1">학습한 일수</p>
-            </div>
-          </div>
-        </div>
-
         {/* 월 네비게이션 */}
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
           <div className="flex items-center justify-between mb-4">
@@ -215,11 +207,7 @@ export function CalendarPage() {
                     {day}
                   </span>
                   {count > 0 ? (
-                    <div className="grid grid-cols-5 gap-[1px] px-0.5 overflow-hidden flex-1 place-items-center content-start">
-                      {Array.from({ length: count }, (_, i) => (
-                        <span key={i} className="w-[8px] h-[8px] rounded-full shrink-0" style={{ background: 'radial-gradient(circle at 35% 35%, #FFB3D9, #FF80BF)' }} />
-                      ))}
-                    </div>
+                    <TallyMarks count={count} />
                   ) : (
                     <span className={`text-xs font-semibold ${
                       isPast ? 'text-red-300' : 'text-gray-300'
@@ -230,6 +218,40 @@ export function CalendarPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* 월간 요약 */}
+        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
+          <h2 className="text-sm font-semibold text-[var(--foreground)] mb-3">
+            {month + 1}월 요약
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{totalSolved}</p>
+              <p className="text-xs text-gray-500 mt-1">풀이한 문제 수</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{activeDays}</p>
+              <p className="text-xs text-gray-500 mt-1">학습한 일수</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 전체 요약 */}
+        <div className="bg-white rounded-lg border border-[var(--border)] p-4">
+          <h2 className="text-sm font-semibold text-[var(--foreground)] mb-3">
+            전체 요약
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{totalStats.solved}</p>
+              <p className="text-xs text-gray-500 mt-1">풀이한 문제 수</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{totalStats.days}</p>
+              <p className="text-xs text-gray-500 mt-1">학습한 일수</p>
+            </div>
           </div>
         </div>
 

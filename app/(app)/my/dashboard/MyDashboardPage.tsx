@@ -71,23 +71,25 @@ export function MyDashboardPage() {
     fetchSolveRecords();
   }, [user]);
 
-  // 주간 캘린더용 (stats에서 파생)
+  // 주간 캘린더용 (선택 과목 기준)
   useEffect(() => {
-    if (!stats) return;
+    if (!stats || !selectedSubject) return;
     const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(today.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
     const counts: Record<string, number> = {};
-    stats.getRecords().forEach(r => {
-      const date = r.createdAt.slice(0, 10);
-      if (date >= sevenDaysAgo.toISOString().slice(0, 10)) {
-        counts[date] = (counts[date] || 0) + 1;
-      }
-    });
+    stats.getRecords()
+      .filter(r => r.problemId.split('_')[0] === selectedSubject)
+      .forEach(r => {
+        const date = r.createdAt.slice(0, 10);
+        if (date >= sevenDaysAgo.toISOString().slice(0, 10)) {
+          counts[date] = (counts[date] || 0) + 1;
+        }
+      });
     setWeeklyCounts(counts);
-  }, [stats]);
+  }, [stats, selectedSubject]);
 
   useEffect(() => {
     if (interestSubjectIds.length > 0 && !selectedSubject) {

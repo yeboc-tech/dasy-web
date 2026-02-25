@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from '@/lib/contexts/auth-context';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import {
   Select,
   SelectContent,
@@ -32,6 +34,12 @@ function getThumbnailPath(exam: Exam): string {
 export function SuneungPage() {
   const router = useRouter();
   const [selectedYear, setSelectedYear] = useState<string>('all');
+  const { user } = useAuth();
+  const { interestSubjectIds, fetchSettings } = useUserAppSettingStore();
+
+  useEffect(() => {
+    if (user) fetchSettings(user.id);
+  }, [user, fetchSettings]);
 
   // Filter only 수능 exams and group by year
   const examGroups = useMemo(() => {
@@ -136,7 +144,11 @@ export function SuneungPage() {
                     {group.subjects.map((exam) => (
                       <span
                         key={exam.id}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                          interestSubjectIds.includes(exam.subject)
+                            ? 'bg-[#fff0f7] text-[#FF00A1] font-medium'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
                       >
                         {exam.subject}
                       </span>

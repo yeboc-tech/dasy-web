@@ -12,6 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import examsData from '@/data/exams.json';
+import { useAuth } from '@/lib/contexts/auth-context';
+import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 
 type Exam = typeof examsData.exams[number];
 
@@ -50,6 +52,13 @@ function ExamsPageContent() {
   const [selectedGrade, setSelectedGrade] = useState<string>(searchParams.get('grade') || 'all');
   const [selectedExamType, setSelectedExamType] = useState<string>(searchParams.get('type') || 'all');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+
+  const { user } = useAuth();
+  const { interestSubjectIds, fetchSettings } = useUserAppSettingStore();
+
+  useEffect(() => {
+    if (user) fetchSettings(user.id);
+  }, [user, fetchSettings]);
 
   const { filters } = examsData.metadata;
 
@@ -254,7 +263,11 @@ function ExamsPageContent() {
                     {group.subjects.map((exam) => (
                       <span
                         key={exam.id}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700"
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${
+                          interestSubjectIds.includes(exam.subject)
+                            ? 'bg-[#fff0f7] text-[#FF00A1] font-medium'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
                       >
                         {exam.subject}
                       </span>
