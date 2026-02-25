@@ -143,7 +143,7 @@ export function AppSidebar() {
           <div className="px-3 py-3 mb-2 flex items-center gap-3">
             <Avatar
               name={profileJson.name}
-              variant={profileJson.variant as any}
+              variant={profileJson.variant as "pixel" | "bauhaus" | "ring" | "beam" | "sunset" | "marble" | "geometric" | "abstract"}
               size={40}
               colors={profileJson.colors}
             />

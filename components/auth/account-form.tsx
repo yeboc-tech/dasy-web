@@ -185,7 +185,7 @@ export function AccountForm() {
         <div className="flex items-center gap-3">
           <Avatar
             name={profileJson.name}
-            variant={profileJson.variant as any}
+            variant={profileJson.variant as "pixel" | "bauhaus" | "ring" | "beam" | "sunset" | "marble" | "geometric" | "abstract"}
             size={64}
             colors={profileJson.colors}
           />

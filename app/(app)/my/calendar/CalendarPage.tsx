@@ -76,7 +76,7 @@ export function CalendarPage() {
       const { data } = await supabase
         .from('user_problem_solve_record')
         .select('created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', user!.id)
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
