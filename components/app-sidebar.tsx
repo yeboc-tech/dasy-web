@@ -81,7 +81,7 @@ const navGroups: NavGroup[] = [
   {
     title: '제작',
     items: [
-      { label: '학습지 제작하기', href: '/worksheets', icon: <FilePlus className="w-4 h-4" /> },
+      { label: '학습지 제작하기', href: '/worksheets/builder', icon: <FilePlus className="w-4 h-4" /> },
       { label: '내가 만든 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
     ],
   },
