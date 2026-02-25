@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FilePlus, Globe, User, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays, CreditCard } from 'lucide-react';
+import { FilePlus, Globe, User, Users, FileStack, MessageSquare, BookOpen, Star, List, ThumbsUp, BarChart3, Settings, Home, ArrowRightLeft, ClipboardList, CalendarDays, CreditCard } from 'lucide-react';
 import Avatar from 'boring-avatars';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -81,8 +81,14 @@ const navGroups: NavGroup[] = [
   {
     title: '제작',
     items: [
-      { label: '학습지 제작하기', href: '/', icon: <FilePlus className="w-4 h-4" /> },
+      { label: '학습지 제작하기', href: '/worksheets', icon: <FilePlus className="w-4 h-4" /> },
       { label: '내가 만든 학습지', href: '/my-worksheets', icon: <FileStack className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: '학생관리',
+    items: [
+      { label: '학생 현황', href: '/teacher/students', icon: <Users className="w-4 h-4" /> },
     ],
   },
   {
@@ -114,12 +120,12 @@ export function AppSidebar() {
 
   // Filter nav groups based on mode and auth
   const visibleNavGroups = navGroups.filter((group) => {
-    // 선생님 모드: 제작 그룹만 표시
+    // 선생님 모드: 제작, 학생관리 그룹만 표시
     if (mode === 'teacher') {
-      return group.title === '제작';
+      return group.title === '제작' || group.title === '학생관리';
     }
-    // 학생 모드: 제작 그룹 숨김
-    if (group.title === '제작') {
+    // 학생 모드: 제작, 학생관리 그룹 숨김
+    if (group.title === '제작' || group.title === '학생관리') {
       return false;
     }
     // 학생 모드: MY, 학습 결과, 설정은 로그인 시에만 표시
