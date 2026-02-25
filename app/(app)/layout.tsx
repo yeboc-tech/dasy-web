@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Lock } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CustomButton } from '@/components/custom-button';
@@ -88,17 +89,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* 오늘의 문제 버튼 */}
             <button
               onClick={handleTodayProblemClick}
-              className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-[#abe0ea] hover:bg-gray-200 transition-colors cursor-pointer"
             >
               오늘의 문제
+              <Image src="/images/flash-card.png" alt="" width={14} height={14} />
             </button>
 
             {/* 오답복습 버튼 */}
             <button
               onClick={handleReviewClick}
-              className="px-3 h-8 rounded-md bg-[#FFF0F7] text-[#FF00A1] text-sm font-medium hover:bg-[#FFE0F0] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-md bg-gray-100 text-gray-600 text-sm font-medium border border-[#abe0ea] hover:bg-gray-200 transition-colors cursor-pointer"
             >
               오답복습
+              <Image src="/images/flash-card.png" alt="" width={14} height={14} />
             </button>
 
             {!loading && !user && (
