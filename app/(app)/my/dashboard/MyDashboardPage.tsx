@@ -7,7 +7,13 @@ import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { createClient } from '@/lib/supabase/client';
 import { getSubjectLabel } from '@/lib/utils/subjectUtils';
-import { DashboardStatistics, SolveRecordDTO } from '@/lib/service/DashboardStatistics';
+import {
+  DashboardStatistics,
+  SolveRecordDTO,
+  ChapterProgress,
+  SsotChapterTree,
+  ChapterCountEntry,
+} from '@/lib/service/DashboardStatistics';
 import { EXAM_DATA_YEAR_RANGE } from '@/lib/constants/examConstants';
 
 export function MyDashboardPage() {
@@ -17,6 +23,9 @@ export function MyDashboardPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState<DashboardStatistics | null>(null);
+  const [chapterTree, setChapterTree] = useState<SsotChapterTree | null>(null);
+  const [chapterCounts, setChapterCounts] = useState<Record<string, ChapterCountEntry> | null>(null);
+  const [problemTagMap, setProblemTagMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -97,6 +106,61 @@ export function MyDashboardPage() {
     }
   }, [interestSubjectIds, selectedSubject]);
 
+  // SSOT 챕터 트리 + 단원별 문제 개수 + problem_tags 매핑 fetch
+  useEffect(() => {
+    if (!selectedSubject) return;
+    let cancelled = false;
+
+    async function fetchChapterData() {
+      const supabase = createClient();
+
+      // 1. 챕터 트리
+      const ssotKey = selectedSubject!.startsWith('통합사회_')
+        ? `단원_자세한${selectedSubject}`
+        : `단원_사회탐구_${selectedSubject}`;
+
+      const [treeRes, countsRes, tagsRes] = await Promise.all([
+        supabase.from('ssot').select('value').eq('key', ssotKey).single(),
+        supabase.from('ssot').select('value').eq('key', '단원별_문제_개수').single(),
+        supabase
+          .from('problem_tags')
+          .select('problem_id, tag_ids')
+          .eq('type', ssotKey),
+      ]);
+
+      if (cancelled) return;
+
+      // 챕터 트리
+      if (treeRes.data?.value) {
+        setChapterTree(treeRes.data.value as SsotChapterTree);
+      } else {
+        setChapterTree(null);
+      }
+
+      // 단원별 문제 개수 (해당 과목)
+      if (countsRes.data?.value) {
+        const allCounts = countsRes.data.value as Record<string, Record<string, ChapterCountEntry>>;
+        setChapterCounts(allCounts[selectedSubject!] || null);
+      } else {
+        setChapterCounts(null);
+      }
+
+      // problem_tags → 대단원 매핑 (tag_ids[0] = 대단원 id)
+      const tagMap = new Map<string, string>();
+      if (tagsRes.data) {
+        for (const row of tagsRes.data) {
+          if (row.tag_ids && row.tag_ids.length > 0) {
+            tagMap.set(row.problem_id, row.tag_ids[0]);
+          }
+        }
+      }
+      setProblemTagMap(tagMap);
+    }
+
+    fetchChapterData();
+    return () => { cancelled = true; };
+  }, [selectedSubject]);
+
   // 연도 계산
   const currentYear = new Date().getFullYear();
   const recent5Start = currentYear - 5;
@@ -110,97 +174,40 @@ export function MyDashboardPage() {
     return stats.getReviewStats(selectedSubject, selectedTurn);
   }, [stats, selectedSubject, selectedTurn]);
 
-  // 단원별 학습 분석 코멘트 (내가 푼 문제 기반)
-  const chapterAnalysisComment: Record<string, string> = {
-    '경제': '<b>경제생활과 경제 문제</b> 단원을 가장 많이 학습했어요. <b>세계 시장과 교역</b> 단원은 아직 학습량이 부족하니 집중해보세요.',
-    '동아시아사': '<b>동아시아 세계의 성립과 변화</b> 단원 학습이 잘 진행되고 있어요. <b>오늘날의 동아시아</b> 단원의 정답률이 낮으니 복습이 필요합니다.',
-    '사회문화': '<b>문화와 사회</b> 단원에서 높은 정답률을 보이고 있어요! <b>사회 계층과 불평등</b> 단원은 정답률이 낮으니 개념 정리가 필요합니다.',
-    '생활과윤리': '<b>현대의 삶과 실천 윤리</b> 단원을 잘 이해하고 있어요. <b>과학과 윤리</b> 단원은 학습량과 정답률 모두 보완이 필요합니다.',
-    '세계사': '<b>인류의 출현과 문명의 발생</b> 단원에서 뛰어난 정답률을 보여요! <b>서아시아·인도 지역의 역사</b> 단원도 꾸준히 학습해보세요.',
-    '세계지리': '<b>세계화와 지역 이해</b> 단원의 정답률이 우수해요. <b>몬순 아시아와 오세아니아</b> 단원은 더 많은 문제 풀이가 필요합니다.',
-    '윤리와사상': '<b>인간과 윤리 사상</b> 단원을 잘 이해하고 있어요. <b>서양 윤리 사상</b> 단원은 학습량 대비 정답률이 낮으니 복습해보세요.',
-    '정치와법': '<b>민주 국가와 정부</b> 단원에서 좋은 성적을 보이고 있어요. <b>정치 과정과 참여</b> 단원의 정답률 향상이 필요합니다.',
-    '한국지리': '<b>국토 인식과 지리 정보</b> 단원의 정답률이 높아요! <b>거주 공간의 변화와 지역 개발</b> 단원은 더 집중해서 학습해보세요.',
-    '통합사회': '<b>인간, 사회, 환경과 행복</b> 단원을 잘 이해하고 있어요. <b>생활 공간과 사회</b> 단원은 추가 학습이 필요합니다.',
-  };
+  // 대단원별 학습 진행 현황 (실제 데이터)
+  const chapterProgressList = useMemo<ChapterProgress[]>(() => {
+    if (!stats || !selectedSubject || !chapterTree || !chapterCounts) return [];
+    return stats.getChapterProgress(selectedSubject, chapterTree, chapterCounts, problemTagMap);
+  }, [stats, selectedSubject, chapterTree, chapterCounts, problemTagMap]);
 
-  // 단원별 학습 현황 목 데이터 (내가 푼 문제 기반)
-  const chapterProgressData: Record<string, { chapter: string; solved: number; total: number; accuracy: number }[]> = {
-    '경제': [
-      { chapter: '경제생활과 경제 문제', solved: 12, total: 25, accuracy: 75 },
-      { chapter: '시장과 경제 활동', solved: 8, total: 30, accuracy: 62 },
-      { chapter: '국가와 경제 활동', solved: 5, total: 28, accuracy: 80 },
-      { chapter: '세계 시장과 교역', solved: 3, total: 22, accuracy: 67 },
-    ],
-    '동아시아사': [
-      { chapter: '동아시아 역사의 시작', solved: 10, total: 20, accuracy: 70 },
-      { chapter: '동아시아 세계의 성립과 변화', solved: 15, total: 35, accuracy: 73 },
-      { chapter: '동아시아의 사회 변동과 문화 교류', solved: 7, total: 25, accuracy: 57 },
-      { chapter: '오늘날의 동아시아', solved: 2, total: 18, accuracy: 50 },
-    ],
-    '사회문화': [
-      { chapter: '사회·문화 현상의 탐구', solved: 14, total: 22, accuracy: 79 },
-      { chapter: '개인과 사회 구조', solved: 11, total: 28, accuracy: 64 },
-      { chapter: '문화와 사회', solved: 6, total: 20, accuracy: 83 },
-      { chapter: '사회 계층과 불평등', solved: 9, total: 32, accuracy: 56 },
-    ],
-    '생활과윤리': [
-      { chapter: '현대의 삶과 실천 윤리', solved: 8, total: 18, accuracy: 75 },
-      { chapter: '생명과 윤리', solved: 12, total: 30, accuracy: 67 },
-      { chapter: '사회와 윤리', solved: 10, total: 28, accuracy: 70 },
-      { chapter: '과학과 윤리', solved: 4, total: 22, accuracy: 50 },
-    ],
-    '세계사': [
-      { chapter: '인류의 출현과 문명의 발생', solved: 7, total: 15, accuracy: 86 },
-      { chapter: '동아시아 지역의 역사', solved: 13, total: 32, accuracy: 69 },
-      { chapter: '서아시아·인도 지역의 역사', solved: 9, total: 25, accuracy: 67 },
-      { chapter: '유럽·아메리카 지역의 역사', solved: 11, total: 35, accuracy: 73 },
-    ],
-    '세계지리': [
-      { chapter: '세계화와 지역 이해', solved: 6, total: 18, accuracy: 83 },
-      { chapter: '세계의 자연환경과 인간 생활', solved: 14, total: 38, accuracy: 64 },
-      { chapter: '세계의 인문환경과 인문 경관', solved: 8, total: 28, accuracy: 75 },
-      { chapter: '몬순 아시아와 오세아니아', solved: 5, total: 20, accuracy: 60 },
-    ],
-    '윤리와사상': [
-      { chapter: '인간과 윤리 사상', solved: 9, total: 20, accuracy: 78 },
-      { chapter: '동양과 한국 윤리 사상', solved: 16, total: 40, accuracy: 69 },
-      { chapter: '서양 윤리 사상', solved: 12, total: 35, accuracy: 67 },
-      { chapter: '사회사상', solved: 7, total: 25, accuracy: 71 },
-    ],
-    '정치와법': [
-      { chapter: '민주주의와 헌법', solved: 11, total: 28, accuracy: 73 },
-      { chapter: '민주 국가와 정부', solved: 8, total: 25, accuracy: 75 },
-      { chapter: '정치 과정과 참여', solved: 10, total: 30, accuracy: 60 },
-      { chapter: '개인 생활과 법', solved: 6, total: 22, accuracy: 67 },
-    ],
-    '한국지리': [
-      { chapter: '국토 인식과 지리 정보', solved: 5, total: 15, accuracy: 80 },
-      { chapter: '지형 환경과 인간 생활', solved: 12, total: 35, accuracy: 67 },
-      { chapter: '기후 환경과 인간 생활', solved: 9, total: 28, accuracy: 78 },
-      { chapter: '거주 공간의 변화와 지역 개발', solved: 7, total: 25, accuracy: 57 },
-    ],
-    '통합사회': [
-      { chapter: '인간, 사회, 환경과 행복', solved: 10, total: 22, accuracy: 82 },
-      { chapter: '자연환경과 인간', solved: 8, total: 25, accuracy: 75 },
-      { chapter: '생활 공간과 사회', solved: 6, total: 20, accuracy: 67 },
-      { chapter: '인권 보장과 헌법', solved: 11, total: 28, accuracy: 73 },
-    ],
-  };
+  // 학습 분석 코멘트 (실제 데이터 기반 자동 생성)
+  const chapterComment = useMemo(() => {
+    if (chapterProgressList.length === 0) return '';
 
-  // 과목별 기출문제 TIP 목 데이터
-  const chapterAnalysis: Record<string, string> = {
-    '경제': '<b>시장과 경제</b> 단원의 수요·공급 곡선 문제가 자주 출제됩니다. <b>국제 경제</b> 파트에서 환율과 무역수지 개념을 집중적으로 복습하세요. 금융 상품 비교 문제도 최근 출제 빈도가 높아지고 있습니다.',
-    '동아시아사': '<b>동아시아 세계의 성립</b>과 <b>국제 관계의 다원화</b> 단원에서 출제 비중이 높습니다. 특히 중국 왕조별 대외 정책과 조공·책봉 관계를 정리해두세요. 근대화 과정에서 각국의 개항 순서와 배경도 중요합니다.',
-    '사회문화': '<b>사회 계층과 불평등</b> 단원의 계층 이동 유형 문제가 핵심입니다. <b>사회 조사 방법론</b>에서 양적·질적 연구의 차이점을 명확히 구분하세요. 일탈 이론과 사회화 기관 관련 문제도 자주 출제됩니다.',
-    '생활과윤리': '<b>생명 윤리</b>와 <b>사회 윤리</b> 단원의 출제 비중이 높습니다. 특히 동·서양 사상가별 입장 비교 문제를 집중 학습하세요. 환경 윤리에서 인간중심주의와 생태중심주의 구분도 필수입니다.',
-    '세계사': '<b>시민 혁명과 산업 혁명</b> 단원이 출제 빈도가 가장 높습니다. <b>제국주의와 두 차례 세계 대전</b> 파트의 인과관계를 정리하세요. 동서양 문명의 교류와 르네상스 관련 문제도 꾸준히 출제됩니다.',
-    '세계지리': '<b>기후와 지형</b> 단원의 그래프 해석 문제가 핵심입니다. <b>도시와 도시화</b> 파트에서 세계 주요 도시의 특징을 비교 정리하세요. 에너지 자원의 분포와 국제 이동 관련 문제도 중요합니다.',
-    '윤리와사상': '<b>한국과 동양 윤리</b>에서 유교 사상가별 핵심 개념 비교가 자주 출제됩니다. <b>서양 윤리</b>의 공리주의와 의무론 구분을 명확히 하세요. 사회사상에서 자유주의와 공동체주의 비교도 필수입니다.',
-    '정치와법': '<b>민주주의와 헌법</b> 단원의 기본권 제한 문제가 핵심입니다. <b>정치 과정과 참여</b>에서 선거 제도 비교 문제를 집중 학습하세요. 국제 정치와 법 단원도 최근 출제 비중이 높아지고 있습니다.',
-    '한국지리': '<b>지형과 기후</b> 단원의 지형도 해석 문제가 자주 출제됩니다. <b>인구와 도시</b> 파트에서 수도권 집중 현상과 도시 구조를 정리하세요. 지역별 산업 특성과 교통망 관련 문제도 중요합니다.',
-    '통합사회': '<b>인권과 정의</b> 단원과 <b>시장 경제와 금융</b> 파트의 출제 비중이 높습니다. 문화 다양성과 세계화 관련 개념을 정리해두세요. 환경 문제와 지속 가능한 발전 단원도 자주 출제됩니다.',
-  };
+    const withSolved = chapterProgressList.filter(c => c.solved > 0);
+    if (withSolved.length === 0) {
+      return '아직 풀이 기록이 없습니다. 기출문제를 풀어보세요!';
+    }
+
+    // 가장 많이 푼 단원
+    const mostSolved = [...withSolved].sort((a, b) => b.solved - a.solved)[0];
+    // 정답률이 가장 낮은 단원 (2문제 이상 풀이)
+    const lowAccuracy = [...withSolved]
+      .filter(c => c.solved >= 2)
+      .sort((a, b) => a.accuracy - b.accuracy)[0];
+    // 아직 안 푼 단원 중 첫 번째
+    const unstudied = chapterProgressList.find(c => c.solved === 0 && c.total > 0);
+
+    let comment = `<b>${mostSolved.chapter}</b> 단원을 가장 많이 학습했어요 (${mostSolved.solved}문제).`;
+
+    if (lowAccuracy && lowAccuracy.chapterId !== mostSolved.chapterId) {
+      comment += ` <b>${lowAccuracy.chapter}</b> 단원은 정답률이 ${lowAccuracy.accuracy}%로 복습이 필요합니다.`;
+    } else if (unstudied) {
+      comment += ` <b>${unstudied.chapter}</b> 단원은 아직 학습하지 않았으니 도전해보세요!`;
+    }
+
+    return comment;
+  }, [chapterProgressList]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -370,41 +377,35 @@ export function MyDashboardPage() {
           </div>
 
           {selectedSubject ? (
-            (() => {
-              const chapters = chapterProgressData[selectedSubject] || [];
-              const comment = chapterAnalysisComment[selectedSubject] || '';
-              return (
-                <div>
-                  {comment && (
-                    <p
-                      className="text-sm text-gray-600 leading-relaxed mb-3"
-                      dangerouslySetInnerHTML={{ __html: comment }}
-                    />
-                  )}
-                  <div className="space-y-2">
-                    {chapters.map((item, idx) => {
-                      const progressPercent = Math.round((item.solved / item.total) * 100);
-                      return (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-700 truncate flex-1 mr-2">{item.chapter}</span>
-                            <span className="text-gray-500 whitespace-nowrap">
-                              {item.solved}/{item.total} · 정답률 {item.accuracy}%
-                            </span>
-                          </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
-                              style={{ width: `${progressPercent}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()
+            <div>
+              {chapterComment && (
+                <p
+                  className="text-sm text-gray-600 leading-relaxed mb-3"
+                  dangerouslySetInnerHTML={{ __html: chapterComment }}
+                />
+              )}
+              <div className="space-y-2">
+                {chapterProgressList.map((item) => {
+                  const progressPercent = item.total > 0 ? Math.round((item.solved / item.total) * 100) : 0;
+                  return (
+                    <div key={item.chapterId} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-700 truncate flex-1 mr-2">{item.chapter}</span>
+                        <span className="text-gray-500 whitespace-nowrap">
+                          {item.solved}/{item.total} · 정답률 {item.accuracy}%
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#FF00A1] rounded-full transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ) : (
             <div className="text-sm text-gray-400 py-8 text-center">
               관심 과목을 설정해주세요.
@@ -469,6 +470,11 @@ export function MyDashboardPage() {
             <h2 className="text-sm font-semibold text-[var(--foreground)]">과목별 기출문제 TIP</h2>
           </div>
 
+          <div className="text-sm text-gray-400 py-8 text-center">
+            준비 중
+          </div>
+
+          {/* TODO: 과목별 기출문제 TIP 내용 추가
           {selectedSubject ? (
             <p
               className="text-sm text-gray-600 leading-relaxed"
@@ -481,6 +487,7 @@ export function MyDashboardPage() {
               관심 과목을 설정해주세요.
             </div>
           )}
+          */}
         </div>
       </div>
     </div>
