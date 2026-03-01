@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { GradingAnimation } from '@/components/GradingAnimation';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { RecommendedProblem } from '@/lib/service/OneProblemRecommender';
+import { getSubjectLabel } from '@/lib/utils/subjectUtils';
 import { createClient } from '@/lib/supabase/client';
 
 export type ProblemMode = 'today' | 'review' | 'resolve';
@@ -163,7 +164,7 @@ export function OneProblemSolverDialog({
             </button>
           )}
           <DialogTitle>
-            {problem ? `${problem.subjectId}, ` : ''}<span className="font-light">{title}</span>
+            {problem ? `${getSubjectLabel(problem.subjectId) || problem.subjectId}, ` : ''}<span className="font-light">{title}</span>
           </DialogTitle>
         </div>
 
