@@ -2,14 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Eye, Calendar, Star } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, Star, Lock } from 'lucide-react';
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import remarkGfm from 'remark-gfm';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
+import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
+import { toast } from 'sonner';
 
 interface WorksheetGroupItem {
   id: number;
@@ -18,14 +20,15 @@ interface WorksheetGroupItem {
   content: string;
   view_count: number;
   created_at: string;
+  price: number;
 }
 
 interface WorksheetGroupDetailContentProps {
   item: WorksheetGroupItem;
 }
 
-// Custom MDX components
-const mdxComponents = {
+// MDX base components (without `a` — that's handled dynamically)
+const baseMdxComponents = {
   h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />
   ),
@@ -56,9 +59,6 @@ const mdxComponents = {
   pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
     <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4" {...props} />
   ),
-  a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a className="text-blue-600 hover:underline" {...props} />
-  ),
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img className="max-w-full h-auto rounded-lg my-4" alt={props.alt || ''} {...props} />
@@ -77,13 +77,23 @@ const mdxComponents = {
   ),
 };
 
+function isLockedLink(href: string | undefined): boolean {
+  if (!href) return false;
+  return href.includes('/solve/') || href.includes('cdn.y3c.kr');
+}
+
 export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDetailContentProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { point, fetchAccount } = useUserAccountStore();
   const [mdxSource, setMdxSource] = useState<MDXRemoteSerializeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(item.price === 0);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+
+  const isPaid = item.price > 0;
 
   useEffect(() => {
     async function compileMDX() {
@@ -102,19 +112,32 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
   }, [item.content]);
 
   useEffect(() => {
-    async function checkFavorite() {
+    async function checkFavoriteAndPurchase() {
       if (!user) return;
       const supabase = createClient();
-      const { data } = await supabase
+
+      // Check favorite
+      const { data: favData } = await supabase
         .from('worksheet_group_favorites')
         .select('id')
         .eq('user_id', user.id)
         .eq('worksheet_group_id', item.id)
         .single();
-      setIsFavorite(!!data);
+      setIsFavorite(!!favData);
+
+      // Check purchase (only for paid items)
+      if (isPaid) {
+        const { data: purchaseData } = await supabase
+          .from('user_worksheet_group_purchases')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('worksheet_group_id', item.id)
+          .single();
+        setIsPurchased(!!purchaseData);
+      }
     }
-    checkFavorite();
-  }, [user, item.id]);
+    checkFavoriteAndPurchase();
+  }, [user, item.id, isPaid]);
 
   const toggleFavorite = async () => {
     if (!user) {
@@ -141,6 +164,47 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
     setFavoriteLoading(false);
   };
 
+  const handlePurchase = async () => {
+    if (!user) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    setPurchaseLoading(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('purchase_worksheet_group', {
+        p_worksheet_group_id: item.id,
+      });
+
+      if (error) {
+        toast.error('구매 중 오류가 발생했습니다.');
+        return;
+      }
+
+      const result = data as { status: string; current_point?: number; required_point?: number; remaining_point?: number };
+
+      switch (result.status) {
+        case 'SUCCESS':
+          setIsPurchased(true);
+          fetchAccount(user.id);
+          toast.success('구매가 완료되었습니다!');
+          break;
+        case 'ALREADY_PURCHASED':
+          setIsPurchased(true);
+          toast.info('이미 구매한 상품입니다.');
+          break;
+        case 'INSUFFICIENT_POINTS':
+          toast.error(`포인트가 부족합니다. (보유: ${result.current_point}P / 필요: ${result.required_point}P)`);
+          break;
+        default:
+          toast.error('구매 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
@@ -149,6 +213,23 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
       day: 'numeric',
     });
   };
+
+  const locked = isPaid && !isPurchased;
+
+  const mdxComponents = useMemo(() => ({
+    ...baseMdxComponents,
+    a: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+      if (locked && isLockedLink(props.href)) {
+        return (
+          <span className="inline-flex items-center gap-1 text-gray-400 cursor-not-allowed">
+            <Lock className="w-3.5 h-3.5" />
+            <span className="line-through">{props.children}</span>
+          </span>
+        );
+      }
+      return <a className="text-blue-600 hover:underline" {...props} />;
+    },
+  }), [locked]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -194,6 +275,25 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
               </span>
             </div>
           </header>
+
+          {/* Purchase Banner */}
+          {isPaid && !isPurchased && (
+            <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+              <div>
+                <p className="font-medium text-amber-900">이 학습지 그룹은 유료입니다</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  풀기 및 PDF 다운로드를 위해 구매가 필요합니다. (보유 포인트: {point}P)
+                </p>
+              </div>
+              <Button
+                onClick={handlePurchase}
+                disabled={purchaseLoading}
+                className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {purchaseLoading ? '처리 중...' : `${item.price}P 구매`}
+              </Button>
+            </div>
+          )}
 
           {/* Featured Image */}
           {item.image_url && (

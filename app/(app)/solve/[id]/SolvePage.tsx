@@ -18,6 +18,7 @@ import { getWorksheetPdf, type PdfProgress } from '@/lib/pdf/pdfCache';
 import { getProblemImageUrl } from '@/lib/utils/s3Utils';
 import { getEditedContents } from '@/lib/supabase/services/clientServices';
 import { toast } from 'sonner';
+import { checkWorksheetAccess } from '@/lib/supabase/services/purchaseService';
 
 const SimplePDFViewer = dynamic(() => import('@/components/solve/SimplePDFViewer'), {
   ssr: false,
@@ -123,6 +124,16 @@ export function SolvePage() {
           setLoading(false);
           setPdfLoading(false);
           return;
+        }
+
+        // Check purchase access for paid worksheet groups
+        if (user) {
+          const access = await checkWorksheetAccess(supabase, user.id, worksheetId);
+          if (access.isPaid && !access.isPurchased) {
+            toast.error('구매가 필요한 학습지입니다.');
+            router.replace(access.worksheetGroupId ? `/worksheet-group/${access.worksheetGroupId}` : '/worksheet-group');
+            return;
+          }
         }
 
         setWorksheet(data);

@@ -13,12 +13,13 @@ export async function fetchWorksheetGroups(
     created_at: string
     tags: string[] | null
     worksheet_ids: string[]
+    price: number
   }[] = []
 
   if (filter.userId) {
     const { data, error } = await supabase
       .from('worksheet_group_favorites')
-      .select('worksheet_group:worksheet_group_id(id, image_url, title, view_count, created_at, tags, worksheet_ids)')
+      .select('worksheet_group:worksheet_group_id(id, image_url, title, view_count, created_at, tags, worksheet_ids, price)')
       .eq('user_id', filter.userId)
       .order('created_at', { ascending: false })
 
@@ -31,7 +32,7 @@ export async function fetchWorksheetGroups(
   } else {
     let query = supabase
       .from('worksheet_group')
-      .select('id, image_url, title, view_count, created_at, tags, worksheet_ids')
+      .select('id, image_url, title, view_count, created_at, tags, worksheet_ids, price')
 
     if (filter.isBest) {
       query = query.eq('is_best', true)
