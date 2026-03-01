@@ -194,7 +194,7 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
       switch (result.status) {
         case 'SUCCESS':
           setIsPurchased(true);
-          fetchAccount(user.id);
+          if (user) fetchAccount(user.id);
           toast.success('구매가 완료되었습니다!');
           break;
         case 'ALREADY_PURCHASED':
