@@ -5,7 +5,7 @@ import { Loader, ChevronDown, TabletSmartphone, FileText } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
-import { getSubjectsByYear } from '@/lib/utils/subjectUtils';
+import { getSubjectsByYear, getSubjectIdsByYear } from '@/lib/utils/subjectUtils';
 import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
 import { PlanCards } from '@/components/plan/PlanCards';
 import { PurchaseFlow } from '@/components/plan/PurchaseFlow';
@@ -103,8 +103,12 @@ export function AppSettingsPage() {
       newSelected.add(subjectId);
     }
 
+    // SSOT 과목 순서대로 정렬
+    const allSubjectOrder = getSubjectIdsByYear(targetSuneungYear);
+    const sorted = allSubjectOrder.filter(id => newSelected.has(id));
+
     setSaving(true);
-    await updateSettings(user.id, { interest_subject_ids: Array.from(newSelected) });
+    await updateSettings(user.id, { interest_subject_ids: sorted });
     setSaving(false);
   };
 
