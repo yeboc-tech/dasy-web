@@ -70,7 +70,7 @@ export function useChapterProblemCounts() {
 
     // 통합사회는 학년별 중첩 구조: { "고2": { "1-1": {...} }, "고3": { ... } }
     if (subject.startsWith('통합사회_') && grade) {
-      const gradeData = (counts[subject] as any)[grade] as SubjectCounts | undefined;
+      const gradeData = (counts[subject] as Record<string, SubjectCounts>)[grade] as SubjectCounts | undefined;
       return gradeData?.[chapterId] ?? null;
     }
 
