@@ -21,7 +21,7 @@ import { EXAM_DATA_YEAR_RANGE } from '@/lib/constants/examConstants';
 
 export function MyDashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const { interestSubjectIds, problemRange, fetchSettings } = useUserAppSettingStore();
+  const { interestSubjectIds, problemRange, currentGrade, fetchSettings } = useUserAppSettingStore();
   const [selectedTurn, setSelectedTurn] = useState(1);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [weeklyCounts, setWeeklyCounts] = useState<Record<string, number>>({});
@@ -136,7 +136,8 @@ export function MyDashboardPage() {
         supabase
           .from('problem_tags')
           .select('problem_id, tag_ids')
-          .eq('type', ssotKey),
+          .eq('type', ssotKey)
+          .limit(5000),
       ]);
 
       if (cancelled) return;
@@ -149,9 +150,16 @@ export function MyDashboardPage() {
       }
 
       // 단원별 문제 개수 (해당 과목)
+      // 통합사회_1/2는 학년별로 분리된 구조: { "고2": { "1-1": {...} }, "고3": { ... } }
+      // 9개 과목은 기존 flat 구조: { "1-1": {...}, ... }
       if (countsRes.data?.value) {
-        const allCounts = countsRes.data.value as Record<string, Record<string, ChapterCountEntry>>;
-        setChapterCounts(allCounts[selectedSubject!] || null);
+        const allCounts = countsRes.data.value as Record<string, any>;
+        const subjectData = allCounts[selectedSubject!];
+        if (subjectData && selectedSubject!.startsWith('통합사회_')) {
+          setChapterCounts((subjectData[currentGrade] as Record<string, ChapterCountEntry>) || null);
+        } else {
+          setChapterCounts(subjectData || null);
+        }
       } else {
         setChapterCounts(null);
       }
@@ -170,7 +178,7 @@ export function MyDashboardPage() {
 
     fetchChapterData();
     return () => { cancelled = true; };
-  }, [selectedSubject]);
+  }, [selectedSubject, currentGrade]);
 
   // 연도 계산
   const currentYear = new Date().getFullYear();
@@ -220,7 +228,7 @@ export function MyDashboardPage() {
     return comment;
   }, [chapterProgressList]);
 
-  const { currentGrade } = useUserAppSettingStore();
+  // currentGrade는 위에서 이미 destructure됨
 
   // 단원별 플래시카드: fetchByChapter 호출
   const handleChapterFetchProblem = useCallback(async () => {

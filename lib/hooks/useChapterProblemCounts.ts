@@ -64,10 +64,18 @@ export function useChapterProblemCounts() {
   }, []);
 
   // Helper function to get count for a specific subject and chapter
-  const getCount = (subject: string, chapterId: string): ChapterCount | null => {
-    if (!counts || !counts[subject] || !counts[subject][chapterId]) {
-      return null;
+  // 통합사회_1/2는 학년별 분리 구조이므로 grade 파라미터 필요
+  const getCount = (subject: string, chapterId: string, grade?: string): ChapterCount | null => {
+    if (!counts || !counts[subject]) return null;
+
+    // 통합사회는 학년별 중첩 구조: { "고2": { "1-1": {...} }, "고3": { ... } }
+    if (subject.startsWith('통합사회_') && grade) {
+      const gradeData = (counts[subject] as any)[grade] as SubjectCounts | undefined;
+      return gradeData?.[chapterId] ?? null;
     }
+
+    // 9개 과목: flat 구조
+    if (!counts[subject][chapterId]) return null;
     return counts[subject][chapterId];
   };
 

@@ -19,6 +19,7 @@ export interface WorksheetGroupItem {
   tags: string[] | null;
   subjects: string[];
   targetGrades?: string[];
+  price?: number;
 }
 
 interface WorksheetGroupListItemProps {
@@ -135,6 +136,11 @@ export function WorksheetGroupListItem({ item, href, hideFavorite }: WorksheetGr
           </span>
         </div>
       </div>
+      {item.price != null && item.price > 0 && (
+        <span className="shrink-0 px-2 py-1 text-xs font-bold rounded-md bg-amber-100 text-amber-700">
+          {item.price.toLocaleString()}P
+        </span>
+      )}
       {!hideFavorite && (
         <button
           onClick={toggleFavorite}

@@ -16,6 +16,15 @@ export interface RecommendedProblem {
 
 type Result = { data: RecommendedProblem | null; error: Error | null };
 
+type AccuracyRow = {
+  problem_id: string;
+  correct_answer: string | null;
+  difficulty: string | null;
+  score: number | null;
+  accuracy_rate: number | null;
+};
+
+
 const CDN_CONTENTS_URL = 'https://cdn.y3c.kr/tongkidari/contents';
 const CDN_EDITED_CONTENTS_URL = 'https://cdn.y3c.kr/tongkidari/edited-contents';
 
@@ -54,36 +63,11 @@ export class OneProblemRecommender {
 
       const solvedProblemIds = new Set(solvedRecords?.map(r => r.problem_id) || []);
 
-      // 연도 범위
+      // 학년별 후보 조회 전략 분기
       const yearRange = this.getYearRange(problemRange);
-      const years: number[] = [];
-      if (yearRange) {
-        for (let y = yearRange.minYear; y <= yearRange.maxYear; y++) years.push(y);
-      }
-
-      // 과목 × 학년 × 연도로 후보 조회
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const queries: PromiseLike<any>[] = [];
-      for (const subject of interestSubjectIds) {
-        if (years.length > 0) {
-          for (const year of years) {
-            queries.push(
-              supabase.from('accuracy_rate')
-                .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
-                .like('problem_id', `${subject}_${currentGrade}_${year}_%`)
-            );
-          }
-        } else {
-          queries.push(
-            supabase.from('accuracy_rate')
-              .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
-              .like('problem_id', `${subject}_${currentGrade}_%`)
-          );
-        }
-      }
-
-      const results = await Promise.all(queries);
-      const allProblems = this.flattenQueryResults(results);
+      const allProblems = currentGrade === '고2'
+        ? await this.fetchCandidatesByTag(supabase, interestSubjectIds, currentGrade, yearRange)
+        : await this.fetchCandidatesByProblemId(supabase, interestSubjectIds, currentGrade, yearRange);
       if (allProblems instanceof Error) return { data: null, error: allProblems };
 
       if (allProblems.length === 0) {
@@ -132,9 +116,19 @@ export class OneProblemRecommender {
       }
 
       // 과목 필터
+      // 통합사회 과목(통합사회_1, 통합사회_2)은 problem_id 접두사가 다르므로
+      // problem_tags 태그 기반으로 필터링한다.
       let problemIds = Array.from(latestByProblem.keys());
+      let taggedIdSet: Set<string> | null = null;
       if (params?.subjectFilter) {
-        problemIds = problemIds.filter(id => id.startsWith(params.subjectFilter + '_'));
+        if (this.isIntegratedSubject(params.subjectFilter)) {
+          const result = await this.getTaggedProblemIds(supabase, params.subjectFilter);
+          if (result instanceof Error) return { data: null, error: result };
+          taggedIdSet = result;
+          problemIds = problemIds.filter(id => taggedIdSet!.has(id));
+        } else {
+          problemIds = problemIds.filter(id => id.startsWith(params.subjectFilter + '_'));
+        }
       }
       if (problemIds.length === 0) {
         return { data: null, error: new Error('해당 과목에서 푼 문제가 없습니다.') };
@@ -156,7 +150,9 @@ export class OneProblemRecommender {
       // 최근 시도가 틀린 문제
       const wrongProblems: string[] = [];
       for (const [problemId, record] of latestByProblem.entries()) {
-        if (params?.subjectFilter && !problemId.startsWith(params.subjectFilter + '_')) continue;
+        if (params?.subjectFilter) {
+          if (taggedIdSet ? !taggedIdSet.has(problemId) : !problemId.startsWith(params.subjectFilter + '_')) continue;
+        }
         const correctAnswer = correctAnswerMap.get(problemId);
         if (correctAnswer && record.submit_answer !== null) {
           if (String(record.submit_answer) !== correctAnswer) {
@@ -195,27 +191,30 @@ export class OneProblemRecommender {
         ? `단원_자세한${subjectId}`
         : `단원_사회탐구_${subjectId}`;
 
-      const { data: tagRows, error: tagError } = await supabase
+      // DB 단에서 대단원 + 학년 필터링
+      let tagQuery = supabase
         .from('problem_tags')
-        .select('problem_id, tag_ids')
-        .eq('type', tagType);
+        .select('problem_id')
+        .eq('type', tagType)
+        .contains('tag_ids', [chapterId]);
 
+      // 학년 필터: 통합사회는 problem_id 과목이 달라 prefix 매칭 불가 → LIKE로 학년 세그먼트 필터
+      if (this.isIntegratedSubject(subjectId)) {
+        tagQuery = tagQuery.like('problem_id', `%_${currentGrade}_%`);
+      } else {
+        tagQuery = tagQuery.like('problem_id', `${subjectId}_${currentGrade}_%`);
+      }
+
+      const { data: tagRows, error: tagError } = await tagQuery.limit(5000);
       if (tagError) return { data: null, error: tagError };
 
-      // 연도 범위 계산
+      // 연도 필터 (JS)
       const yearRange = problemRange ? this.getYearRange(problemRange) : null;
-
-      // 대단원 필터 + 학년 필터 + 연도 필터
-      const gradePrefix = `${subjectId}_${currentGrade}_`;
       const chapterProblemIds = (tagRows || [])
         .filter(row => {
-          if (row.tag_ids?.[0] !== chapterId) return false;
-          if (!row.problem_id.startsWith(gradePrefix)) return false;
-          if (yearRange) {
-            const year = parseInt(row.problem_id.split('_')[2]);
-            if (year < yearRange.minYear || year > yearRange.maxYear) return false;
-          }
-          return true;
+          if (!yearRange) return true;
+          const year = parseInt(row.problem_id.split('_')[2]);
+          return year >= yearRange.minYear && year <= yearRange.maxYear;
         })
         .map(row => row.problem_id);
 
@@ -223,12 +222,11 @@ export class OneProblemRecommender {
         return { data: null, error: new Error('해당 단원에 문제가 없습니다.') };
       }
 
-      // 사용자가 푼 문제 제외
+      // 사용자가 푼 문제 제외 (IN 절에 수백 개 ID를 넣으면 느리므로 전체 조회 후 JS 필터)
       const { data: solvedRecords } = await supabase
         .from('user_problem_solve_record')
         .select('problem_id')
-        .eq('user_id', user.id)
-        .in('problem_id', chapterProblemIds);
+        .eq('user_id', user.id);
 
       const solvedSet = new Set(solvedRecords?.map(r => r.problem_id) || []);
       const eligible = chapterProblemIds.filter(id => !solvedSet.has(id));
@@ -259,8 +257,26 @@ export class OneProblemRecommender {
         return { data: null, error: problemError || new Error('문제를 찾을 수 없습니다.') };
       }
 
-      const subject = this.extractSubject(problemData.problem_id);
-      const tagType = subject.startsWith('통합사회_')
+      let subject = this.extractSubject(problemData.problem_id);
+      const grade = problemData.problem_id.split('_')[1];
+
+      // 고2 문제는 problem_id 과목(경제 등)과 실제 학습 과목(통합사회_1 등)이 다르므로
+      // problem_tags에서 어떤 통합사회 과목에 속하는지 역추적한다.
+      if (grade === '고2') {
+        const { data: integratedTag } = await supabase
+          .from('problem_tags')
+          .select('type')
+          .eq('problem_id', problemData.problem_id)
+          .like('type', '단원_자세한통합사회_%')
+          .limit(1)
+          .single();
+        if (integratedTag) {
+          // "단원_자세한통합사회_1" → "통합사회_1"
+          subject = integratedTag.type.replace('단원_자세한', '');
+        }
+      }
+
+      const tagType = this.isIntegratedSubject(subject)
         ? `단원_자세한${subject}`
         : `단원_사회탐구_${subject}`;
 
@@ -308,10 +324,128 @@ export class OneProblemRecommender {
     }
   }
 
+  // ─── 후보 조회 전략 ───
+  //
+  // 고1/고3: problem_id가 "{관심과목}_고1_..." 또는 "{관심과목}_고3_..."이므로
+  //          관심 과목으로 LIKE 검색하면 바로 매칭된다.
+  //
+  // 고2:     problem_id는 "경제_고2_...", "사회문화_고2_..." 등 9개 개별 과목 체계인데,
+  //          2027학년도 이후 사용자의 관심 과목은 "통합사회_1", "통합사회_2"이므로
+  //          LIKE 검색으로는 매칭이 안 된다.
+  //          → problem_tags 테이블의 통합사회 단원 태그(단원_자세한통합사회_1 등)를 통해
+  //            고2 문제를 역조회하는 방식으로 우회한다.
+
+  /** 고1/고3: problem_id LIKE 패턴으로 accuracy_rate 직접 조회 */
+  private static async fetchCandidatesByProblemId(
+    supabase: ReturnType<typeof createClient>,
+    subjectIds: string[],
+    grade: CurrentGrade,
+    yearRange: { minYear: number; maxYear: number } | null,
+  ): Promise<AccuracyRow[] | Error> {
+    const years: number[] = [];
+    if (yearRange) {
+      for (let y = yearRange.minYear; y <= yearRange.maxYear; y++) years.push(y);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const queries: PromiseLike<any>[] = [];
+    for (const subject of subjectIds) {
+      if (years.length > 0) {
+        for (const year of years) {
+          queries.push(
+            supabase.from('accuracy_rate')
+              .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+              .like('problem_id', `${subject}_${grade}_${year}_%`)
+          );
+        }
+      } else {
+        queries.push(
+          supabase.from('accuracy_rate')
+            .select('problem_id, correct_answer, difficulty, score, accuracy_rate')
+            .like('problem_id', `${subject}_${grade}_%`)
+        );
+      }
+    }
+
+    const results = await Promise.all(queries);
+    return this.flattenQueryResults(results);
+  }
+
+  /** 고2: 통합사회 단원 태그로 problem_ids를 먼저 조회 → accuracy_rate에서 상세 조회 */
+  private static async fetchCandidatesByTag(
+    supabase: ReturnType<typeof createClient>,
+    subjectIds: string[],
+    grade: CurrentGrade,
+    yearRange: { minYear: number; maxYear: number } | null,
+  ): Promise<AccuracyRow[] | Error> {
+    // 1) problem_tags에서 해당 통합사회 태그의 고2 문제 ID 수집
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tagQueries: PromiseLike<any>[] = [];
+    for (const subject of subjectIds) {
+      const tagType = `단원_자세한${subject}`;
+      // DB 단에서 학년 필터링 (Supabase max-rows 제한으로 JS 필터링만으로는 누락 발생)
+      tagQueries.push(
+        supabase.from('problem_tags')
+          .select('problem_id')
+          .eq('type', tagType)
+          .like('problem_id', `%_${grade}_%`)
+          .limit(5000)
+      );
+    }
+
+    const tagResults = await Promise.all(tagQueries);
+    const candidateIds: string[] = [];
+    for (const result of tagResults) {
+      if (result.error) return result.error;
+      if (result.data) {
+        for (const row of result.data as { problem_id: string }[]) {
+          // 학년 필터: problem_id의 두 번째 세그먼트가 고2
+          const parts = row.problem_id.split('_');
+          if (parts[1] !== grade) continue;
+          // 연도 필터
+          if (yearRange) {
+            const year = parseInt(parts[2]);
+            if (year < yearRange.minYear || year > yearRange.maxYear) continue;
+          }
+          candidateIds.push(row.problem_id);
+        }
+      }
+    }
+
+    // accuracy_rate 상세 조회는 하지 않고 problem_id만 반환
+    // → 랜덤 선택 후 fetchProblemById에서 1건만 조회
+    return candidateIds.map(id => ({ problem_id: id, correct_answer: null, difficulty: null, score: null, accuracy_rate: null }));
+  }
+
   // ─── 비공개 헬퍼 ───
 
   private static extractSubject(problemId: string): string {
     return problemId.split('_')[0] || '기타';
+  }
+
+  /** 통합사회 과목(통합사회_1, 통합사회_2)인지 판별 */
+  private static isIntegratedSubject(subjectId: string): boolean {
+    return subjectId === '통합사회_1' || subjectId === '통합사회_2';
+  }
+
+  /** 통합사회 과목에 해당하는 problem_id Set을 problem_tags에서 조회 */
+  private static async getTaggedProblemIds(
+    supabase: ReturnType<typeof createClient>,
+    subjectId: string,
+    grade?: CurrentGrade,
+  ): Promise<Set<string> | Error> {
+    const tagType = `단원_자세한${subjectId}`;
+    let query = supabase
+      .from('problem_tags')
+      .select('problem_id')
+      .eq('type', tagType);
+    // DB 단에서 학년 필터링 (Supabase max-rows 제한으로 누락 방지)
+    if (grade) {
+      query = query.like('problem_id', `%_${grade}_%`);
+    }
+    const { data, error } = await query.limit(5000);
+    if (error) return error;
+    return new Set((data || []).map((r: { problem_id: string }) => r.problem_id));
   }
 
   private static getYearRange(problemRange: ProblemRange): { minYear: number; maxYear: number } | null {
@@ -328,20 +462,8 @@ export class OneProblemRecommender {
   private static flattenQueryResults(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     results: any[]
-  ): Array<{
-    problem_id: string;
-    correct_answer: string | null;
-    difficulty: string | null;
-    score: number | null;
-    accuracy_rate: number | null;
-  }> | Error {
-    const all: Array<{
-      problem_id: string;
-      correct_answer: string | null;
-      difficulty: string | null;
-      score: number | null;
-      accuracy_rate: number | null;
-    }> = [];
+  ): AccuracyRow[] | Error {
+    const all: AccuracyRow[] = [];
 
     for (const result of results) {
       if (result.error) {

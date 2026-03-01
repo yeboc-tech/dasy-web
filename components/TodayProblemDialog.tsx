@@ -38,9 +38,14 @@ export function TodayProblemDialog({ open, onOpenChange }: TodayProblemDialogPro
       return { data: null, error: new Error('앱 설정에서 학습 과목을 선택해주세요.') };
     }
 
+    // 고2는 problem_id 과목명(경제 등)과 관심 과목(통합사회_1 등)이 다르므로
+    // subjectFilter를 적용할 수 없어 항상 전체 관심 과목으로 조회한다.
+    const subjects = (subjectFilter && currentGrade !== '고2')
+      ? [subjectFilter]
+      : interestSubjectIds;
+
     return await OneProblemRecommender.fetchTodayProblem({
-      // 과목 필터가 있으면 해당 과목만, 없으면 전체 관심 과목
-      interestSubjectIds: subjectFilter ? [subjectFilter] : interestSubjectIds,
+      interestSubjectIds: subjects,
       problemRange,
       currentGrade,
     });

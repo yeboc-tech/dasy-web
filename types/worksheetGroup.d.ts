@@ -14,5 +14,6 @@ interface WorksheetGroup {
   created_at: string
   tags: string[] | null
   worksheet_ids: string[]
+  price: number
   worksheets: { id: string; subject_ids: string[]; target_grades: string[] }[]
 }
