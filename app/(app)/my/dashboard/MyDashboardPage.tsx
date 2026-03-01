@@ -136,7 +136,8 @@ export function MyDashboardPage() {
         supabase
           .from('problem_tags')
           .select('problem_id, tag_ids')
-          .eq('type', ssotKey),
+          .eq('type', ssotKey)
+          .limit(5000),
       ]);
 
       if (cancelled) return;

@@ -191,36 +191,30 @@ export class OneProblemRecommender {
         ? `단원_자세한${subjectId}`
         : `단원_사회탐구_${subjectId}`;
 
-      const { data: tagRows, error: tagError } = await supabase
+      // DB 단에서 대단원 + 학년 필터링
+      let tagQuery = supabase
         .from('problem_tags')
-        .select('problem_id, tag_ids')
+        .select('problem_id')
         .eq('type', tagType)
-        .limit(5000);
+        .contains('tag_ids', [chapterId]);
 
+      // 학년 필터: 통합사회는 problem_id 과목이 달라 prefix 매칭 불가 → LIKE로 학년 세그먼트 필터
+      if (this.isIntegratedSubject(subjectId)) {
+        tagQuery = tagQuery.like('problem_id', `%_${currentGrade}_%`);
+      } else {
+        tagQuery = tagQuery.like('problem_id', `${subjectId}_${currentGrade}_%`);
+      }
+
+      const { data: tagRows, error: tagError } = await tagQuery.limit(5000);
       if (tagError) return { data: null, error: tagError };
 
-      // 연도 범위 계산
+      // 연도 필터 (JS)
       const yearRange = problemRange ? this.getYearRange(problemRange) : null;
-
-      // 대단원 필터 + 학년 필터 + 연도 필터
-      // 통합사회 과목은 problem_id 접두사가 "경제_고2_..." 등이므로
-      // prefix 대신 학년 세그먼트(parts[1])로 필터링한다.
-      const useGradeSegment = this.isIntegratedSubject(subjectId);
-      const gradePrefix = `${subjectId}_${currentGrade}_`;
       const chapterProblemIds = (tagRows || [])
         .filter(row => {
-          if (row.tag_ids?.[0] !== chapterId) return false;
-          const parts = row.problem_id.split('_');
-          if (useGradeSegment) {
-            if (parts[1] !== currentGrade) return false;
-          } else {
-            if (!row.problem_id.startsWith(gradePrefix)) return false;
-          }
-          if (yearRange) {
-            const year = parseInt(parts[2]);
-            if (year < yearRange.minYear || year > yearRange.maxYear) return false;
-          }
-          return true;
+          if (!yearRange) return true;
+          const year = parseInt(row.problem_id.split('_')[2]);
+          return year >= yearRange.minYear && year <= yearRange.maxYear;
         })
         .map(row => row.problem_id);
 
@@ -228,12 +222,11 @@ export class OneProblemRecommender {
         return { data: null, error: new Error('해당 단원에 문제가 없습니다.') };
       }
 
-      // 사용자가 푼 문제 제외
+      // 사용자가 푼 문제 제외 (IN 절에 수백 개 ID를 넣으면 느리므로 전체 조회 후 JS 필터)
       const { data: solvedRecords } = await supabase
         .from('user_problem_solve_record')
         .select('problem_id')
-        .eq('user_id', user.id)
-        .in('problem_id', chapterProblemIds);
+        .eq('user_id', user.id);
 
       const solvedSet = new Set(solvedRecords?.map(r => r.problem_id) || []);
       const eligible = chapterProblemIds.filter(id => !solvedSet.has(id));
@@ -390,10 +383,12 @@ export class OneProblemRecommender {
     const tagQueries: PromiseLike<any>[] = [];
     for (const subject of subjectIds) {
       const tagType = `단원_자세한${subject}`;
+      // DB 단에서 학년 필터링 (Supabase max-rows 제한으로 JS 필터링만으로는 누락 발생)
       tagQueries.push(
         supabase.from('problem_tags')
           .select('problem_id')
           .eq('type', tagType)
+          .like('problem_id', `%_${grade}_%`)
           .limit(5000)
       );
     }
@@ -437,13 +432,18 @@ export class OneProblemRecommender {
   private static async getTaggedProblemIds(
     supabase: ReturnType<typeof createClient>,
     subjectId: string,
+    grade?: CurrentGrade,
   ): Promise<Set<string> | Error> {
     const tagType = `단원_자세한${subjectId}`;
-    const { data, error } = await supabase
+    let query = supabase
       .from('problem_tags')
       .select('problem_id')
-      .eq('type', tagType)
-      .limit(5000);
+      .eq('type', tagType);
+    // DB 단에서 학년 필터링 (Supabase max-rows 제한으로 누락 방지)
+    if (grade) {
+      query = query.like('problem_id', `%_${grade}_%`);
+    }
+    const { data, error } = await query.limit(5000);
     if (error) return error;
     return new Set((data || []).map((r: { problem_id: string }) => r.problem_id));
   }

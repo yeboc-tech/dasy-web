@@ -8,6 +8,7 @@ import { serialize } from 'next-mdx-remote/serialize';
 import remarkGfm from 'remark-gfm';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { useUserAccountStore } from '@/lib/zustand/userAccountStore';
@@ -164,12 +165,18 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
     setFavoriteLoading(false);
   };
 
-  const handlePurchase = async () => {
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+
+  const handlePurchaseClick = () => {
     if (!user) {
       router.push('/auth/signin');
       return;
     }
+    setPurchaseDialogOpen(true);
+  };
 
+  const handlePurchaseConfirm = async () => {
+    setPurchaseDialogOpen(false);
     setPurchaseLoading(true);
     try {
       const supabase = createClient();
@@ -286,14 +293,61 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
                 </p>
               </div>
               <Button
-                onClick={handlePurchase}
+                onClick={handlePurchaseClick}
                 disabled={purchaseLoading}
                 className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
               >
-                {purchaseLoading ? '처리 중...' : `${item.price}P 구매`}
+                {purchaseLoading ? '처리 중...' : `${item.price.toLocaleString()}P 구매`}
               </Button>
             </div>
           )}
+
+          {/* Purchase Confirmation Dialog */}
+          <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogTitle>구매 확인</DialogTitle>
+              <div className="space-y-3 mt-2">
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">{item.title}</span>을(를) 구매하시겠습니까?
+                </p>
+                <div className="p-3 bg-gray-50 rounded-lg space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">차감 포인트</span>
+                    <span className="font-medium text-amber-700">{item.price.toLocaleString()}P</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">보유 포인트</span>
+                    <span className="font-medium">{point.toLocaleString()}P</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-1 flex justify-between">
+                    <span className="text-gray-500">구매 후 잔액</span>
+                    <span className={`font-medium ${point - item.price < 0 ? 'text-red-500' : 'text-gray-900'}`}>
+                      {(point - item.price).toLocaleString()}P
+                    </span>
+                  </div>
+                </div>
+                {point < item.price && (
+                  <p className="text-xs text-red-500">포인트가 부족합니다.</p>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setPurchaseDialogOpen(false)}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={handlePurchaseConfirm}
+                    disabled={point < item.price}
+                  >
+                    구매하기
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Featured Image */}
           {item.image_url && (
