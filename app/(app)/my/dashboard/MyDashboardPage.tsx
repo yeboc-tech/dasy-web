@@ -153,12 +153,13 @@ export function MyDashboardPage() {
       // 통합사회_1/2는 학년별로 분리된 구조: { "고2": { "1-1": {...} }, "고3": { ... } }
       // 9개 과목은 기존 flat 구조: { "1-1": {...}, ... }
       if (countsRes.data?.value) {
-        const allCounts = countsRes.data.value as Record<string, any>;
+        const allCounts = countsRes.data.value as Record<string, Record<string, ChapterCountEntry> | Record<string, Record<string, ChapterCountEntry>>>;
         const subjectData = allCounts[selectedSubject!];
         if (subjectData && selectedSubject!.startsWith('통합사회_')) {
-          setChapterCounts((subjectData[currentGrade] as Record<string, ChapterCountEntry>) || null);
+          const gradeData = subjectData as Record<string, Record<string, ChapterCountEntry>>;
+          setChapterCounts(gradeData[currentGrade] || null);
         } else {
-          setChapterCounts(subjectData || null);
+          setChapterCounts((subjectData as Record<string, ChapterCountEntry>) || null);
         }
       } else {
         setChapterCounts(null);
