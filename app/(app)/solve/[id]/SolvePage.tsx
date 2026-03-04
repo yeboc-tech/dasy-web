@@ -50,6 +50,7 @@ export function SolvePage() {
   const [pdfProgress, setPdfProgress] = useState<PdfProgress>({ stage: 'checking_cache', percent: 0 });
   const [answers, setAnswers] = useState<{[problemNumber: number]: number}>({});
   const [showInstructionsDialog, setShowInstructionsDialog] = useState(true);
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
 
   // Solve mode states
   const [solveMode, setSolveMode] = useState<'all' | 'partial'>('all');
@@ -80,6 +81,32 @@ export function SolvePage() {
 
   // Previously solved problems (problem_id set)
   const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
+
+  // sessionStorage draft
+  const draftKey = `solve-draft-${worksheetId}`;
+
+  interface DraftData {
+    answers: {[problemNumber: number]: number};
+    sessionId: string;
+    problemIdsToSolve: string[];
+    sortedSelectedIndices: number[];
+    maxScore: number;
+    currentPage: number;
+    timerEnabled: boolean;
+    selectedProblemIndices: number[];
+    viewMode: 'pdf' | 'tablet';
+  }
+
+  // 리프레시 시 임시 저장 데이터 확인
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(draftKey);
+      if (saved) {
+        setShowInstructionsDialog(false);
+        setShowRestoreDialog(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   // Sync viewMode with store default (only once, before exam starts)
   useEffect(() => {
@@ -186,11 +213,61 @@ export function SolvePage() {
     }
   }, [worksheetId]);
 
+  // 답안 변경 시 sessionStorage에 임시 저장
+  const saveDraftRef = useRef<() => void>(() => {});
+  saveDraftRef.current = () => {
+    if (!sessionId) return;
+    try {
+      const draft: DraftData = {
+        answers,
+        sessionId,
+        problemIdsToSolve,
+        sortedSelectedIndices,
+        maxScore,
+        currentPage,
+        timerEnabled,
+        selectedProblemIndices: Array.from(selectedProblemIndices),
+        viewMode,
+      };
+      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+    } catch { /* ignore */ }
+  };
+
   const handleAnswerChange = (problemNumber: number, answer: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [problemNumber]: answer
-    }));
+    setAnswers(prev => ({ ...prev, [problemNumber]: answer }));
+  };
+
+  // answers 변경 시 임시 저장
+  useEffect(() => {
+    if (isExamStarted && Object.keys(answers).length > 0) {
+      saveDraftRef.current();
+    }
+  }, [answers, isExamStarted]);
+
+  const handleRestoreDraft = () => {
+    try {
+      const saved = sessionStorage.getItem(draftKey);
+      if (saved) {
+        const draft: DraftData = JSON.parse(saved);
+        setAnswers(draft.answers);
+        setSessionId(draft.sessionId);
+        setProblemIdsToSolve(draft.problemIdsToSolve);
+        setSortedSelectedIndices(draft.sortedSelectedIndices);
+        setMaxScore(draft.maxScore);
+        setCurrentPage(draft.currentPage);
+        setTimerEnabled(draft.timerEnabled);
+        setSelectedProblemIndices(new Set(draft.selectedProblemIndices));
+        setViewMode(draft.viewMode);
+        setIsExamStarted(true);
+      }
+    } catch { /* ignore */ }
+    setShowRestoreDialog(false);
+  };
+
+  const handleDiscardDraft = () => {
+    sessionStorage.removeItem(draftKey);
+    setShowRestoreDialog(false);
+    setShowInstructionsDialog(true);
   };
 
   const handleBack = () => {
@@ -396,6 +473,7 @@ export function SolvePage() {
       }
 
       // Navigate to result page
+      sessionStorage.removeItem(draftKey);
       router.push(`/solve/${worksheetId}/result?session=${sessionId}`);
 
     } catch (err) {
@@ -439,6 +517,26 @@ export function SolvePage() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-white">
+      {/* Restore Draft Dialog */}
+      <Dialog open={showRestoreDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogTitle className="text-lg font-semibold text-center">임시 저장 복원</DialogTitle>
+          <div className="py-4 text-center">
+            <p className="text-sm text-gray-700">
+              이전에 풀던 기록이 있습니다.<br />이어서 풀기하시겠습니까?
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <CustomButton variant="outline" size="sm" className="flex-1" onClick={handleDiscardDraft}>
+              새로 시작
+            </CustomButton>
+            <CustomButton variant="primary" size="sm" className="flex-1" onClick={handleRestoreDraft}>
+              이어서 풀기
+            </CustomButton>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Submit Confirmation Dialog */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <DialogContent className="sm:max-w-sm">
