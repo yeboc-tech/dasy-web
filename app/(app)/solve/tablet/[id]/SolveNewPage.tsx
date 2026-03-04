@@ -368,7 +368,7 @@ export function SolveNewPage() {
 
       {/* Instructions Dialog */}
       <Dialog open={showInstructionsDialog} onOpenChange={setShowInstructionsDialog}>
-        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+        <DialogContent className="sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto" showCloseButton={false}>
           <DialogTitle className="text-lg font-semibold text-center">시험 유의사항</DialogTitle>
           <div className="py-4">
             <ul className="space-y-3 text-sm text-gray-700">
