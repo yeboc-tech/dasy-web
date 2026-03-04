@@ -5,6 +5,9 @@ import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { useUserAppSettingStore } from '@/lib/zustand/userAppSettingStore';
 import { useAuth } from '@/lib/contexts/auth-context';
 import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
 
 interface TodayProblemDialogProps {
   open: boolean;
@@ -60,7 +63,53 @@ export function TodayProblemDialog({ open, onOpenChange }: TodayProblemDialogPro
     return `today-problem-${yy}${mm}${dd}`;
   }, []);
 
-  // ready 상태가 아니면 다이얼로그를 열지 않음
+  const [hideToday, setHideToday] = useState(false);
+
+  const handleClose = () => {
+    if (hideToday) {
+      localStorage.setItem('hideTodayProblem', new Date().toDateString());
+    }
+    onOpenChange(false);
+  };
+
+  // 설정 로드 완료했는데 관심과목이 없으면 안내 다이얼로그
+  if (initialized && interestSubjectIds.length === 0 && open) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md gap-1" showCloseButton={false}>
+          <DialogTitle><span className="font-light">오늘의 문제</span></DialogTitle>
+          <div className="mt-1 min-h-[380px] flex flex-col items-center justify-center">
+            <p className="text-gray-500 text-sm">관심 과목을 설정하면 오늘의 문제를 받을 수 있어요</p>
+            <Link
+              href="/my/settings/subjects"
+              onClick={() => onOpenChange(false)}
+              className="mt-4 px-4 py-2 text-sm font-medium text-white bg-[#FF00A1] rounded-lg hover:bg-[#E0008E] transition-colors"
+            >
+              설정하러 가기
+            </Link>
+          </div>
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={hideToday}
+                onCheckedChange={(checked) => setHideToday(checked === true)}
+                className="border-gray-300"
+              />
+              <span className="text-sm text-gray-500">오늘 하루 보지 않기</span>
+            </label>
+            <button
+              onClick={handleClose}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              확인
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // 설정 로드 중이면 렌더링하지 않음
   if (!ready && open) {
     return null;
   }

@@ -151,7 +151,7 @@ export function OneProblemSolverDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md gap-1" showCloseButton={false}>
+      <DialogContent className="sm:max-w-md gap-1 max-h-[calc(100dvh-2rem)] overflow-y-auto" showCloseButton={false}>
         <div>
           {process.env.NODE_ENV === 'development' && problem && (
             <button
