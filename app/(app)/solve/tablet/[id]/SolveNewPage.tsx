@@ -578,7 +578,7 @@ export function SolveNewPage() {
 
       {/* Content - Two problems side by side */}
       <div className="flex-1 overflow-hidden bg-gray-100 flex flex-col">
-        <div className="flex-1 flex gap-4 p-4 overflow-hidden">
+        <div className="flex-1 min-h-0 flex gap-4 p-4 overflow-hidden">
           {/* Left problem */}
           <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
             {leftProblemId ? (
@@ -592,7 +592,7 @@ export function SolveNewPage() {
                     disabled={!isExamStarted || (selectedProblemIndices.size > 0 && !selectedProblemIndices.has(leftProblemIndex))}
                   />
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 flex justify-center">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-4 flex justify-center">
                   <ProblemImage problemId={leftProblemId} editedUrl={editedContentMap.get(leftProblemId)} />
                 </div>
               </>
@@ -614,7 +614,7 @@ export function SolveNewPage() {
                     disabled={!isExamStarted || (selectedProblemIndices.size > 0 && !selectedProblemIndices.has(rightProblemIndex))}
                   />
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 flex justify-center">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain p-4 flex justify-center">
                   <ProblemImage problemId={rightProblemId} editedUrl={editedContentMap.get(rightProblemId)} />
                 </div>
               </>
