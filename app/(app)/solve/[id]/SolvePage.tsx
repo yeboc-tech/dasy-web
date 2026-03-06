@@ -172,8 +172,9 @@ export function SolvePage() {
         setLoading(false);
 
         // Preload edited content + problem images for tablet mode
+        let editedMap = new Map<string, string>();
         try {
-          const editedMap = await getEditedContents(data.selected_problem_ids);
+          editedMap = await getEditedContents(data.selected_problem_ids);
           setEditedContentMap(editedMap);
           data.selected_problem_ids.forEach((pid: string) => {
             const img = new window.Image();
@@ -195,6 +196,7 @@ export function SolvePage() {
             title: data.title,
             author: data.author,
             createdAt: data.created_at,
+            editedContentMap: editedMap,
           },
           (progress) => setPdfProgress(progress)
         );

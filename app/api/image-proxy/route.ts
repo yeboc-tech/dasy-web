@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         const problemId = urlParts[1].replace('.png', '');
 
         // Query Supabase edited_contents table
-        const supabase = createClient();
+        const supabase = await createClient();
         const { data, error } = await supabase
           .from('edited_contents')
           .select('base64')

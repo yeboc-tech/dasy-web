@@ -41,6 +41,8 @@ export interface WorksheetPdfParams {
   createdAt?: string;
   /** 답안 이미지 포함 여부 (기본: false, solve 모드에서는 false) */
   includeAnswers?: boolean;
+  /** edited content CDN URL 맵 (problem_id -> CDN URL) */
+  editedContentMap?: Map<string, string>;
 }
 
 /**
@@ -125,7 +127,7 @@ export async function getWorksheetPdf(
   params: WorksheetPdfParams,
   onProgress?: (progress: PdfProgress) => void
 ): Promise<{ url: string; fromCache: boolean }> {
-  const { worksheetId, problemIds, title, author, createdAt, includeAnswers = false } = params;
+  const { worksheetId, problemIds, title, author, createdAt, includeAnswers = false, editedContentMap } = params;
 
   // 1. 캐시 확인
   onProgress?.({ stage: 'checking_cache', percent: 5, message: '캐시 확인 중...' });
@@ -137,9 +139,9 @@ export async function getWorksheetPdf(
     return { url, fromCache: true };
   }
 
-  // 2. 이미지 로드
+  // 2. 이미지 로드 (edited content가 있으면 해당 CDN URL 사용)
   const totalImages = problemIds.length;
-  const problemImageUrls = problemIds.map(id => getProblemImageUrl(id));
+  const problemImageUrls = problemIds.map(id => editedContentMap?.get(id) || getProblemImageUrl(id));
 
   let loadedCount = 0;
   const problemImages: ImageWithDimensions[] = await Promise.all(
