@@ -379,21 +379,31 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       }
       setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
 
-      // Fetch edited contents for preview
-      const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-      const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
-      const answerIds = data?.problems
-        ?.filter((p: ProblemMetadata) => p.answer_filename)
-        ?.map((p: ProblemMetadata) => {
-          // For tagged subject problems, answer ID replaces _문제 with _해설
-          if (getSubjectFromProblemId(p.id) !== null) {
-            return p.id.replace('_문제', '_해설');
-          }
-          return p.id;
-        }) || [];
-      const allResourceIds = [...problemIds, ...answerIds];
-      const fetchedEditedContents = await getEditedContents(allResourceIds);
-      setEditedContentsMap(fetchedEditedContents);
+      // Fetch edited contents for preview (skip if autoPdf with cache hit)
+      let skipEditedContents = false;
+      if (autoPdf && worksheetId) {
+        const cacheResult = await checkPdfCache(worksheetId);
+        if (cacheResult.cached) {
+          skipEditedContents = true;
+        }
+      }
+
+      if (!skipEditedContents) {
+        const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+        const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
+        const answerIds = data?.problems
+          ?.filter((p: ProblemMetadata) => p.answer_filename)
+          ?.map((p: ProblemMetadata) => {
+            // For tagged subject problems, answer ID replaces _문제 with _해설
+            if (getSubjectFromProblemId(p.id) !== null) {
+              return p.id.replace('_문제', '_해설');
+            }
+            return p.id;
+          }) || [];
+        const allResourceIds = [...problemIds, ...answerIds];
+        const fetchedEditedContents = await getEditedContents(allResourceIds);
+        setEditedContentsMap(fetchedEditedContents);
+      }
 
       // Start in worksheet view when editing existing worksheet (unless autoPdf or solveId)
       // When solveId is provided, let the solve loading effect handle viewMode
@@ -632,6 +642,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
   // Fetch edited content when problems change (ONLY for tagged subjects)
   useEffect(() => {
+    // Skip in autoPdf mode - edited content is not needed for cached PDF display
+    if (autoPdf) return;
+
     let cancelled = false;
 
     const fetchEditedContent = async () => {
