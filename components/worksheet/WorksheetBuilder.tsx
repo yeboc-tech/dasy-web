@@ -108,6 +108,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
   const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
+  const [worksheetSubject, setWorksheetSubject] = useState<string>('');
 
   // Thumbnail states (store path, not full URL)
   const [thumbnailPath, setThumbnailPath] = useState<string | null>(null);
@@ -326,7 +327,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       // Fetch the worksheet to check if it's economy or regular
       const { data: worksheetMeta, error: metaError } = await supabase
         .from('worksheets')
-        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path')
+        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path, subject')
         .eq('id', worksheetId)
         .single();
 
@@ -347,6 +348,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       setSavedTitle(worksheetMeta.title || null);
       setWorksheetCreatedAt(worksheetMeta.created_at);
       setThumbnailPath(worksheetMeta.thumbnail_path || null);
+      setWorksheetSubject(worksheetMeta.subject || '');
 
       // Detect if it's an economy worksheet by checking problem ID format
       const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
@@ -554,9 +556,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         const base64ProblemImages = problemImages.map(img => img.base64);
         const problemHeights = problemImages.map(img => img.height);
 
-        // Detect subject
-        const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-        const subject = detectedSubject || '통합사회';
+        const subject = worksheetSubject || '';
 
         // Prepare problem metadata for PDF badges
         const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -1280,9 +1280,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       const base64ProblemImages = problemImages.map(img => img.base64);
       const problemHeights = problemImages.map(img => img.height);
 
-      // Detect subject
-      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-      const subject = detectedSubject || '통합사회';
+      const subject = worksheetSubject || '';
 
       // Prepare problem metadata for PDF badges
       const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -1704,7 +1702,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         const cacheResult = await checkPdfCache(worksheetId);
 
         if (cacheResult.cached && cacheResult.cdnPath) {
-          const cachedUrl = getCdnUrl(cacheResult.cdnPath);
+          const baseUrl = getCdnUrl(cacheResult.cdnPath);
+          const cachedUrl = cacheResult.updatedAt ? `${baseUrl}?v=${new Date(cacheResult.updatedAt).getTime()}` : baseUrl;
           setPdfUrl(cachedUrl);
           setPdfProgress({ stage: '캐시에서 로드 완료!', percent: 100 });
 
@@ -1781,9 +1780,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       const problemHeights = problemImages.map(img => img.height);
       const answerHeights = answerImages.map(img => img.height);
 
-      // Detect subject from first problem ID - for tagged subjects (경제, 사회문화, 생활과윤리) or default to 통합사회
-      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-      const subject = detectedSubject || '통합사회';
+      const subject = worksheetSubject || '';
 
       // Prepare problem metadata for PDF badges
       const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -1832,7 +1829,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         uploadPdfToCache(worksheetId, blob)
           .then((result) => {
             if (result.success && result.cdnPath) {
-              const cdnUrl = getCdnUrl(result.cdnPath);
+              const baseUrl = getCdnUrl(result.cdnPath);
+              const cdnUrl = result.updatedAt ? `${baseUrl}?v=${new Date(result.updatedAt).getTime()}` : baseUrl;
               setPdfUrl(cdnUrl);
               setPdfCached(true);
             }

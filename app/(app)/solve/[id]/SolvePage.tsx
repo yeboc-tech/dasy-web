@@ -142,7 +142,7 @@ export function SolvePage() {
         // Load worksheet data
         const { data, error } = await supabase
           .from('worksheets')
-          .select('id, title, author, selected_problem_ids, created_at, custom_time_limit_s')
+          .select('id, title, author, selected_problem_ids, created_at, custom_time_limit_s, subject')
           .eq('id', worksheetId)
           .single();
 
@@ -197,6 +197,7 @@ export function SolvePage() {
             author: data.author,
             createdAt: data.created_at,
             editedContentMap: editedMap,
+            subject: data.subject || '',
           },
           (progress) => setPdfProgress(progress)
         );
