@@ -91,7 +91,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
   const [economyLoading, setEconomyLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
@@ -108,14 +108,15 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
   const [savedTitle, setSavedTitle] = useState<string | null>(null); // Title shown in header, only updates on save
   const [validationErrors, setValidationErrors] = useState<{ title?: string; author?: string }>({});
   const [isOwner, setIsOwner] = useState(true); // Default true for new worksheets
+  const [worksheetSubject, setWorksheetSubject] = useState<string>('');
 
   // Thumbnail states (store path, not full URL)
   const [thumbnailPath, setThumbnailPath] = useState<string | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
   // Solve mode states
-  const [solveAnswers, setSolveAnswers] = useState<{[problemNumber: number]: number}>({});
-  const [solveGradingResults, setSolveGradingResults] = useState<{[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} | null>(null);
+  const [solveAnswers, setSolveAnswers] = useState<{ [problemNumber: number]: number }>({});
+  const [solveGradingResults, setSolveGradingResults] = useState<{ [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } | null>(null);
   const [solvePdfUrl, setSolvePdfUrl] = useState<string | null>(null);
   const [solvePdfLoading, setSolvePdfLoading] = useState(false);
   const [solveResultDialogOpen, setSolveResultDialogOpen] = useState(false);
@@ -199,8 +200,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
     preloadPdfMake();
     warmupPdfWorker(); // Initialize worker and load pdfMake in background
     // Preload logo and QR code in background
-    getCachedLogoBase64().catch(() => {});
-    getCachedQrBase64().catch(() => {});
+    getCachedLogoBase64().catch(() => { });
+    getCachedQrBase64().catch(() => { });
   }, []);
 
   // Check if PDF is cached when worksheet loads
@@ -326,7 +327,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       // Fetch the worksheet to check if it's economy or regular
       const { data: worksheetMeta, error: metaError } = await supabase
         .from('worksheets')
-        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path')
+        .select('selected_problem_ids, filters, title, author, is_public, created_at, created_by, thumbnail_path, subject')
         .eq('id', worksheetId)
         .single();
 
@@ -347,6 +348,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       setSavedTitle(worksheetMeta.title || null);
       setWorksheetCreatedAt(worksheetMeta.created_at);
       setThumbnailPath(worksheetMeta.thumbnail_path || null);
+      setWorksheetSubject(worksheetMeta.subject || '');
 
       // Detect if it's an economy worksheet by checking problem ID format
       const { isTaggedWorksheet } = await import('@/lib/supabase/services/taggedWorksheetService');
@@ -377,21 +379,31 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       }
       setLastInitializedMode(isTaggedMode);  // Skip re-sorting on load
 
-      // Fetch edited contents for preview
-      const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
-      const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
-      const answerIds = data?.problems
-        ?.filter((p: ProblemMetadata) => p.answer_filename)
-        ?.map((p: ProblemMetadata) => {
-          // For tagged subject problems, answer ID replaces _문제 with _해설
-          if (getSubjectFromProblemId(p.id) !== null) {
-            return p.id.replace('_문제', '_해설');
-          }
-          return p.id;
-        }) || [];
-      const allResourceIds = [...problemIds, ...answerIds];
-      const fetchedEditedContents = await getEditedContents(allResourceIds);
-      setEditedContentsMap(fetchedEditedContents);
+      // Fetch edited contents for preview (skip if autoPdf with cache hit)
+      let skipEditedContents = false;
+      if (autoPdf && worksheetId) {
+        const cacheResult = await checkPdfCache(worksheetId);
+        if (cacheResult.cached) {
+          skipEditedContents = true;
+        }
+      }
+
+      if (!skipEditedContents) {
+        const { getEditedContents } = await import('@/lib/supabase/services/clientServices');
+        const problemIds = data?.problems?.map((p: ProblemMetadata) => p.id) || [];
+        const answerIds = data?.problems
+          ?.filter((p: ProblemMetadata) => p.answer_filename)
+          ?.map((p: ProblemMetadata) => {
+            // For tagged subject problems, answer ID replaces _문제 with _해설
+            if (getSubjectFromProblemId(p.id) !== null) {
+              return p.id.replace('_문제', '_해설');
+            }
+            return p.id;
+          }) || [];
+        const allResourceIds = [...problemIds, ...answerIds];
+        const fetchedEditedContents = await getEditedContents(allResourceIds);
+        setEditedContentsMap(fetchedEditedContents);
+      }
 
       // Start in worksheet view when editing existing worksheet (unless autoPdf or solveId)
       // When solveId is provided, let the solve loading effect handle viewMode
@@ -488,7 +500,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
 
         // Convert solve results to OMR answers format (answers only, no grading)
-        const answers: {[problemNumber: number]: number} = {};
+        const answers: { [problemNumber: number]: number } = {};
 
         worksheetProblems.forEach((problem, index) => {
           const problemResult = solveData.results[problem.id];
@@ -554,9 +566,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         const base64ProblemImages = problemImages.map(img => img.base64);
         const problemHeights = problemImages.map(img => img.height);
 
-        // Detect subject
-        const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-        const subject = detectedSubject || '통합사회';
+        const subject = worksheetSubject || '';
 
         // Prepare problem metadata for PDF badges
         const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -632,6 +642,9 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
   // Fetch edited content when problems change (ONLY for tagged subjects)
   useEffect(() => {
+    // Skip in autoPdf mode - edited content is not needed for cached PDF display
+    if (autoPdf) return;
+
     let cancelled = false;
 
     const fetchEditedContent = async () => {
@@ -1280,9 +1293,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       const base64ProblemImages = problemImages.map(img => img.base64);
       const problemHeights = problemImages.map(img => img.height);
 
-      // Detect subject
-      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-      const subject = detectedSubject || '통합사회';
+      const subject = worksheetSubject || '';
 
       // Prepare problem metadata for PDF badges
       const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -1326,7 +1337,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
       }, 150);
 
-      const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
+      const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => { });
       clearInterval(pdfGenInterval);
 
       const solveUrl = URL.createObjectURL(solveBlob);
@@ -1382,7 +1393,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       });
 
       // Grade each answer - only update OMR display
-      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
 
       worksheetProblems.forEach((problem, index) => {
         const problemNumber = index + 1;
@@ -1438,7 +1449,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       });
 
       // Grade each answer
-      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
       const problemResults: Record<string, ProblemResult> = {};
       let totalScore = 0;
       let maxScore = 0;
@@ -1583,7 +1594,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         });
 
         // Grade each answer
-        const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+        const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
         worksheetProblems.forEach((problem, index) => {
           const problemNumber = index + 1;
           const userAnswer = solveAnswers[problemNumber] || 0;
@@ -1704,7 +1715,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         const cacheResult = await checkPdfCache(worksheetId);
 
         if (cacheResult.cached && cacheResult.cdnPath) {
-          const cachedUrl = getCdnUrl(cacheResult.cdnPath);
+          const baseUrl = getCdnUrl(cacheResult.cdnPath);
+          const cachedUrl = cacheResult.updatedAt ? `${baseUrl}?v=${new Date(cacheResult.updatedAt).getTime()}` : baseUrl;
           setPdfUrl(cachedUrl);
           setPdfProgress({ stage: '캐시에서 로드 완료!', percent: 100 });
 
@@ -1781,9 +1793,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       const problemHeights = problemImages.map(img => img.height);
       const answerHeights = answerImages.map(img => img.height);
 
-      // Detect subject from first problem ID - for tagged subjects (경제, 사회문화, 생활과윤리) or default to 통합사회
-      const detectedSubject = worksheetProblems[0] ? getSubjectFromProblemId(worksheetProblems[0].id) : null;
-      const subject = detectedSubject || '통합사회';
+      const subject = worksheetSubject || '';
 
       // Prepare problem metadata for PDF badges
       const problemMetadataForPdf = worksheetProblems.map(problem => ({
@@ -1823,7 +1833,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
       }, 200);
 
-      const blob = await generatePdfWithWorker(docDefinition, () => {});
+      const blob = await generatePdfWithWorker(docDefinition, () => { });
       clearInterval(pdfGenInterval);
 
       // Upload to cache if worksheet is saved (background, don't block)
@@ -1832,7 +1842,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         uploadPdfToCache(worksheetId, blob)
           .then((result) => {
             if (result.success && result.cdnPath) {
-              const cdnUrl = getCdnUrl(result.cdnPath);
+              const baseUrl = getCdnUrl(result.cdnPath);
+              const cdnUrl = result.updatedAt ? `${baseUrl}?v=${new Date(result.updatedAt).getTime()}` : baseUrl;
               setPdfUrl(cdnUrl);
               setPdfCached(true);
             }
@@ -1908,9 +1919,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
     <div className="w-full h-full flex flex-col relative overflow-hidden">
       {/* Worksheet View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'worksheet' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'worksheet' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         {/* Top Bar - Worksheet */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
@@ -2041,9 +2051,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* Add Problems View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'addProblems' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'addProblems' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         {/* Top Bar - Add Problems */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
@@ -2146,9 +2155,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* PDF Generation View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'pdfGeneration' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'pdfGeneration' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-center gap-3">
@@ -2233,11 +2241,10 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* Solve View - expands from card to full screen */}
       <div
-        className={`fixed z-50 flex flex-col bg-white transition-all duration-500 ease-in-out ${
-          viewMode === 'solve'
-            ? 'inset-0 rounded-none opacity-100'
-            : 'top-14 left-[calc(0.5rem+16rem+0.5rem)] right-2 bottom-2 rounded-2xl opacity-0 pointer-events-none'
-        }`}
+        className={`fixed z-50 flex flex-col bg-white transition-all duration-500 ease-in-out ${viewMode === 'solve'
+          ? 'inset-0 rounded-none opacity-100'
+          : 'top-14 left-[calc(0.5rem+16rem+0.5rem)] right-2 bottom-2 rounded-2xl opacity-0 pointer-events-none'
+          }`}
       >
         {/* Top Bar - Solve */}
         <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 shrink-0 bg-white">

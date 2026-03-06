@@ -5,17 +5,19 @@
 
 import { getCdnUrl, getProblemImageUrl } from '@/lib/utils/s3Utils';
 import { imageToBase64WithDimensions, createWorksheetWithAnswersDocDefinitionClient, generatePdfWithWorker, type ImageWithDimensions } from '@/lib/pdf/clientUtils';
-import { getSubjectFromProblemId } from '@/lib/supabase/services/taggedWorksheetService';
+
 
 interface CacheCheckResult {
   cached: boolean;
   cdnPath?: string;
   reason?: string;
+  updatedAt?: string;
 }
 
 interface CacheUploadResult {
   success: boolean;
   cdnPath?: string;
+  updatedAt?: string;
   error?: string;
 }
 
@@ -43,6 +45,8 @@ export interface WorksheetPdfParams {
   includeAnswers?: boolean;
   /** edited content CDN URL 맵 (problem_id -> CDN URL) */
   editedContentMap?: Map<string, string>;
+  /** worksheet의 subject 컬럼 값 */
+  subject?: string;
 }
 
 /**
@@ -127,7 +131,7 @@ export async function getWorksheetPdf(
   params: WorksheetPdfParams,
   onProgress?: (progress: PdfProgress) => void
 ): Promise<{ url: string; fromCache: boolean }> {
-  const { worksheetId, problemIds, title, author, createdAt, includeAnswers = false, editedContentMap } = params;
+  const { worksheetId, problemIds, title, author, createdAt, includeAnswers = false, editedContentMap, subject: worksheetSubject } = params;
 
   // 1. 캐시 확인
   onProgress?.({ stage: 'checking_cache', percent: 5, message: '캐시 확인 중...' });
@@ -135,7 +139,8 @@ export async function getWorksheetPdf(
 
   if (cacheResult.cached && cacheResult.cdnPath) {
     onProgress?.({ stage: 'cache_hit', percent: 100, message: '캐시에서 로드' });
-    const url = getCdnUrl(cacheResult.cdnPath);
+    const baseUrl = getCdnUrl(cacheResult.cdnPath);
+    const url = cacheResult.updatedAt ? `${baseUrl}?v=${new Date(cacheResult.updatedAt).getTime()}` : baseUrl;
     return { url, fromCache: true };
   }
 
@@ -167,9 +172,8 @@ export async function getWorksheetPdf(
   const base64ProblemImages = problemImages.map(img => img.base64);
   const problemHeights = problemImages.map(img => img.height);
 
-  // 과목 감지
-  const detectedSubject = problemIds[0] ? getSubjectFromProblemId(problemIds[0]) : null;
-  const subject = detectedSubject || '통합사회';
+  // 과목: worksheet의 subject 컬럼 우선, 없으면 빈 문자열
+  const subject = worksheetSubject || '';
 
   // 메타데이터 (solve 모드에서는 빈 값)
   const problemMetadataForPdf = problemIds.map(() => ({

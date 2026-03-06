@@ -74,7 +74,8 @@ export async function GET(request: NextRequest) {
     // Return cdn path (client will assemble full URL)
     return NextResponse.json({
       cached: true,
-      cdnPath: cacheEntry.cdn_path
+      cdnPath: cacheEntry.cdn_path,
+      updatedAt: cacheEntry.created_at
     });
   } catch (error) {
     console.error('Error checking PDF cache:', error);
@@ -158,7 +159,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      cdnPath
+      cdnPath,
+      updatedAt: now
     });
   } catch (error) {
     console.error('Error caching PDF:', error);
