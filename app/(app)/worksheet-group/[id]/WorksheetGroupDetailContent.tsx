@@ -234,7 +234,8 @@ export default function WorksheetGroupDetailContent({ item }: WorksheetGroupDeta
           </span>
         );
       }
-      return <a className="text-blue-600 hover:underline" {...props} />;
+      const isExternal = props.href?.startsWith('http');
+      return <a className="text-blue-600 hover:underline" {...props} {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})} />;
     },
   }), [locked]);
 
