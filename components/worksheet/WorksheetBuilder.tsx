@@ -91,7 +91,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
   const [economyLoading, setEconomyLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiMode, setAiMode] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [sortRules, setSortRules] = useState<SortRule[]>([]);
   const [editedContentsMap, setEditedContentsMap] = useState<Map<string, string> | null>(null);
@@ -115,8 +115,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
   // Solve mode states
-  const [solveAnswers, setSolveAnswers] = useState<{[problemNumber: number]: number}>({});
-  const [solveGradingResults, setSolveGradingResults] = useState<{[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} | null>(null);
+  const [solveAnswers, setSolveAnswers] = useState<{ [problemNumber: number]: number }>({});
+  const [solveGradingResults, setSolveGradingResults] = useState<{ [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } | null>(null);
   const [solvePdfUrl, setSolvePdfUrl] = useState<string | null>(null);
   const [solvePdfLoading, setSolvePdfLoading] = useState(false);
   const [solveResultDialogOpen, setSolveResultDialogOpen] = useState(false);
@@ -200,8 +200,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
     preloadPdfMake();
     warmupPdfWorker(); // Initialize worker and load pdfMake in background
     // Preload logo and QR code in background
-    getCachedLogoBase64().catch(() => {});
-    getCachedQrBase64().catch(() => {});
+    getCachedLogoBase64().catch(() => { });
+    getCachedQrBase64().catch(() => { });
   }, []);
 
   // Check if PDF is cached when worksheet loads
@@ -490,7 +490,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
 
         // Convert solve results to OMR answers format (answers only, no grading)
-        const answers: {[problemNumber: number]: number} = {};
+        const answers: { [problemNumber: number]: number } = {};
 
         worksheetProblems.forEach((problem, index) => {
           const problemResult = solveData.results[problem.id];
@@ -1324,7 +1324,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
       }, 150);
 
-      const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => {});
+      const solveBlob = await generatePdfWithWorker(solveDocDefinition, () => { });
       clearInterval(pdfGenInterval);
 
       const solveUrl = URL.createObjectURL(solveBlob);
@@ -1380,7 +1380,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       });
 
       // Grade each answer - only update OMR display
-      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
 
       worksheetProblems.forEach((problem, index) => {
         const problemNumber = index + 1;
@@ -1436,7 +1436,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
       });
 
       // Grade each answer
-      const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+      const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
       const problemResults: Record<string, ProblemResult> = {};
       let totalScore = 0;
       let maxScore = 0;
@@ -1581,7 +1581,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         });
 
         // Grade each answer
-        const results: {[problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number }} = {};
+        const results: { [problemNumber: number]: { isCorrect: boolean; correctAnswer: number; score: number } } = {};
         worksheetProblems.forEach((problem, index) => {
           const problemNumber = index + 1;
           const userAnswer = solveAnswers[problemNumber] || 0;
@@ -1820,7 +1820,7 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
         }
       }, 200);
 
-      const blob = await generatePdfWithWorker(docDefinition, () => {});
+      const blob = await generatePdfWithWorker(docDefinition, () => { });
       clearInterval(pdfGenInterval);
 
       // Upload to cache if worksheet is saved (background, don't block)
@@ -1906,9 +1906,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
     <div className="w-full h-full flex flex-col relative overflow-hidden">
       {/* Worksheet View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'worksheet' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'worksheet' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         {/* Top Bar - Worksheet */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
@@ -2039,9 +2038,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* Add Problems View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'addProblems' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'addProblems' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         {/* Top Bar - Add Problems */}
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
@@ -2144,9 +2142,8 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* PDF Generation View - with fade transition */}
       <div
-        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${
-          viewMode === 'pdfGeneration' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
-        }`}
+        className={`absolute inset-0 flex flex-col transition-opacity duration-500 ease-in-out ${viewMode === 'pdfGeneration' ? 'opacity-100 delay-200' : 'opacity-0 pointer-events-none delay-0'
+          }`}
       >
         <div className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 bg-white">
           <div className="flex items-center gap-3">
@@ -2231,11 +2228,10 @@ export default function WorksheetBuilder({ worksheetId, autoPdf, solveId, initia
 
       {/* Solve View - expands from card to full screen */}
       <div
-        className={`fixed z-50 flex flex-col bg-white transition-all duration-500 ease-in-out ${
-          viewMode === 'solve'
-            ? 'inset-0 rounded-none opacity-100'
-            : 'top-14 left-[calc(0.5rem+16rem+0.5rem)] right-2 bottom-2 rounded-2xl opacity-0 pointer-events-none'
-        }`}
+        className={`fixed z-50 flex flex-col bg-white transition-all duration-500 ease-in-out ${viewMode === 'solve'
+          ? 'inset-0 rounded-none opacity-100'
+          : 'top-14 left-[calc(0.5rem+16rem+0.5rem)] right-2 bottom-2 rounded-2xl opacity-0 pointer-events-none'
+          }`}
       >
         {/* Top Bar - Solve */}
         <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 shrink-0 bg-white">

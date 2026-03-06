@@ -40,10 +40,9 @@ interface PDFViewerProps {
 }
 
 const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSave, onPreview, onBack, subject, worksheetTitle, worksheetAuthor, isTitlePlaceholder, isAuthorPlaceholder, isPublic, worksheetId, hideHeader }: PDFViewerProps) {
-  console.log('🟠 PDFViewer component render - pdfUrl:', !!pdfUrl);
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const pageRefs = useRef<{[key: number]: HTMLImageElement | null}>({});
+  const pageRefs = useRef<{ [key: number]: HTMLImageElement | null }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [pageInputValue, setPageInputValue] = useState('1');
@@ -52,25 +51,25 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]);
-  
+
   // Track prop changes
   const prevProps = useRef({ pdfUrl, onError, onEdit, onSave });
   useEffect(() => {
     const prev = prevProps.current;
     const changes = [];
-    
+
     if (prev.pdfUrl !== pdfUrl) changes.push(`pdfUrl: ${prev.pdfUrl} -> ${pdfUrl}`);
     if (prev.onError !== onError) changes.push('onError changed');
     if (prev.onEdit !== onEdit) changes.push('onEdit changed');
     if (prev.onSave !== onSave) changes.push('onSave changed');
-    
+
     if (changes.length > 0) {
       console.log('🟠 PDFViewer prop changes:', changes);
     }
-    
+
     prevProps.current = { pdfUrl, onError, onEdit, onSave };
   });
-  
+
 
   // Load PDF document and render all pages
   useEffect(() => {
@@ -79,48 +78,48 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
       try {
         setLoading(true);
         setError(null);
-        
+
         // Ensure PDF.js is loaded
         if (!pdfjsLib) {
           throw new Error('PDF.js library not loaded');
         }
-        
+
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         const pdf = await loadingTask.promise;
-        
+
         setTotalPages(pdf.numPages);
         setCurrentPage(1);
         setPageInputValue('1');
-        
+
         // Pre-render all pages as images
         const images: string[] = [];
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
           const viewport = page.getViewport({ scale: 2.0 }); // Higher quality
-          
+
           // Create temporary canvas for rendering
           const canvas = document.createElement('canvas');
           const context = canvas.getContext('2d');
           if (!context) continue;
-          
+
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          
+
           const renderContext = {
             canvasContext: context,
             viewport: viewport,
             canvas: canvas,
           };
-          
+
           await page.render(renderContext).promise;
-          
+
           // Convert to image
           const imageData = canvas.toDataURL('image/png', 1.0);
           images.push(imageData);
         }
-        
+
         setPageImages(images);
-        
+
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
         setError(errorMessage);
@@ -163,7 +162,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
     const updateCurrentPageFromScroll = () => {
       const scrollTop = container.scrollTop;
       const containerHeight = container.clientHeight;
-      
+
       // Find which page is currently most visible in the viewport
       let newCurrentPage = 1;
       let maxVisibleArea = 0;
@@ -251,10 +250,10 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
   const scrollToPage = (pageNum: number) => {
     const pageRef = pageRefs.current[pageNum];
     if (!pageRef || !containerRef.current) return;
-    
+
     const container = containerRef.current;
     const pageElement = pageRef;
-    
+
     // For page 1, scroll to the very top to show the natural container padding
     if (pageNum === 1) {
       container.scrollTo({
@@ -263,19 +262,19 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
       });
       return;
     }
-    
+
     // For other pages, calculate position to show them at the top with consistent spacing
     // Get the first page to calculate the offset from container top
     const firstPageRef = pageRefs.current[1];
     if (!firstPageRef) return;
-    
+
     const firstPageTop = firstPageRef.offsetTop;
     const currentPageTop = pageElement.offsetTop;
-    
+
     // Calculate the scroll position to align the current page where the first page starts
     // This maintains the same visual spacing as page 1
     const targetScrollTop = currentPageTop - firstPageTop;
-    
+
     container.scrollTo({
       top: Math.max(0, targetScrollTop),
       behavior: 'smooth'
@@ -310,19 +309,19 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
   const downloadPDF = () => {
     // Create filename from title and author
     let filename = 'worksheet.pdf';
-    
+
     if (worksheetTitle || worksheetAuthor) {
       const titlePart = worksheetTitle || '';
       const authorPart = worksheetAuthor || '';
       const nameParts = [titlePart, authorPart].filter(part => part.trim().length > 0);
-      
+
       if (nameParts.length > 0) {
         // Clean up the filename by removing invalid characters
         const cleanName = nameParts.join('_').replace(/[<>:"/\\|?*]/g, '').trim();
         filename = `${cleanName}.pdf`;
       }
     }
-    
+
     const link = document.createElement('a');
     link.href = pdfUrl;
     link.download = filename;
@@ -362,16 +361,16 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
         iframe.style.width = '1px';
         iframe.style.height = '1px';
         iframe.src = pdfUrl;
-        
+
         document.body.appendChild(iframe);
         printIframeRef.current = iframe;
-        
+
         // Wait for PDF to load initially
         iframe.onload = () => {
           // Now it's ready for printing anytime
         };
       }
-      
+
       // Print using the existing iframe
       setTimeout(() => {
         try {
@@ -385,7 +384,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
           window.open(pdfUrl, '_blank');
         }
       }, 100); // Small delay to ensure iframe is ready
-      
+
     } catch (err) {
       console.error('Error printing:', err);
       // Fallback: open PDF in new tab
@@ -417,7 +416,7 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
     <>
       {/* Inject print styles */}
       <style dangerouslySetInnerHTML={{ __html: printStyles }} />
-      
+
       <div className="flex flex-col h-full bg-white print:h-auto">
         {/* Worksheet Header Bar */}
         {!hideHeader && (worksheetTitle || onEdit || onSave || onBack) && (
@@ -496,148 +495,148 @@ const PDFViewer = React.memo(function PDFViewer({ pdfUrl, onError, onEdit, onSav
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* PDF Toolbar */}
           <div className="flex items-center justify-between px-3 py-2 bg-[var(--gray-100)] text-[var(--gray-900)] border-b border-[var(--border)] print:hidden">
-        {/* Left Section */}
-        <div className="flex items-center space-x-2">
-          {/* Page Navigation */}
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={goToPreviousPage}
-              disabled={currentPage <= 1}
-              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
-              title="Previous page"
-            >
-              <ChevronLeft size={16} />
-            </Button>
-            
-            <div className="flex items-center space-x-1 text-xs">
-              <input
-                type="number"
-                value={pageInputValue}
-                onChange={handlePageInputChange}
-                onKeyDown={handlePageInputKeyDown}
-                onBlur={handlePageInputSubmit}
-                className="w-10 px-1 py-0.5 text-center bg-white border border-[var(--border)] rounded text-[var(--gray-900)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--gray-400)]"
-                min="1"
-                max={totalPages}
-                placeholder="Page"
-              />
-              <span>/</span>
-              <span>{totalPages}</span>
+            {/* Left Section */}
+            <div className="flex items-center space-x-2">
+              {/* Page Navigation */}
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage <= 1}
+                  className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
+                  title="Previous page"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+
+                <div className="flex items-center space-x-1 text-xs">
+                  <input
+                    type="number"
+                    value={pageInputValue}
+                    onChange={handlePageInputChange}
+                    onKeyDown={handlePageInputKeyDown}
+                    onBlur={handlePageInputSubmit}
+                    className="w-10 px-1 py-0.5 text-center bg-white border border-[var(--border)] rounded text-[var(--gray-900)] text-xs focus:outline-none focus:ring-1 focus:ring-[var(--gray-400)]"
+                    min="1"
+                    max={totalPages}
+                    placeholder="Page"
+                  />
+                  <span>/</span>
+                  <span>{totalPages}</span>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={goToNextPage}
+                  disabled={currentPage >= totalPages}
+                  className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
+                  title="Next page"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+
+              {/* Zoom Controls */}
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomOut}
+                  className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
+                  title="Zoom out"
+                >
+                  <Minus size={16} />
+                </Button>
+
+                <div
+                  className="h-8 text-xs text-[var(--gray-900)] flex items-center justify-center bg-transparent"
+                  style={{ width: '45px' }}
+                >
+                  {Math.min(Math.round(zoom * 100), 100)}%
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={zoomIn}
+                  disabled={zoom >= 1.0}
+                  className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
+                  title="Zoom in"
+                >
+                  <Plus size={16} />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={fitToPage}
+                  className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
+                  title="Fit to page"
+                >
+                  <Maximize size={16} />
+                </Button>
+              </div>
             </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={goToNextPage}
-              disabled={currentPage >= totalPages}
-              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
-              title="Next page"
-            >
-              <ChevronRight size={16} />
-            </Button>
-          </div>
-          
-          {/* Zoom Controls */}
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={zoomOut}
-              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
-              title="Zoom out"
-            >
-              <Minus size={16} />
-            </Button>
 
-            <div
-              className="h-8 text-xs text-[var(--gray-900)] flex items-center justify-center bg-transparent"
-              style={{ width: '45px' }}
-            >
-{Math.min(Math.round(zoom * 100), 100)}%
+            {/* Right Section */}
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={downloadPDF}
+                className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
+                title="Download PDF"
+              >
+                <Download size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={printPDF}
+                className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
+                title="Print"
+              >
+                <Printer size={16} />
+              </Button>
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={zoomIn}
-              disabled={zoom >= 1.0}
-              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)] disabled:opacity-50"
-              title="Zoom in"
-            >
-              <Plus size={16} />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={fitToPage}
-              className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
-              title="Fit to page"
-            >
-              <Maximize size={16} />
-            </Button>
           </div>
-        </div>
 
-        {/* Right Section */}
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={downloadPDF}
-            className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
-            title="Download PDF"
+          {/* PDF Container - Continuous Scroll */}
+          <div
+            ref={containerRef}
+            className="flex-1 overflow-auto bg-gray-100 p-4"
+            style={{
+              // Fix iOS Safari scrolling
+              WebkitOverflowScrolling: 'touch',
+              // Ensure touch events work properly on iPad
+              touchAction: 'auto'
+            }}
           >
-            <Download size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={printPDF}
-            className="h-8 w-8 text-[var(--gray-900)] hover:bg-[var(--gray-200)]"
-            title="Print"
-          >
-            <Printer size={16} />
-          </Button>
+            {/* Render all pages as images */}
+            <div className="flex flex-col gap-5 items-center">
+              {pageImages.map((imageData, index) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={index}
+                  ref={(el) => {
+                    pageRefs.current[index + 1] = el;
+                  }}
+                  src={imageData}
+                  alt={`PDF Page ${index + 1}`}
+                  className="shadow-lg border border-gray-300 max-w-full"
+                  style={{
+                    width: `${zoom * 100}%`,
+                    height: 'auto',
+                    display: 'block'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* PDF Container - Continuous Scroll */}
-      <div 
-        ref={containerRef}
-        className="flex-1 overflow-auto bg-gray-100 p-4"
-        style={{
-          // Fix iOS Safari scrolling
-          WebkitOverflowScrolling: 'touch',
-          // Ensure touch events work properly on iPad
-          touchAction: 'auto'
-        }}
-      >
-        {/* Render all pages as images */}
-        <div className="flex flex-col gap-5 items-center">
-          {pageImages.map((imageData, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              key={index}
-              ref={(el) => {
-                pageRefs.current[index + 1] = el;
-              }}
-              src={imageData}
-              alt={`PDF Page ${index + 1}`}
-              className="shadow-lg border border-gray-300 max-w-full"
-              style={{ 
-                width: `${zoom * 100}%`,
-                height: 'auto',
-                display: 'block'
-              }}
-            />
-          ))}
-        </div>
-      </div>
-        </div>
-    </div>
     </>
   );
 });
