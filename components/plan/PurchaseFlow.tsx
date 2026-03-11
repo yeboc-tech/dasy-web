@@ -74,10 +74,14 @@ export function PurchaseFlow() {
               <span className="text-sm font-medium text-[var(--foreground)]">설정 &gt; 구독 관리에서 해지</span>
             </div>
           </div>
+          <p className="text-xs text-gray-400 mt-4 leading-relaxed">
+            구매 후 서비스 이용내역이 확인된 경우에는 단순 변심에 의한 환불은 불가합니다.<br />
+            위 내용을 확인하였으며 정기 결제에 동의합니다.
+          </p>
           <button
             disabled={submitting}
             onClick={handlePurchase}
-            className="w-full mt-4 py-3 rounded-lg text-sm font-semibold transition-colors bg-[#FF00A1] text-white hover:bg-[#e0008f] cursor-pointer disabled:opacity-50"
+            className="w-full mt-3 py-3 rounded-lg text-sm font-semibold transition-colors bg-[#FF00A1] text-white hover:bg-[#e0008f] cursor-pointer disabled:opacity-50"
           >
             {submitting ? '처리 중...' : '구매하기'}
           </button>
