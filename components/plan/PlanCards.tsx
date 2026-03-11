@@ -24,7 +24,7 @@ const plans = [
   },
   {
     name: 'PRO',
-    price: '10,000원 / 월',
+    price: '14,900원 / 월',
     description: '모든 기능 제한 없이',
     uniqueFeatures: ['복수 과목 학습 가능', '10,000 Point / 월 지급'],
     highlighted: true,

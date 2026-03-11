@@ -121,14 +121,12 @@ export function MySubscriptionPage() {
               }`}>
                 {subscriptionType}
               </span>
-              {subscriptionType === 'FREE' && (
-                <Link
-                  href="/subscription"
-                  className="text-sm text-[#FF00A1] hover:underline font-medium"
-                >
-                  업그레이드
-                </Link>
-              )}
+              <Link
+                href="/subscription"
+                className="text-sm text-[#FF00A1] hover:underline font-medium"
+              >
+                {subscriptionType === 'FREE' ? '구독하기' : '구독 변경'}
+              </Link>
             </div>
           </div>
 

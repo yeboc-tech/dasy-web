@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { PlanCards } from '@/components/plan/PlanCards';
 import { PurchaseFlow } from '@/components/plan/PurchaseFlow';
+import { Footer } from '@/components/Footer';
 
 export function SubscriptionPage() {
   return (
@@ -29,6 +30,9 @@ export function SubscriptionPage() {
           <PurchaseFlow />
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
