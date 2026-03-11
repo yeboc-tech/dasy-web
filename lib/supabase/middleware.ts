@@ -28,7 +28,22 @@ export async function updateSession(request: NextRequest) {
   )
 
   // refreshing the auth token
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 루트 경로: 로그인 여부에 따라 분기
+  const pathname = request.nextUrl.pathname
+  if (pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = user ? '/my/dashboard' : '/landing'
+    return NextResponse.redirect(url)
+  }
+
+  // 랜딩 페이지: 로그인 된 상태면 대시보드로
+  if (pathname === '/landing' && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/my/dashboard'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
