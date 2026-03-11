@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb } from 'lucide-react';
+import { BookOpen, BarChart3, FileText, ChevronRight, Lightbulb, Target, CheckCircle2, Circle } from 'lucide-react';
+import { hasUserSolvedAny } from '@/lib/api/SupabaseTable';
 import { OneProblemSolverDialog } from '@/components/OneProblemSolverDialog';
 import { OneProblemRecommender } from '@/lib/service/OneProblemRecommender';
 import { useAuth } from '@/lib/contexts/auth-context';
@@ -32,12 +33,31 @@ export function MyDashboardPage() {
   const [chapterTree, setChapterTree] = useState<SsotChapterTree | null>(null);
   const [chapterCounts, setChapterCounts] = useState<Record<string, ChapterCountEntry> | null>(null);
   const [problemTagMap, setProblemTagMap] = useState<Map<string, string>>(new Map());
+  const [hasSolved, setHasSolved] = useState<boolean | null>(null);
+  const [solveCheckLoading, setSolveCheckLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading && user) {
       fetchSettings(user.id);
     }
   }, [user, authLoading, fetchSettings]);
+
+  // 풀이 이력 체크 (주간 학습 목표 표시용)
+  useEffect(() => {
+    async function checkSolveHistory() {
+      if (!user) {
+        setHasSolved(false);
+        setSolveCheckLoading(false);
+        return;
+      }
+      const { hasSolved: solved } = await hasUserSolvedAny();
+      setHasSolved(solved);
+      setSolveCheckLoading(false);
+    }
+    if (!authLoading) {
+      checkSolveHistory();
+    }
+  }, [user, authLoading]);
 
   // 설정 로드 후 chapterYearRange 동기화
   useEffect(() => {
@@ -310,6 +330,100 @@ export function MyDashboardPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+        {/* 주간 학습 목표 */}
+        <section className="bg-white border border-[var(--border)] rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="w-5 h-5 text-[#FF00A1]" />
+            <h2 className="text-sm font-semibold text-[var(--foreground)]">주간 학습 목표</h2>
+          </div>
+
+          {solveCheckLoading || authLoading ? (
+            <div className="text-sm text-[var(--gray-500)]">로딩 중...</div>
+          ) : !hasSolved ? (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500 leading-relaxed">
+                학습 기록이 없습니다. 아래 진단고사를 풀어보면 나에게 맞는 학습 목표를 설정해드려요.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/worksheet-group/11"
+                  className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm font-medium text-[var(--foreground)]">상위권 진단고사 시작하기</span>
+                  <span className="text-xs text-[var(--gray-500)]">정답률 90% 이상</span>
+                </Link>
+                <Link
+                  href="/worksheet-group/12"
+                  className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm font-medium text-[var(--foreground)]">중위권 진단고사 시작하기</span>
+                  <span className="text-xs text-[var(--gray-500)]">정답률 70~90%</span>
+                </Link>
+                <Link
+                  href="/worksheet-group/13"
+                  className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-sm font-medium text-[var(--foreground)]">하위권 진단고사 시작하기</span>
+                  <span className="text-xs text-[var(--gray-500)]">정답률 50~70%</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* TODO: 학습 기록 기반 주간 목표 표시 */}
+              <p className="text-sm text-gray-500">학습 기록을 분석하여 목표를 설정 중입니다...</p>
+            </div>
+          )}
+        </section>
+
+        {/* 주간 학습 현황 */}
+        <section className="bg-white border border-[var(--border)] rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-[#FF00A1]" />
+            <h2 className="text-sm font-semibold text-[var(--foreground)]">주간 학습 현황</h2>
+          </div>
+          <div className="space-y-3">
+            {(() => {
+              const weekAgo = new Date();
+              weekAgo.setDate(weekAgo.getDate() - 7);
+              const weekAgoStr = weekAgo.toISOString().slice(0, 10);
+              const weeklyRecords = stats?.getRecords().filter(r => r.createdAt.slice(0, 10) >= weekAgoStr) ?? [];
+              const weeklySolved = weeklyRecords.length;
+              const weeklyWrong = weeklyRecords.filter(r => r.correctAnswer && String(r.submitAnswer) !== String(r.correctAnswer)).length;
+              return [
+                { label: '푼 문제', current: weeklySolved, target: 50, unit: '문제' },
+                { label: '오답 문제', current: weeklyWrong, target: weeklySolved, unit: '문제' },
+              ];
+            })().map((stat) => {
+              const percent = stat.target > 0 ? Math.min(Math.round((stat.current / stat.target) * 100), 100) : 0;
+              const completed = stat.current >= stat.target;
+              return (
+                <div key={stat.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {completed ? (
+                        <CheckCircle2 className="w-4 h-4 text-[#FF00A1]" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-gray-300" />
+                      )}
+                      <span className="text-sm text-[var(--foreground)]">{stat.label}</span>
+                    </div>
+                    <span className="text-sm text-[var(--gray-500)]">
+                      {stat.current} / {stat.target} {stat.unit}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#FF00A1] rounded-full transition-all"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         {/* 7일 캘린더 (월~일 고정) */}
         <div className="bg-white rounded-lg border border-[var(--border)] p-4">
