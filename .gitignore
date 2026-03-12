@@ -43,6 +43,8 @@ data/
 docs/
 .devcontainer/
 .claude
+.mcp.json
 .mcp.json.env
+.cursor/mcp.json
 
 scripts
