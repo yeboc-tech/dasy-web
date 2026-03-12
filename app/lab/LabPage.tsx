@@ -112,9 +112,9 @@ const IMPORTANCE_BADGE: Record<string, { label: string; bg: string; text: string
 
 function ConceptCard({ concept }: { concept: Concept }) {
   const [expanded, setExpanded] = useState(false);
-  const badge = IMPORTANCE_BADGE[concept.exam_importance] ?? IMPORTANCE_BADGE.medium;
+  const badge = (concept.exam_importance ? IMPORTANCE_BADGE[concept.exam_importance] : undefined) ?? IMPORTANCE_BADGE.medium;
 
-  const hasDetail = concept.explanation || concept.key_terms?.length > 0 || concept.common_mistakes?.length > 0;
+  const hasDetail = concept.explanation || (concept.key_terms?.length ?? 0) > 0 || (concept.common_mistakes?.length ?? 0) > 0;
 
   return (
     <div
