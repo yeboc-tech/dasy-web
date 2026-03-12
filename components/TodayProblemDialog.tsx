@@ -81,7 +81,7 @@ export function TodayProblemDialog({ open, onOpenChange }: TodayProblemDialogPro
           <div className="mt-1 min-h-[380px] flex flex-col items-center justify-center">
             <p className="text-gray-500 text-sm">관심 과목을 설정하면 오늘의 문제를 받을 수 있어요</p>
             <Link
-              href="/my/settings/subjects"
+              href="/settings/subjects"
               onClick={() => onOpenChange(false)}
               className="mt-4 px-4 py-2 text-sm font-medium text-white bg-[#FF00A1] rounded-lg hover:bg-[#E0008E] transition-colors"
             >
