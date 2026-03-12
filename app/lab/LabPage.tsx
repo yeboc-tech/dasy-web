@@ -171,13 +171,13 @@ function ConceptCard({ concept }: { concept: Concept }) {
               )}
 
               {/* Key terms */}
-              {concept.key_terms?.length > 0 && (
+              {(concept.key_terms?.length ?? 0) > 0 && (
                 <div>
                   <p className="text-[13px] font-semibold mb-1.5" style={{ color: '#0369A1' }}>
                     핵심 용어
                   </p>
                   <div className="space-y-1">
-                    {concept.key_terms.map((kt: KeyTerm, i: number) => (
+                    {concept.key_terms!.map((kt: KeyTerm, i: number) => (
                       <div key={i} className="flex gap-2 text-[13px]" style={{ color: '#334155' }}>
                         <span className="font-medium shrink-0">• {kt.term}</span>
                         <span style={{ color: '#64748B' }}>— {kt.meaning}</span>
@@ -188,7 +188,7 @@ function ConceptCard({ concept }: { concept: Concept }) {
               )}
 
               {/* Common mistakes */}
-              {concept.common_mistakes?.length > 0 && (
+              {(concept.common_mistakes?.length ?? 0) > 0 && (
                 <div
                   className="p-3 rounded-xl"
                   style={{ backgroundColor: '#FFF7ED', border: '1px solid #FED7AA' }}
@@ -197,7 +197,7 @@ function ConceptCard({ concept }: { concept: Concept }) {
                     자주 하는 실수
                   </p>
                   <div className="space-y-1">
-                    {concept.common_mistakes.map((mistake: string, i: number) => (
+                    {concept.common_mistakes!.map((mistake: string, i: number) => (
                       <p key={i} className="text-[13px] leading-[20px]" style={{ color: '#9A3412' }}>
                         • {mistake}
                       </p>
@@ -603,7 +603,14 @@ export function LabPage() {
 
               {/* Explanation content */}
               <div ref={explanationRef} />
-              {currentProblem.explanations[selectedAnswer] ? (
+              {(() => {
+                const expl = currentProblem.explanations[selectedAnswer];
+                if (!expl) return (
+                  <div className="p-4 rounded-2xl" style={{ backgroundColor: '#F8FAFC' }}>
+                    <p className="text-sm" style={{ color: '#94A3B8' }}>이 선지에 대한 해설이 없습니다.</p>
+                  </div>
+                );
+                return (
                 <div className="space-y-4">
                   {/* 키다리 chat bubble */}
                   <div>
@@ -619,34 +626,32 @@ export function LabPage() {
                       }}
                     >
                       <p className="text-[16px] leading-[24px]" style={{ color: '#334155' }}>
-                        {currentProblem.explanations[selectedAnswer].explanation}
+                        {expl.explanation}
                       </p>
                     </div>
                   </div>
 
                   {/* Related Concepts */}
-                  {currentProblem.explanations[selectedAnswer].relatedConcepts?.length > 0 && (
+                  {(expl.relatedConcepts?.length ?? 0) > 0 && (
                     <div className="space-y-3">
-                      {currentProblem.explanations[selectedAnswer].relatedConcepts.map((concept: Concept, i: number) => (
+                      {expl.relatedConcepts!.map((concept: Concept, i: number) => (
                         <ConceptCard key={i} concept={concept} />
                       ))}
                     </div>
                   )}
 
                   {/* Related Comparisons */}
-                  {currentProblem.explanations[selectedAnswer].relatedComparisons?.length > 0 && (
+                  {(expl.relatedComparisons?.length ?? 0) > 0 && (
                     <div className="space-y-3">
-                      {currentProblem.explanations[selectedAnswer].relatedComparisons.map((comp: Comparison, i: number) => (
+                      {expl.relatedComparisons!.map((comp: Comparison, i: number) => (
                         <ComparisonTable key={i} comparison={comp} />
                       ))}
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="p-4 rounded-2xl" style={{ backgroundColor: '#F8FAFC' }}>
-                  <p className="text-sm" style={{ color: '#94A3B8' }}>이 선지에 대한 해설이 없습니다.</p>
-                </div>
-              )}
+                );
+              })()}
+              {/* no-explanation fallback handled inside IIFE above */}
             </div>
           </div>
 
