@@ -4,11 +4,41 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 // ─── Types ──────────────────────────────────────────────────
+interface KeyTerm {
+  term: string;
+  meaning: string;
+}
+
+interface Concept {
+  term: string;
+  definition: string;
+  explanation?: string;
+  exam_importance?: string;
+  key_terms?: KeyTerm[];
+  common_mistakes?: string[];
+}
+
+interface ComparisonAxis {
+  axis: string;
+  values: Record<string, string>;
+}
+
+interface Comparison {
+  title: string;
+  axes: ComparisonAxis[];
+}
+
+interface Explanation {
+  explanation: string;
+  relatedConcepts?: Concept[];
+  relatedComparisons?: Comparison[];
+}
+
 interface Problem {
   problem_id: string;
   problem_text: string;
   choices_text: Record<string, string>;
-  explanations: Record<string, any>;
+  explanations: Record<string, Explanation>;
   correct_answer: string;
   accuracy_rate: number;
   has_edited_image: boolean;
@@ -80,7 +110,7 @@ const IMPORTANCE_BADGE: Record<string, { label: string; bg: string; text: string
   low: { label: '출제 빈도 낮음', bg: '#F1F5F9', text: '#64748B' },
 };
 
-function ConceptCard({ concept }: { concept: any }) {
+function ConceptCard({ concept }: { concept: Concept }) {
   const [expanded, setExpanded] = useState(false);
   const badge = IMPORTANCE_BADGE[concept.exam_importance] ?? IMPORTANCE_BADGE.medium;
 
@@ -147,7 +177,7 @@ function ConceptCard({ concept }: { concept: any }) {
                     핵심 용어
                   </p>
                   <div className="space-y-1">
-                    {concept.key_terms.map((kt: any, i: number) => (
+                    {concept.key_terms.map((kt: KeyTerm, i: number) => (
                       <div key={i} className="flex gap-2 text-[13px]" style={{ color: '#334155' }}>
                         <span className="font-medium shrink-0">• {kt.term}</span>
                         <span style={{ color: '#64748B' }}>— {kt.meaning}</span>
@@ -184,7 +214,7 @@ function ConceptCard({ concept }: { concept: any }) {
 }
 
 // ─── Comparison Table ───────────────────────────────────────
-function ComparisonTable({ comparison }: { comparison: any }) {
+function ComparisonTable({ comparison }: { comparison: Comparison }) {
   if (!comparison.axes?.length) return null;
 
   // Extract column headers from values of the first axis
@@ -224,7 +254,7 @@ function ComparisonTable({ comparison }: { comparison: any }) {
             </tr>
           </thead>
           <tbody>
-            {comparison.axes.map((axis: any, i: number) => (
+            {comparison.axes.map((axis: ComparisonAxis, i: number) => (
               <tr key={i}>
                 <td
                   className="py-2 px-3 font-medium"
@@ -264,7 +294,7 @@ export function LabPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [isRetry, setIsRetry] = useState(false);
+  const [, setIsRetry] = useState(false);
   const [loading, setLoading] = useState(false);
   const explanationRef = useRef<HTMLDivElement>(null);
 
@@ -284,7 +314,7 @@ export function LabPage() {
       return;
     }
 
-    const sorted = (data as any[])
+    const sorted = (data as Problem[])
       .filter((p) => p.accuracy_rate != null)
       .sort((a, b) => Number(b.accuracy_rate) - Number(a.accuracy_rate));
 
@@ -597,7 +627,7 @@ export function LabPage() {
                   {/* Related Concepts */}
                   {currentProblem.explanations[selectedAnswer].relatedConcepts?.length > 0 && (
                     <div className="space-y-3">
-                      {currentProblem.explanations[selectedAnswer].relatedConcepts.map((concept: any, i: number) => (
+                      {currentProblem.explanations[selectedAnswer].relatedConcepts.map((concept: Concept, i: number) => (
                         <ConceptCard key={i} concept={concept} />
                       ))}
                     </div>
@@ -606,7 +636,7 @@ export function LabPage() {
                   {/* Related Comparisons */}
                   {currentProblem.explanations[selectedAnswer].relatedComparisons?.length > 0 && (
                     <div className="space-y-3">
-                      {currentProblem.explanations[selectedAnswer].relatedComparisons.map((comp: any, i: number) => (
+                      {currentProblem.explanations[selectedAnswer].relatedComparisons.map((comp: Comparison, i: number) => (
                         <ComparisonTable key={i} comparison={comp} />
                       ))}
                     </div>
